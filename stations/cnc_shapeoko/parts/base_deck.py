@@ -310,6 +310,17 @@ def build_deck() -> Part:
                     side_x, SPINE_HOUSING_FRONT, depth=DADO_D, side="front"
                 )
 
+    # The GROWTH lungs/stock divider station, cut now and left empty. Converting
+    # to the growth extractor moves one panel into a slot that already exists
+    # instead of recutting the deck, which is the largest panel in the station.
+    # It takes a removable birch spline meanwhile so the stock bay floor stays
+    # flat and does not collect chips.
+    gcx = D.wall_x_growth[1] + T / 2
+    p -= groove((gcx, -OVERSHOOT), (gcx, _housing_rear(1)), side="front")
+    for side_x in (gcx - DADO_W / 2, gcx + DADO_W / 2):
+        if EPS < side_x < DECK_W - EPS:
+            p -= relief(side_x, SPINE_HOUSING_FRONT, depth=DADO_D, side="front")
+
     # Deck down onto the plinth. Heads counterbored below the housing floor.
     for cy in X_RAIL_CY:
         p -= screw_line(
