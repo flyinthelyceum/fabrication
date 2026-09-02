@@ -20,12 +20,15 @@ One right-handed coordinate system, millimetres, shared by every part.
             machine.  X runs 0 .. leg_x_inner.
     +Y      to the REAR, away from the operator.  Y runs 0 .. leg_y_inner.
             The brain band is at high Y.  The open stock face is at Y = 0.
-    +Z      UP from the floor.  Z runs 0 .. clear_h (underside of the machine
-            frame).  Nothing the carcass owns lives above clear_h.
+    +Z      UP from the floor.  Z runs 0 .. z_beam (underside of the machine's
+            frame beam).  The ceiling on the way up is not one number: four
+            gussets hang off the beam and eat into both X and Y, so what the
+            carcass may reach at any point is ``Station.clear_z(x, y)`` and
+            ``clear_h_min`` is only that surface's lowest value.
 
-leg_x_inner is the one unmeasured number in the whole model.  Nothing in this
-module hardcodes around it.  When Jared's tape lands, one line in ``params.py``
-changes and every datum below moves with it.
+The leg opening was measured on 2026-09-02 and the model moved with it: X gained
+154mm, Y lost 61.  Nothing in this module hardcodes around either, which is why
+that was two lines in ``params.py`` and no geometry.
 
 
 THE BANDS
@@ -229,9 +232,9 @@ carcass becomes a butt joint without a datum changing.
 
 
 # ---------------------------------------------------------------- stack-up
-# The vertical budget. clear_h is the ceiling and it is a medium-confidence
-# estimate, so the carcass is built bottom-up from its contents and the leftover
-# becomes a reveal. See Datums.top_gap.
+# The vertical budget. The ceiling is a surface rather than a number, so the
+# carcass is built bottom-up from its contents and the leftover becomes a
+# reveal against whatever the envelope puts overhead. See Datums.top_gap.
 
 PLINTH_H = GRID * 3     # 60mm toe kick. Levellers and the low air intake.
 ISOLATOR_H = 15.0       # rubber isolation feet under the extractor platform
@@ -252,8 +255,9 @@ costed rather than assumed.
 LEG_SLOT_V = 60.0
 """Vertical travel in the leg-tie slots.
 
-table_h matches neither published leg configuration; levelling feet swing the
-frame by 52mm and nobody has looked yet. The carcass does not care: it is built
+The levelling feet swing the frame by 52mm, and 2026-09-02 settled which way:
+they are fitted, so table_h is Carbide's 945 config. The slot stays anyway,
+because a levelling foot is a thing that gets wound. The carcass is built
 from the floor up, the leg ties are slotted, and the swing lands in the slot and
 in top_gap. 60 > 52 with room either side.
 """
@@ -462,11 +466,25 @@ class Datums:
         return self.top_z[1]
 
     @property
+    def clear_over_carcass(self) -> float:
+        """Lowest ceiling the machine imposes anywhere over the carcass.
+
+        The carcass footprint IS the leg opening -- the 2026-09-02 ruling puts
+        it flush to the leg inner faces -- so this asks the clearance envelope
+        for its worst corner, which is where a gusset comes down to meet a leg.
+        A part with a smaller footprint gets a higher ceiling, and asks
+        ``Station.clear_z`` for its own.
+        """
+        return self.s.clear_z_over(
+            (self.x_left, self.x_right), (self.y_front, self.y_rear)
+        )
+
+    @property
     def top_gap(self) -> float:
-        """Reveal between the carcass top and the underside of the machine
-        frame. The carcass is built from the floor up and this is the leftover,
-        which is why the 52mm levelling-feet question cannot break it."""
-        return self.s.clear_h - self.carcass_h
+        """Reveal between the carcass top and the lowest thing above it. The
+        carcass is built from the floor up and this is the leftover, which is
+        why the 52mm levelling-feet question cannot break it."""
+        return self.clear_over_carcass - self.carcass_h
 
     # -- brain band: the ventilation corridor -------------------------------
 
@@ -1048,8 +1066,8 @@ def check_carcass(d: Datums = DATUMS) -> list[str]:
 
     if d.top_gap < TOP_GAP_MIN:
         notes.append(
-            f"carcass is {d.carcass_h:.0f}mm tall into {s.clear_h:.0f}mm of "
-            f"clearance, leaving {d.top_gap:.0f}mm. Below the {TOP_GAP_MIN:.0f}mm "
+            f"carcass is {d.carcass_h:.0f}mm tall into {d.clear_over_carcass:.0f}mm "
+            f"of clearance, leaving {d.top_gap:.0f}mm. Below the {TOP_GAP_MIN:.0f}mm "
             "reveal the carcass starts touching the machine frame, which is the "
             "one thing it must not do."
         )

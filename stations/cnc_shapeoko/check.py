@@ -3,12 +3,12 @@
     .venv/bin/python -m stations.cnc_shapeoko.check
 
 Everything in the station already checks itself, but the checks are spread
-across eight modules and nobody is going to run eight commands before walking to
+across nine modules and nobody is going to run nine commands before walking to
 the machine. This runs all of them and sorts what comes back into two piles,
 because they are not the same kind of thing:
 
-  BLOCKING   geometry that is wrong. Two parts in the same material, the
-             carcass not fitting under the machine, the growth path lost, a part
+  BLOCKING   geometry that is wrong. Two parts in the same material, a part
+             reaching into the machine's own steel, the growth path lost, a part
              overflowing its bay. Cutting against any of these wastes sheet.
 
   TODO       a part the design needs and the model does not have yet. Does not
@@ -26,7 +26,7 @@ CLASSIFICATION IS A STOPGAP. It matches phrases that are written deliberately
 into the check messages, which means renaming a message silently reclassifies
 it. Anything unmatched falls to BLOCKING, so drift fails loud rather than quiet.
 The real fix is for each check to return its own severity instead of a bare
-string; that refactor touches eight modules and has not been done.
+string; that refactor touches nine modules and has not been done.
 """
 
 from __future__ import annotations
@@ -41,6 +41,7 @@ from stations.cnc_shapeoko.assembly import (
     interference,
 )
 from stations.cnc_shapeoko.carcass import DATUMS, check_carcass
+from stations.cnc_shapeoko.machine import check_machine
 from stations.cnc_shapeoko.parts import base_deck, bay_walls, leg_tie, spine_panel, top_cap
 
 # A note is STANDING when it says so itself. These phrases are written into the
@@ -91,6 +92,7 @@ def collect() -> list[tuple[str, str, str]]:
         ("top_cap", top_cap.check_top_cap(d)),
         ("leg_tie", leg_tie.check_leg_tie(d)),
         ("assembly", check_assembly(comps, d)),
+        ("machine", check_machine(comps, d)),
     ]
 
     out: list[tuple[str, str, str]] = []

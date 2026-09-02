@@ -465,7 +465,7 @@ def envelope(comps: list[Component] | None = None, d: Datums = DATUMS) -> list[F
         Fit("carcass + plinth", x1 - x0, s.leg_x_inner, "X"),
         Fit("with leg ties", tx1 - tx0, s.leg_x_inner, "X"),
         Fit("carcass + plinth", y1 - y0, s.leg_y_inner, "Y"),
-        Fit("carcass + plinth", z1 - z0, s.clear_h, "Z"),
+        Fit("carcass + plinth", z1 - z0, d.clear_over_carcass, "Z"),
     ]
 
 
@@ -486,7 +486,7 @@ def check_assembly(comps: list[Component] | None = None, d: Datums = DATUMS) -> 
 
     body = [c for c in comps if c.group != "tie"]
     top = max(c.bbox.max.Z for c in body)
-    reveal = d.s.clear_h - top
+    reveal = d.clear_over_carcass - top
     if reveal < TOP_GAP_MIN:
         notes.append(
             f"assembled reveal is {reveal:.1f}mm against a {TOP_GAP_MIN:.0f}mm "

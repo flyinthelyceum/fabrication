@@ -18,7 +18,7 @@ laser blank.
     pad face      vertical, bears on the outer face of the birch end wall
 
 The legs splay outward with height: the leg frame is 1524mm across at the table
-and roughly 1100 across the inner faces at the floor. The datum origin sits on
+and 1254 across the inner faces at the floor, measured. The datum origin sits on
 the left inner leg face AT THE FLOOR, so the clear gap between a vertical
 carcass wall and a leg face opens as ``z * tan(leg_splay)``. That single fact
 sets everything below, including how high up the leg the tie has to sit before
@@ -27,9 +27,11 @@ there is enough gap to hold a machinable block of delrin.
 WHERE THE 52mm SWING LANDS
 ==========================
 
-``table_h`` matches neither published leg configuration and the levelling feet
-swing the frame by 52mm. The carcass answers that by being built from the floor
-up, so its height is fixed and the leftover becomes ``Datums.top_gap``. The tie
+The levelling feet swing the frame by 52mm, and 2026-09-02 confirmed they are
+fitted, so ``table_h`` is the 945 configuration. The wind on a levelling foot is
+still travel the joint has to take. The carcass answers it by being built from
+the floor up, so its height is fixed and the leftover becomes
+``Datums.top_gap``. The tie
 answers it by being slotted: ``LEG_SLOT_V`` = 60mm of vertical travel against
 the leg, which is 60 > 52 with room either side.
 

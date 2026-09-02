@@ -10,6 +10,13 @@ Brief: https://notes.aaand.space/cnc-station-enclosure.html (v4, 2026-09-01)
 Sourced pass 2026-09-01: manufacturer figures reconciled in from the URLs in
 SOURCES. Where a sourced number disagrees with the brief the brief's value is
 kept and the disagreement is written on the line, not silently resolved.
+
+Measured pass 2026-09-02: Jared's tape and calipers on the machine itself, plus
+two hand-dimensioned elevations of the gussets. The leg opening, the table
+height, the four frame gussets, the VFD enclosure and its fans, and the CT 15
+are measured now rather than scaled or published, and their CONFIDENCE says so.
+The gussets are what replaced ``clear_h``: the ceiling under this machine is a
+function of X and Y, not a number. See GUSSETS and ``Station.clear_z``.
 """
 
 from dataclasses import dataclass
@@ -30,13 +37,18 @@ SOURCES = {
     "leg_wall_t": "https://shop.carbide3d.com/products/shapeoko51pro-leg44",
     "leg_mount_pitch": "https://community.carbide3d.com/t/leg-kit-center-to-center-spacing-and-hole-diameter/105167",
     "leg_mount_hole_d": "https://community.carbide3d.com/t/leg-kit-center-to-center-spacing-and-hole-diameter/105167",
-    "leg_x_inner": "UNSOURCED. Jared's tape. See the comment on the field.",
-    "leg_y_inner": "UNSOURCED. Jared's tape.",
+    "leg_x_inner": "MEASURED 2026-09-02, tape. Was 1100 scaled off a photograph.",
+    "leg_y_inner": "MEASURED 2026-09-02, tape. Was 1150 scaled off a photograph.",
     "leg_splay": "UNSOURCED. Carbide publishes no leg geometry at all.",
+    "clear_h_min": "MEASURED 2026-09-02, tape, floor to the lowest obstruction.",
+    "gusset_x": "MEASURED 2026-09-02, tape plus a hand-dimensioned elevation.",
+    "gusset_y": "MEASURED 2026-09-02, tape plus a hand-dimensioned elevation.",
+    "z_beam": "DERIVED from clear_h_min + gusset_y_h. See check(); confirm it.",
     "extractor_env": "See EXTRACTORS. Each entry carries its own festoolusa URL.",
     "hose_id": "https://carbide3d.com/hub/docs/sweepy-pro-s5-pro/",
     "hose_bend_mult": "UNSOURCED ASSUMPTION. No maker publishes a bend radius for D36/32.",
-    "vfd_box": "UNSOURCED. Carbide publishes no VFD enclosure dimensions.",
+    "vfd_box": "MEASURED 2026-09-02, calipers. Carbide publishes nothing.",
+    "vfd_fan": "MEASURED 2026-09-02, calipers, two square fans on the left face.",
     "vfd_vent_clear": "https://carbide3d.com/hub/docs/65mm-er16-spindle/",
     "vfd_mount_pitch": "https://carbide3d.com/hub/docs/65mm-er16-spindle/",
     "mini_pc_env": "https://download.intel.com/newsroom/2023/client-computing/Intel-NUC-13-Pro-Tech-Product-Spec.pdf",
@@ -53,7 +65,9 @@ SOURCES = {
 # bag part numbers are per size and do not interchange, so both live on the same
 # row as the name and neither can drift away from it again.
 #
-#   CT 15      470 x 320 x 435    15 L    130 CFM   fitted
+#   CT 15      457 x 308 x 429    15 L    130 CFM   fitted, CALIPERED
+#              (the spec table's 470 x 320 x 435 also had W and D the wrong way
+#               round, which is why the row below is now the caliper's)
 #   CT 26 EI   630 x 365 x 540    26 L              would also fit
 #   CT 36 EI   630 x 365 x 596    36 L              the growth path
 #   CT 48 EI   740 x 406 x 1005   48 L              will not fit, ever
@@ -61,7 +75,9 @@ SOURCES = {
 EXTRACTORS = {
     "CT15": {
         "name": "Festool CT 15 HEPA CLEANTEC",
-        "env": (470.0, 320.0, 435.0),   # festoolusa spec table, verified 2026-09-02
+        "env": (457.2, 307.975, 428.625),   # CALIPERED 2026-09-02. Supersedes the
+                                        # festoolusa spec table's 470 x 320 x 435,
+                                        # which was also transposed in W and D.
         "capacity_l": 15,
         "airflow_cfm": 130.0,           # festoolusa: "130 CFM (3 700 l/min)"
         "bag": "Festool SC-FIS-CT MINI/MIDI-2/5/CT15, part 204308",
@@ -86,15 +102,21 @@ the consumable line gets ordered."""
 # Confidence tags carried from the brief's parameter table, so a reader of the
 # model knows which numbers are load-bearing guesses.
 CONFIDENCE = {
-    "table_h": "medium",     # 889 is exactly 35in; Carbide publishes 893 without
-                             # feet and 945 with. Which config Jared owns is open.
-    "clear_h": "medium",     # floor to underside of frame, less gussets.
-                             # Carbide publishes no frame clearance. Still an estimate.
-    "leg_x_inner": "low",    # scaled from the leg-kit photo. MEASURE THIS.
-    "leg_y_inner": "low",    # same method
+    "table_h": "measured",   # 2026-09-02: levelling feet ARE on the machine, so
+                             # it is Carbide's 945 config and not the 893 one.
+    "clear_h_min": "measured",   # floor to the LOWEST obstruction, which is the
+                             # bottom of a Y gusset. The floor of the envelope.
+    "z_beam": "derived",     # clear_h_min + gusset_y_h, NOT a tape reading.
+                             # params.check() carries the note that says so.
+    "gusset_x": "measured",  # both X gussets, height, top band and clear span
+    "gusset_y": "measured",  # both Y gussets, plus the inner block
+    "leg_x_inner": "measured",   # 2026-09-02 tape, was 1100 off a photograph
+    "leg_y_inner": "measured",   # same tape
     "leg_splay": "low",      # visible in the leg-kit render
-    "vfd_box": "low",        # downgraded: no published dims exist. Measure with calipers.
-    "extractor_env": "high",     # festoolusa spec table for whichever row is selected
+    "vfd_box": "measured",   # 2026-09-02 calipers
+    "vfd_fan": "measured",   # 2026-09-02 calipers, two square fans, left face
+    "extractor_env": "high",     # festoolusa spec table for whichever row is
+                                 # selected; the CT 15 row is calipered instead
     "vfd_panel_standoff": "assumption",     # see the field. A traded clearance.
     "vfd_louvre_free_ratio": "assumption",  # nobody publishes one
     "lungs_lining_t": "medium",  # MLV plus open-cell foam, lay-up not yet bought
@@ -119,21 +141,131 @@ CONFIDENCE = {
 }
 
 
+# ---------------------------------------------------------------- gussets
+#
+# THE CEILING UNDER THIS MACHINE IS A SURFACE, NOT A NUMBER.
+#
+# ``clear_h`` used to be one scalar, 780mm, and every check compared against it.
+# Ruled by Jared 2026-09-02, after measuring: "clear_h as a global constraint
+# gives up a ton of space between the gussets on x and still over a foot of
+# usable full height on y. Model the gussets in their entirety and let's develop
+# around them."
+#
+# So there are four of them, two per axis, one at each end. Each hangs from the
+# underside of a frame beam, runs at FULL intrusion for a top band, then tapers
+# back to the leg's inner face. Below a gusset entirely, the full leg opening is
+# clear. ``Station.clear_z(x, y)`` is the resulting ceiling and
+# ``Station.clear_h_min`` is only its lowest value.
+#
+# One constraint rides on top of all of it, ruled the same day: "We should be
+# building the carcass to fit between the legs flush to the edges of the CNC
+# bed. Workholding often mounts pieces vertically against the outside face of
+# the bed so we can't build outside of the footprint of the legs." Flush to the
+# leg inner faces is allowed. Outside them is not, ever.
+
+
+@dataclass(frozen=True)
+class Gusset:
+    """One frame gusset, expressed as the ceiling it imposes.
+
+    ``axis`` is the axis the gusset eats into and ``side`` is which end of that
+    axis it hangs off. The profile is read in ``u``, the distance in from the
+    leg inner face on that side, so the two gussets on an axis share one set of
+    measurements and differ only in which way ``u`` runs.
+
+    ``span`` is the extent along the axis this gusset does NOT constrain. It was
+    not measured; see ``check()``, which says so and says which way the model
+    errs.
+    """
+
+    label: str
+    axis: str           # "x" | "y"
+    side: str           # "near" (the u = 0 end) | "far"
+    z_beam: float       # underside of the frame beam it hangs from
+    height: float       # total, down from z_beam
+    top_h: float        # the band at full intrusion, down from z_beam
+    intrude: float      # how far in from the leg face, at full intrusion
+    length: float       # full clear span of the constrained axis
+    span: float         # full clear span of the other axis
+
+    @property
+    def z_bot(self) -> float:
+        """Lowest point of the gusset. Below this the whole opening is clear."""
+        return self.z_beam - self.height
+
+    @property
+    def taper_h(self) -> float:
+        """Height of the tapering part, between z_bot and the top band."""
+        return self.height - self.top_h
+
+    def u_at(self, coord: float) -> float:
+        """Distance in from this gusset's leg face, given a station coordinate."""
+        return coord if self.side == "near" else self.length - coord
+
+    def coord_at(self, u: float) -> float:
+        """The inverse: station coordinate, given a distance in from the face."""
+        return u if self.side == "near" else self.length - u
+
+    def intrusion_at(self, z: float) -> float:
+        """How far in from the leg face the gusset reaches at height ``z``.
+
+        Also the depth a part standing at the leg face has to be relieved by to
+        reach that height.
+        """
+        if z <= self.z_bot:
+            return 0.0
+        if z >= self.z_bot + self.taper_h:
+            return self.intrude
+        return self.intrude * (z - self.z_bot) / self.taper_h
+
+    def ceiling_at(self, u: float) -> float:
+        """Highest z anything may reach at ``u`` in from the leg face."""
+        if u >= self.intrude:
+            return self.z_beam
+        if u <= 0.0:
+            return self.z_bot
+        return self.z_bot + self.taper_h * (u / self.intrude)
+
+
 @dataclass(frozen=True)
 class Station:
     # ---- machine envelope -------------------------------------------------
-    table_h: float = 889.0          # 35 in, top of the table. Carbide's own page says
-                                    # 893mm for the same 35in. Kept the brief's exact
-                                    # conversion; see table_h_no_feet / _with_feet.
-    clear_h: float = 780.0          # usable height under the frame
-    leg_x_inner: float = 1100.0     # inside faces of the legs, left to right.
-                                    # NOT changed by research. The only figure found is
-                                    # 1130.3 (44.5in) from one forum post on a 2x4
-                                    # machine, axis inferred not stated, 5.1 leg kit.
-                                    # A forum anecdote on the wrong machine does not
-                                    # beat a tape. community.carbide3d.com/t/.../103406
-    leg_y_inner: float = 1150.0     # inside faces, front to back
+    table_h: float = 945.0          # MEASURED 2026-09-02. Levelling feet ARE on the
+                                    # machine, so this is Carbide's 945 config. The
+                                    # brief's 889 was an exact 35in conversion of a
+                                    # number that was never the right config.
+    clear_h_min: float = 654.05     # MEASURED 2026-09-02, 25-3/4 in, floor to the
+                                    # LOWEST obstruction under the frame, which is
+                                    # the bottom of a Y gusset. This is the FLOOR of
+                                    # the clearance envelope and not the envelope:
+                                    # anything whose footprint is smaller than the
+                                    # leg opening asks clear_z(x, y) instead.
+    leg_x_inner: float = 1254.125   # MEASURED 2026-09-02, 49-3/8 in, inside faces of
+                                    # the legs, left to right. Was 1100 scaled off the
+                                    # leg-kit photo, so the model gained 154mm here.
+    leg_y_inner: float = 1089.025   # MEASURED 2026-09-02, 42-7/8 in, inside faces,
+                                    # front to back. Was 1150, so it lost 61mm.
     leg_splay: float = 6.0          # degrees
+
+    # ---- the four gussets, measured -------------------------------------
+    # Heights are down from the beam underside. Clear spans are between the two
+    # gussets on that axis; the per-side intrusion is derived from them so it
+    # follows the tape rather than being written down twice.
+    gusset_x_h: float = 180.975     # 7-1/8 in, total height of an X gusset
+    gusset_x_top_h: float = 53.975  # 2-1/8 in, the band at full intrusion
+    gusset_x_clear: float = 1144.5875   # 45-1/16 in, clear X in the top band
+    gusset_y_h: float = 266.7       # 10-1/2 in, total height of a Y gusset
+    gusset_y_top_h: float = 85.725  # 3-3/8 in, the band at full intrusion
+    gusset_y_clear: float = 315.9125    # 12-7/16 in, clear Y in the top band
+    gusset_y_block: tuple[float, float] = (95.25, 85.725)
+    """The innermost part of a Y gusset: a roughly square block, 3-3/4 x 3-3/8
+    in, measured in Y and Z off the hand-dimensioned elevation.
+
+    The envelope does NOT use it. It treats the whole intrusion as solid from
+    the leg face inward, which is conservative: if the gusset is only this block
+    at its inner end, the envelope opens by whatever is behind the block. Kept
+    because it is a real measurement and the day someone models the gusset as a
+    part rather than as a keep-out, this is the shape."""
 
     # ---- machine, as published --------------------------------------------
     # The station has to live inside these. None of them were in the brief.
@@ -182,11 +314,12 @@ class Station:
     lungs_side_clear: float = 20.0  # hand clearance, carriage to lining, per side
 
     # ---- components -------------------------------------------------------
-    vfd_box: tuple[float, float, float] = (200.0, 130.0, 300.0)   # vertical.
-                                    # Kept: the only figure found is a customer's
-                                    # forum measurement, 152 x 178 x 260 (w x d x h),
-                                    # which is smaller than this in two axes. The
-                                    # brief's envelope is the conservative one.
+    vfd_box: tuple[float, float, float] = (142.875, 184.15, 320.675)   # vertical.
+                                    # CALIPERED 2026-09-02, w x d x h. Supersedes the
+                                    # brief's 200 x 130 x 300 guess and the forum's
+                                    # 152 x 178 x 260. Narrower and deeper than both.
+    vfd_fan: float = 84.1375        # CALIPERED 2026-09-02. Square fan aperture.
+    vfd_fan_count: int = 2          # both on the vented LEFT face
     vfd_vent_clear: float = 300.0   # carbide 65mm spindle doc, 30cm from the vented
                                     # (left) face to any obstruction
     vfd_mount_pitch: float = 85.0   # two slotted wall-mount holes, carbide spindle doc
@@ -208,9 +341,15 @@ class Station:
     # out of the orientation its stock mount sets.
     #
     # What pays for it, all three required together:
-    #   1. louvre free area >= vfd_louvre_free_ratio x the vented face area
+    #   1. louvre free area >= vfd_louvre_free_ratio x the FAN APERTURE area
     #   2. intake low, through the plinth and the deck
     #   3. exhaust high, through the top cap's louvre field over the band
+    #
+    # Ruled by Jared 2026-09-02, once the drive had been calipered: "Fan aperture
+    # for sure. Why would we calculate off of a sealed face?" The requirement had
+    # been 1.5x the whole 130 x 300mm left face, which was a guess at an enclosure
+    # nobody had measured AND was mostly sealed steel that moves no air. It is now
+    # 1.5x the two 84.1mm square fans, and it fell from 585cm2 to 212cm2.
     vfd_vent_mode: str = "panel"
     vfd_panel_standoff: float = 40.0        # 2 grid modules, vented face to the
                                             # cheek's inner face. ASSUMPTION.
@@ -316,24 +455,89 @@ class Station:
         comes out of stock."""
         return self.lungs_w_for(self.extractor_growth)
 
+    # ---- the clearance envelope, which replaced clear_h --------------------
+
+    @property
+    def gusset_x_intrude(self) -> float:
+        """How far an X gusset reaches in from a leg face, per side. Derived
+        from the measured clear span so it follows the tape."""
+        return (self.leg_x_inner - self.gusset_x_clear) / 2
+
+    @property
+    def gusset_y_intrude(self) -> float:
+        """The same for a Y gusset, which is seven times the bite."""
+        return (self.leg_y_inner - self.gusset_y_clear) / 2
+
+    @property
+    def z_beam(self) -> float:
+        """Underside of the machine's frame beam, the absolute ceiling.
+
+        DERIVED, NOT MEASURED. The tape read the floor to the LOWEST obstruction,
+        which is the bottom of a Y gusset, so the beam is that plus the Y
+        gusset's own height. ``check()`` carries the note, and the note stays up
+        because the implied beam thickness is thin enough to be worth a second
+        tape reading."""
+        return self.clear_h_min + self.gusset_y_h
+
+    @property
+    def gussets(self) -> tuple[Gusset, ...]:
+        """The four of them, in station coordinates.
+
+        ``span`` is the full opening on the other axis in every case: the extent
+        of a gusset along the axis it does not constrain was not measured, so
+        the model runs it wall to wall. That is the conservative direction.
+        """
+        z = self.z_beam
+        return (
+            Gusset("X gusset left", "x", "near", z, self.gusset_x_h,
+                   self.gusset_x_top_h, self.gusset_x_intrude,
+                   self.leg_x_inner, self.leg_y_inner),
+            Gusset("X gusset right", "x", "far", z, self.gusset_x_h,
+                   self.gusset_x_top_h, self.gusset_x_intrude,
+                   self.leg_x_inner, self.leg_y_inner),
+            Gusset("Y gusset front", "y", "near", z, self.gusset_y_h,
+                   self.gusset_y_top_h, self.gusset_y_intrude,
+                   self.leg_y_inner, self.leg_x_inner),
+            Gusset("Y gusset rear", "y", "far", z, self.gusset_y_h,
+                   self.gusset_y_top_h, self.gusset_y_intrude,
+                   self.leg_y_inner, self.leg_x_inner),
+        )
+
+    def clear_z(self, x: float, y: float) -> float:
+        """Highest z anything may reach at (x, y). THE envelope.
+
+        This is what replaced the scalar clear_h. Every gusset votes and the
+        lowest ceiling wins."""
+        return min(
+            g.ceiling_at(g.u_at(x if g.axis == "x" else y)) for g in self.gussets
+        )
+
+    def clear_z_over(
+        self, xs: tuple[float, float], ys: tuple[float, float]
+    ) -> float:
+        """Lowest ceiling anywhere over a rectangular footprint.
+
+        The four corners are enough. Every gusset's ceiling is monotonic in one
+        coordinate and flat in the other, so a rectangle's worst point is always
+        a corner of it."""
+        return min(self.clear_z(x, y) for x in xs for y in ys)
+
     # ---- VFD panel venting ------------------------------------------------
 
     @property
-    def vfd_vent_face(self) -> tuple[float, float]:
-        """(depth, height) of the drive's vented LEFT face, standing vertically
-        in Carbide's stock orientation."""
-        return (self.vfd_box[1], self.vfd_box[2])
+    def vfd_vent_aperture_area(self) -> float:
+        """Open area of the drive's fans on its vented LEFT face.
 
-    @property
-    def vfd_vent_face_area(self) -> float:
-        d, h = self.vfd_vent_face
-        return d * h
+        The face itself is 184 x 321mm and almost all of it is sealed steel.
+        What moves air is the two square fans, and Jared ruled on 2026-09-02
+        that the louvre answers the aperture, not the face."""
+        return self.vfd_fan_count * self.vfd_fan ** 2
 
     @property
     def louvre_free_area_req(self) -> float:
         """Free area the brain-band louvre has to present for the traded
         clearance to be paid for. See the vfd_vent_mode comment block."""
-        return self.vfd_vent_face_area * self.vfd_louvre_free_ratio
+        return self.vfd_vent_aperture_area * self.vfd_louvre_free_ratio
 
 
 def _snap_up(mm: float) -> float:
@@ -390,11 +594,30 @@ def check(s: Station = STATION) -> list[str]:
             f"moves the clearance by {s.table_h_with_feet - s.table_h_no_feet:.0f}mm."
         )
 
-    if s.extractor_env[2] > s.clear_h:
+    problems.append(
+        f"z_beam {s.z_beam:.2f}mm is DERIVED and not measured. The tape read "
+        f"{s.clear_h_min:.2f}mm from the floor to the LOWEST obstruction, which "
+        f"is the bottom of a Y gusset, and the gusset's own {s.gusset_y_h:.1f}mm "
+        f"was added to it. That implies a frame beam {s.table_h - s.z_beam:.2f}mm "
+        "thick, which is thin for a member carrying a gantry. Measure floor to "
+        "the UNDERSIDE OF THE FRAME BEAM directly and write the answer into "
+        "z_beam. Everything above the gussets moves with it."
+    )
+
+    problems.append(
+        "each gusset's extent along the axis it does NOT constrain was not "
+        "measured, so the model runs all four of them wall to wall. That errs "
+        "toward less room, never more: if the X gussets stop short in Y, or the "
+        f"Y gussets are only the {s.gusset_y_block[0]:.1f} x "
+        f"{s.gusset_y_block[1]:.1f}mm block at their inner end rather than solid "
+        "back to the leg, the envelope opens further than this model says."
+    )
+
+    if s.extractor_env[2] > s.clear_h_min:
         problems.append(
             f"{s.spec['name']} is taller than the clearance under the frame "
-            f"({s.extractor_env[2]:.0f} into {s.clear_h:.0f}, over by "
-            f"{s.extractor_env[2] - s.clear_h:.0f}mm). It does not stand under "
+            f"({s.extractor_env[2]:.0f} into {s.clear_h_min:.0f}, over by "
+            f"{s.extractor_env[2] - s.clear_h_min:.0f}mm). It does not stand under "
             "this machine in any orientation the bay allows."
         )
 
@@ -404,14 +627,14 @@ def check(s: Station = STATION) -> list[str]:
             f"{s.front_bay_d():.0f}mm), so it cannot lie down in the lungs bay either"
         )
 
-    if s.clear_h - s.extractor_env[2] < s.hose_bend_r():
+    if s.clear_h_min - s.extractor_env[2] < s.hose_bend_r():
         problems.append(
             f"no room above the extractor for the hose to turn: "
-            f"{s.clear_h - s.extractor_env[2]:.0f}mm of headroom against a "
+            f"{s.clear_h_min - s.extractor_env[2]:.0f}mm of headroom against a "
             f"{s.hose_bend_r():.0f}mm working bend radius (assumed, not published)"
         )
 
-    if s.vfd_box[2] > s.clear_h:
+    if s.vfd_box[2] > s.clear_h_min:
         problems.append("VFD box is taller than the clearance under the frame")
 
     if s.vfd_vent_mode == "panel":
@@ -426,9 +649,10 @@ def check(s: Station = STATION) -> list[str]:
             "Jared 2026-09-02. This note never clears; it is here so a passing check "
             "is never read as Carbide's clearance having been met. Paid for by a "
             f"louvre of at least {s.louvre_free_area_req / 100.0:.0f}cm2 free area "
-            f"({s.vfd_louvre_free_ratio:.1f}x the "
-            f"{s.vfd_vent_face[0]:.0f} x {s.vfd_vent_face[1]:.0f}mm vented face), "
-            "intake low through the plinth, exhaust high through the top cap."
+            f"({s.vfd_louvre_free_ratio:.1f}x the FAN APERTURE, which is "
+            f"{s.vfd_fan_count} squares of {s.vfd_fan:.1f}mm. Ruled by Jared "
+            "2026-09-02: the fans move the air, not the sealed steel around "
+            "them), intake low through the plinth, exhaust high through the top cap."
         )
         if s.bay_brain_d < s.vfd_box[1] + s.vfd_panel_standoff:
             problems.append(
@@ -473,7 +697,7 @@ def check(s: Station = STATION) -> list[str]:
             f"{min(s.travel_x, s.travel_y):.0f}mm travel"
         )
 
-    if s.sheet_slot[1] > s.clear_h:
+    if s.sheet_slot[1] > s.clear_h_min:
         problems.append(
             "a HALF blank will not stand on edge under the table. "
             "The station rack holds ready-use stock only."
@@ -504,15 +728,16 @@ def check_growth_path(s: Station = STATION) -> list[str]:
             "so this has to be sized for the growth unit from the start."
         )
 
-    if env[2] > s.clear_h:
+    if env[2] > s.clear_h_min:
         problems.append(
-            f"GROWTH LOST: {g['name']} is {env[2]:.0f}mm tall into {s.clear_h:.0f}mm "
-            "of clearance under the frame. No divider move recovers this."
+            f"GROWTH LOST: {g['name']} is {env[2]:.0f}mm tall into "
+            f"{s.clear_h_min:.0f}mm of clearance under the frame. No divider move "
+            "recovers this."
         )
 
-    if s.clear_h - env[2] < s.hose_bend_r():
+    if s.clear_h_min - env[2] < s.hose_bend_r():
         problems.append(
-            f"GROWTH LOST: {s.clear_h - env[2]:.0f}mm of headroom over "
+            f"GROWTH LOST: {s.clear_h_min - env[2]:.0f}mm of headroom over "
             f"{g['name']} against a {s.hose_bend_r():.0f}mm hose bend radius"
         )
 
@@ -554,6 +779,12 @@ if __name__ == "__main__":
     print(f"front bays {s.front_bays():.0f}mm into {s.leg_x_inner:.0f}mm, "
           f"slack {s.slack():.0f}mm")
     print(f"station rack holds {s.stock_capacity()} HALF blanks on edge")
+    print(
+        f"ceiling {s.clear_h_min:.1f} at the leg faces, {s.z_beam:.1f} at the beam; "
+        f"full height only over x {s.gusset_x_intrude:.1f}.."
+        f"{s.leg_x_inner - s.gusset_x_intrude:.1f}  y {s.gusset_y_intrude:.1f}.."
+        f"{s.leg_y_inner - s.gusset_y_intrude:.1f}"
+    )
 
     grown = check_growth_path(s)
     if grown:

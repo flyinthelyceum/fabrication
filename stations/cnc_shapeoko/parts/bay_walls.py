@@ -606,8 +606,8 @@ def check_bay_walls(d: Datums = D) -> list[str]:
                 f"the brain-band louvre is {v.free_area / 100:.0f}cm2 free "
                 f"against the {s.louvre_free_area_req / 100:.0f}cm2 the traded "
                 f"clearance was paid for with ({s.vfd_louvre_free_ratio:.1f}x "
-                f"the {s.vfd_vent_face[0]:.0f} x {s.vfd_vent_face[1]:.0f}mm "
-                "vented face). Carbide's 300mm was given up for this aperture "
+                f"the drive's {s.vfd_fan_count} {s.vfd_fan:.1f}mm square fan "
+                "apertures). Carbide's 300mm was given up for this aperture "
                 "and the aperture is short."
             )
 
