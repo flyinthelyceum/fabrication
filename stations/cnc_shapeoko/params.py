@@ -44,7 +44,11 @@ SOURCES = {
 # Consumables the lungs bay has to store. Not geometry, but they are the reason
 # the bag-change hinge exists, and getting the part number wrong wastes a week.
 CONSUMABLES = {
-    "filter_bag": "Festool SC FIS-CT 48/5, part 497539",     # festoolusa
+    "filter_bag": "Festool SC FIS-CT 36/5, part 496186",     # festoolusa.
+                                                             # Was the CT 48 bag (497539),
+                                                             # left behind when the unit was
+                                                             # ruled a CT 36. Bags are per
+                                                             # size; the 48's does not fit.
     "main_filter": "Festool HEPA-HF-CT 26/36/48 PTFE, part 205412",   # festoolusa
 }
 
