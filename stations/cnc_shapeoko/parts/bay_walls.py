@@ -73,6 +73,7 @@ from stations.cnc_shapeoko.carcass import (
     DADO_D,
     DADO_W,
     DATUMS,
+    GROWTH_SLIDE_MEMBER_H,
     ISOLATOR_H,
     RABBET_D,
     ROUTER_D,
@@ -380,20 +381,26 @@ def check_bay_walls(d: Datums = D) -> list[str]:
     notes: list[str] = []
 
     # -- the lungs stack-up, which is where this part disagrees with the spine
-    platform_top = SLIDE_MEMBER_H
-    assumed_top = T
-    if platform_top > assumed_top:
-        needed = platform_top + ISOLATOR_H + s.extractor_env[2] + SERVICE_GAP
-        over = needed - d.bay_h
+    # The real stack stands on a slide member, not on a bare platform: a
+    # side-mount cabinet member cannot sit lower than the deck face. Compare the
+    # real stack against the bay rather than against lungs_stack_h's assumption.
+    needed = SLIDE_MEMBER_H + ISOLATOR_H + s.extractor_env[2] + SERVICE_GAP
+    over = needed - d.bay_h
+    if over > 0:
         notes.append(
-            f"side-mount slides put the extractor platform {platform_top:.0f}mm "
-            f"above deck_top, not the {assumed_top:.0f}mm lungs_stack_h assumes: "
-            f"a {SLIDE_MEMBER_H:.0f}mm cabinet member cannot sit lower than the "
-            f"deck face. The lungs stack wants {needed:.0f}mm into a "
-            f"{d.bay_h:.0f}mm bay, over by {over:.0f}mm, which would take the "
-            f"{d.top_gap:.0f}mm reveal down to {d.top_gap - over:.0f}mm. "
-            "Three ways out and all of them are Jared's call: a shorter slide "
-            "member, spending the service gap, or letting the carcass grow."
+            f"the fitted {s.spec['name']} on a {SLIDE_MEMBER_H:.0f}mm side-mount "
+            f"member wants {needed:.0f}mm into a {d.bay_h:.0f}mm bay, over by "
+            f"{over:.0f}mm, taking the {d.top_gap:.0f}mm reveal to "
+            f"{d.top_gap - over:.0f}mm. Ways out: a shorter slide member, "
+            "spending the service gap, or letting the carcass grow."
+        )
+
+    grow = GROWTH_SLIDE_MEMBER_H + ISOLATOR_H + s.growth_spec["env"][2] + SERVICE_GAP
+    if grow > d.bay_h:
+        notes.append(
+            f"GROWTH LOST: {s.growth_spec['name']} on the {GROWTH_SLIDE_MEMBER_H:.0f}mm "
+            f"member the conversion assumes wants {grow:.0f}mm into a "
+            f"{d.bay_h:.0f}mm bay. The third conversion step no longer buys the swap."
         )
 
     # -- lungs bay width, once the acoustic lining and the slides are in

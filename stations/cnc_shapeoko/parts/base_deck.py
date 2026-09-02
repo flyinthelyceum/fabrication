@@ -51,7 +51,7 @@ leveller bores  four bores through the deck at the plinth's inside corners. The
                 from the floor.
 
 brain intake    the bottom of the VFD chimney. A slotted field through the deck
-                inside ``Datums.vent_corridor_x``, between the spine housing and
+                inside ``Datums.vfd_keepout_x``, between the spine housing and
                 the rear plinth rail. Air enters the room-side grille in the rear
                 plinth rail, crosses the plinth cavity as a plenum, rises through
                 this field into the brain band, and leaves through the top cap.
@@ -198,7 +198,7 @@ SPINE_HOUSING_REAR = SPINE_CY + DADO_W / 2
 
 INTAKE_X = (
     Y_RAIL_CX[0] + T / 2 + INTAKE_MARGIN,
-    D.vent_corridor_x[1] - INTAKE_MARGIN,
+    D.vfd_keepout_x[1] - INTAKE_MARGIN,
 )
 INTAKE_Y = (
     SPINE_HOUSING_REAR + INTAKE_MARGIN,

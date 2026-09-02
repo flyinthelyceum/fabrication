@@ -59,7 +59,7 @@ INTERFACE, one line each, for the parts cut alongside this one:
 THE VENT CORRIDOR IS A KEEP-OUT
 ===============================
 
-``Datums.vent_corridor_x`` is the VFD's air path and nothing may sit in it.  That
+``Datums.vfd_keepout_x`` is the VFD's air path and nothing may sit in it.  That
 is not just a mounting rule: a pass-through in the corridor is a hole that bleeds
 the chimney into a front bay, which is worse than an obstruction because it is
 invisible.  Every crossing in this file is placed right of the corridor and
@@ -223,7 +223,7 @@ def bay_window(c: Crossing, d: Datums = DATUMS) -> tuple[float, float]:
     complement of the VFD's air corridor. A run emerges in the bay that uses it,
     which is why these cannot simply be spread across the panel.
     """
-    a = max(_bay_x(c.bay, d)[0], _zone_x(c.zone, d)[0], d.vent_corridor_x[1])
+    a = max(_bay_x(c.bay, d)[0], _zone_x(c.zone, d)[0], d.vfd_keepout_x[1])
     b = min(_bay_x(c.bay, d)[1], _zone_x(c.zone, d)[1])
     return (a, b)
 
@@ -236,8 +236,8 @@ def window_margins(c: Crossing, d: Datums = DATUMS) -> tuple[float, float]:
     material, because there is nothing there to foul.
     """
     lo, hi = bay_window(c, d)
-    m_lo = BORE_EDGE_MIN if lo == d.vent_corridor_x[1] else BORE_CLEAR_MIN
-    m_hi = BORE_EDGE_MIN if hi == d.vent_corridor_x[1] else BORE_CLEAR_MIN
+    m_lo = BORE_EDGE_MIN if lo == d.vfd_keepout_x[1] else BORE_CLEAR_MIN
+    m_hi = BORE_EDGE_MIN if hi == d.vfd_keepout_x[1] else BORE_CLEAR_MIN
     return (m_lo, m_hi)
 
 
@@ -258,14 +258,14 @@ def x_split(d: Datums = DATUMS) -> float:
     partition's housing clear of the screw line that fastens the divider, which
     a partition coplanar with the divider would have sat directly on top of.
     """
-    return d.wall_x[2] + d.t
+    return d.brain_split_x
 
 
 def sealed_x(d: Datums = DATUMS) -> tuple[float, float]:
     """X span of the sealed-power zone: right of the VFD's air corridor, left of
     the partition. The contactor, the fused inlet and the WAGO rails live here,
     because nothing may be mounted in the corridor itself."""
-    return (d.vent_corridor_x[1], x_split(d))
+    return (d.vfd_keepout_x[1], x_split(d))
 
 
 def signal_x(d: Datums = DATUMS) -> tuple[float, float]:
@@ -443,10 +443,10 @@ def check_spine(d: Datums = DATUMS) -> list[str]:
                 f"{c.label}: bore centre x={x:.0f} is outside its usable band "
                 f"{band[0]:.0f}..{band[1]:.0f}"
             )
-        if x - r < d.vent_corridor_x[1]:
+        if x - r < d.vfd_keepout_x[1]:
             notes.append(
                 f"{c.label} at x={x:.0f} reaches into the VFD air corridor "
-                f"(ends at {d.vent_corridor_x[1]:.0f}). A pass-through there "
+                f"(ends at {d.vfd_keepout_x[1]:.0f}). A pass-through there "
                 "bleeds the chimney into a front bay."
             )
 
@@ -543,7 +543,7 @@ if __name__ == "__main__":
         f"  split at x={x_split(d):.0f}   "
         f"sealed {sealed_x(d)[0]:.0f}..{sealed_x(d)[1]:.0f}   "
         f"signal {signal_x(d)[0]:.0f}..{signal_x(d)[1]:.0f}   "
-        f"corridor keep-out {d.vent_corridor_x[0]:.0f}..{d.vent_corridor_x[1]:.0f}"
+        f"corridor keep-out {d.vfd_keepout_x[0]:.0f}..{d.vfd_keepout_x[1]:.0f}"
     )
     pos = crossing_positions(d)
     xs = crossing_x(d)

@@ -14,7 +14,7 @@ It does three jobs beyond closing the box:
     band a chimney rather than a sealed 250mm box: air in low through the plinth
     and the deck, up past the vertically standing drive, out high through this
     panel.  The exhaust aperture is a louvre field of through slots sitting
-    directly over ``Datums.vent_corridor_x`` and spanning ``brain_intake_y``, so
+    directly over ``Datums.brain_exhaust_x`` and spanning ``brain_intake_y``, so
     the exhaust is over the intake by construction and moves when the corridor
     moves.  The slots run front-to-back, which leaves continuous ribs tying the
     spine housing to the rear edge; slots running across would have left the cap
@@ -264,9 +264,9 @@ class _VentField:
 
 
 def vent_field(d: Datums = DATUMS) -> _VentField:
-    """Louvre field over the brain band, inside ``vent_corridor_x`` and clear of
-    any mast pad that reaches into it."""
-    cx0, cx1 = d.vent_corridor_x
+    """Louvre field over the brain band, inside ``brain_exhaust_x`` and clear
+    of any mast pad that reaches into it."""
+    cx0, cx1 = d.brain_exhaust_x
     by0, by1 = d.brain_intake_y
 
     y0 = by0 + VENT_RAIL_FRONT
@@ -448,11 +448,11 @@ def check_top_cap(d: Datums = DATUMS) -> list[str]:
             f"{VENT_RAIL_FRONT + VENT_RAIL_REAR:.0f}mm of it. No slot left."
         )
     else:
-        band = (d.vent_corridor_x[1] - d.vent_corridor_x[0]) * d.brain_d
+        band = (d.brain_exhaust_x[1] - d.brain_exhaust_x[0]) * d.brain_d
         frac = v.open_area / band
         if frac < VENT_MIN_OPEN_FRAC:
             notes.append(
-                f"exhaust is {frac * 100:.0f}% open over the vent corridor, under "
+                f"exhaust is {frac * 100:.0f}% open over the sealed band, under "
                 f"the {VENT_MIN_OPEN_FRAC * 100:.0f}% this model assumes a passive "
                 "chimney needs. The assumption is unsourced; argue with it before "
                 "cutting a bigger hole."
@@ -515,8 +515,8 @@ def check_top_cap(d: Datums = DATUMS) -> list[str]:
             "not 2. The end-wall rabbets and the divider dados have got confused."
         )
 
-    if v.count and min(v.x_centres) - VENT_SLOT_W / 2 < d.vent_corridor_x[0]:
-        notes.append("louvre field starts outside the reserved vent corridor")
+    if v.count and min(v.x_centres) - VENT_SLOT_W / 2 < d.brain_exhaust_x[0]:
+        notes.append("louvre field starts outside the brain-band exhaust span")
 
     return notes
 
@@ -558,7 +558,7 @@ if __name__ == "__main__":
         f"  spine dado : y {yc - DADO_W / 2:6.1f}..{yc + DADO_W / 2:6.1f}  "
         f"x {sx0:.0f}..{sx1:.0f}  through, all {DADO_D:.1f} deep"
     )
-    band = (d.vent_corridor_x[1] - d.vent_corridor_x[0]) * d.brain_d
+    band = (d.brain_exhaust_x[1] - d.brain_exhaust_x[0]) * d.brain_d
     print(
         f"  exhaust:  {v.count} slots {VENT_SLOT_W:.0f} x {v.slot_len:.0f} at "
         f"{VENT_PITCH:.0f} pitch, x {v.x_centres[0] - VENT_SLOT_W / 2:.0f}.."

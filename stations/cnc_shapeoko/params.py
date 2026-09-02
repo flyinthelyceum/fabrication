@@ -12,7 +12,8 @@ SOURCES. Where a sourced number disagrees with the brief the brief's value is
 kept and the disagreement is written on the line, not silently resolved.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from math import ceil
 
 from lib.house import CARCASS_T, GRID, PANEL_T, QUARTER, STOCK_MODULE, on_grid
 
@@ -32,7 +33,7 @@ SOURCES = {
     "leg_x_inner": "UNSOURCED. Jared's tape. See the comment on the field.",
     "leg_y_inner": "UNSOURCED. Jared's tape.",
     "leg_splay": "UNSOURCED. Carbide publishes no leg geometry at all.",
-    "extractor_env": "https://www.festoolusa.com/products/dust-extractors/workshop-dust-extractors/577872---ct-36-ei-hepa-us",
+    "extractor_env": "See EXTRACTORS. Each entry carries its own festoolusa URL.",
     "hose_id": "https://carbide3d.com/hub/docs/sweepy-pro-s5-pro/",
     "hose_bend_mult": "UNSOURCED ASSUMPTION. No maker publishes a bend radius for D36/32.",
     "vfd_box": "UNSOURCED. Carbide publishes no VFD enclosure dimensions.",
@@ -41,16 +42,46 @@ SOURCES = {
     "mini_pc_env": "https://download.intel.com/newsroom/2023/client-computing/Intel-NUC-13-Pro-Tech-Product-Spec.pdf",
 }
 
-# Consumables the lungs bay has to store. Not geometry, but they are the reason
-# the bag-change hinge exists, and getting the part number wrong wastes a week.
-CONSUMABLES = {
-    "filter_bag": "Festool SC FIS-CT 36/5, part 496186",     # festoolusa.
-                                                             # Was the CT 48 bag (497539),
-                                                             # left behind when the unit was
-                                                             # ruled a CT 36. Bags are per
-                                                             # size; the 48's does not fit.
-    "main_filter": "Festool HEPA-HF-CT 26/36/48 PTFE, part 205412",   # festoolusa
+# ---------------------------------------------------------------- extractors
+#
+# The station is built around ONE of these and has to be able to grow into the
+# other. Jared ordered the CT 15 HEPA; the CT 36 EI is the v2 growth path.
+#
+# THIS TABLE IS WHY THE REGISTRY EXISTS. The brief carried an envelope tagged
+# "CT48 E" that was in fact the CT 36's to within 4mm on height, and a real CT 48
+# has never stood under this frame in any version of the design. Envelopes and
+# bag part numbers are per size and do not interchange, so both live on the same
+# row as the name and neither can drift away from it again.
+#
+#   CT 15      470 x 320 x 435    15 L    130 CFM   fitted
+#   CT 26 EI   630 x 365 x 540    26 L              would also fit
+#   CT 36 EI   630 x 365 x 596    36 L              the growth path
+#   CT 48 EI   740 x 406 x 1005   48 L              will not fit, ever
+#
+EXTRACTORS = {
+    "CT15": {
+        "name": "Festool CT 15 HEPA CLEANTEC",
+        "env": (470.0, 320.0, 435.0),   # festoolusa spec table, verified 2026-09-02
+        "capacity_l": 15,
+        "airflow_cfm": 130.0,           # festoolusa: "130 CFM (3 700 l/min)"
+        "bag": "Festool SC-FIS-CT MINI/MIDI-2/5/CT15, part 204308",
+        "url": "https://www.festoolusa.com/products/dust-extractors/dust-extractors-for-cleaning/578441---ct-15-hepa-us",
+    },
+    "CT36EI": {
+        "name": "Festool CT 36 EI HEPA CLEANTEC",
+        "env": (630.0, 365.0, 596.0),   # festoolusa spec table. Height is body
+                                        # only; the carry handle is not in it.
+        "capacity_l": 36,
+        "airflow_cfm": None,            # not read off the spec table yet
+        "bag": "Festool SC FIS-CT 36/5, part 496186",
+        "url": "https://www.festoolusa.com/products/dust-extractors/workshop-dust-extractors/577872---ct-36-ei-hepa-us",
+    },
 }
+
+MAIN_FILTER = "Festool HEPA-HF-CT 26/36/48 PTFE, part 205412"
+"""One filter covers the 26, 36 and 48. It does NOT cover the CT 15, whose main
+filter has not been read off a spec table yet. Tagged so the gap is visible when
+the consumable line gets ordered."""
 
 # Confidence tags carried from the brief's parameter table, so a reader of the
 # model knows which numbers are load-bearing guesses.
@@ -63,7 +94,12 @@ CONFIDENCE = {
     "leg_y_inner": "low",    # same method
     "leg_splay": "low",      # visible in the leg-kit render
     "vfd_box": "low",        # downgraded: no published dims exist. Measure with calipers.
-    "extractor_env": "high",     # CT36 EI, festoolusa spec table
+    "extractor_env": "high",     # festoolusa spec table for whichever row is selected
+    "vfd_panel_standoff": "assumption",     # see the field. A traded clearance.
+    "vfd_louvre_free_ratio": "assumption",  # nobody publishes one
+    "lungs_lining_t": "medium",  # MLV plus open-cell foam, lay-up not yet bought
+    "lungs_slide_t": "high",     # Accuride 3832 class member section
+    "lungs_side_clear": "medium",   # a hand's clearance, chosen not sourced
     "footprint_x": "high",       # carbide3d spec table
     "footprint_y": "high",       # carbide3d spec table
     "footprint_z": "medium",     # live spec 23.25in, older forum quotes of the same field 21in
@@ -118,11 +154,32 @@ class Station:
                                     # cannot be grid-indexed on both axes.
     leg_mount_hole_d: float = 7.0   # thru for M6, same source
 
+    # ---- extractor selection ----------------------------------------------
+    extractor: str = "CT15"
+    """The unit that was ORDERED and that v1 is built around."""
+
+    extractor_growth: str = "CT36EI"
+    """The unit v2 has to accept without a redesign. Everything expensive to
+    change is sized for this one; only the lungs/stock divider, the stock rack
+    and the slide member are sized for the fitted unit. See check_growth_path."""
+
     # ---- bays -------------------------------------------------------------
     bay_brain_d: float = 250.0      # rear band, full width
-    bay_lungs_w: float = 480.0      # CT48 on slides, plus lining and clearance
-    bay_stock_w: float = 220.0      # remainder. 8 to 10 blanks at 20mm pitch.
+    bay_stock_w: float = 220.0      # DEAD ESTIMATE. Stock is the remainder and
+                                    # Datums.stock_clear_w is the real number;
+                                    # this is kept only so check() can report
+                                    # how far the brief's arithmetic was out.
     bay_hands_w: float = 400.0      # drawer width
+
+    # ---- lungs bay allowance ----------------------------------------------
+    # bay_lungs_w is DERIVED from these and the fitted extractor. It used to be a
+    # 480 literal sized around a CT 48 that was really a CT 36, which left 66mm
+    # of slack nothing had named. Naming the three allowances means the bay
+    # resizes correctly when the extractor changes instead of keeping a cushion
+    # whose size nobody could account for.
+    lungs_lining_t: float = 12.0    # MLV plus open-cell foam, bonded, per side
+    lungs_slide_t: float = 12.7     # slide member plus its clearance, per side
+    lungs_side_clear: float = 20.0  # hand clearance, carriage to lining, per side
 
     # ---- components -------------------------------------------------------
     vfd_box: tuple[float, float, float] = (200.0, 130.0, 300.0)   # vertical.
@@ -133,24 +190,36 @@ class Station:
     vfd_vent_clear: float = 300.0   # carbide 65mm spindle doc, 30cm from the vented
                                     # (left) face to any obstruction
     vfd_mount_pitch: float = 85.0   # two slotted wall-mount holes, carbide spindle doc
-    extractor_env: tuple[float, float, float] = (630.0, 365.0, 596.0)
-                                    # festoolusa CT 36 EI spec table.
-                                    # THE UNIT WAS MISLABELLED, not mis-estimated. The
-                                    # brief carried 630 x 365 x 600 tagged "CT48 E".
-                                    # That envelope is the CT 36 to within 4mm on
-                                    # height. A real CT 48 is 740 x 406 x 1005 and has
-                                    # never fitted under this frame in any version of
-                                    # the design. Ruling 2026-09-02: the station takes
-                                    # a CT 36. Jared's fallback was a CT 15, but the
-                                    # bay was already sized for the 36 and holds it
-                                    # with room, so the capacity is free.
-                                    # Height is body only; the carry handle is not in
-                                    # the published figure.
-                                    # For reference, all festoolusa spec tables:
-                                    #   CT 15      470 x 320 x 435    15 L
-                                    #   CT 26 EI   630 x 365 x 540    26 L
-                                    #   CT 36 EI   630 x 365 x 596    36 L  <- this one
-                                    #   CT 48 EI   740 x 406 x 1005   48 L  (will not fit)
+
+    # ---- VFD ventilation: a knowing deviation -----------------------------
+    # Ruling 2026-09-02, Jared: the drive vents THROUGH THE PANEL.
+    #
+    # Carbide asks for 300mm of clear air off the drive's vented LEFT face. This
+    # station does not give it 300mm of clear air. The drive stands vertically in
+    # Carbide's own stock orientation at the LEFT end of the brain band, its
+    # vented face looking at a louvred opening in the left brain-band cheek
+    # vfd_panel_standoff away, and the 300mm is satisfied by the open room on the
+    # other side of that louvre rather than by span inside the box.
+    #
+    # THIS IS A TRADE, NOT A SOLUTION, and it is written here so nobody later
+    # reads a passing check as Carbide's clearance having been met. What was
+    # bought for it: the brain band stops reserving a 430mm internal corridor,
+    # which was the previous model's answer and which turned the drive 90 degrees
+    # out of the orientation its stock mount sets.
+    #
+    # What pays for it, all three required together:
+    #   1. louvre free area >= vfd_louvre_free_ratio x the vented face area
+    #   2. intake low, through the plinth and the deck
+    #   3. exhaust high, through the top cap's louvre field over the band
+    vfd_vent_mode: str = "panel"
+    vfd_panel_standoff: float = 40.0        # 2 grid modules, vented face to the
+                                            # cheek's inner face. ASSUMPTION.
+    vfd_louvre_free_ratio: float = 1.5      # ASSUMPTION, not sourced. Nobody
+                                            # publishes a free-area figure for a
+                                            # louvre standing in for a clearance.
+                                            # 1.5 pays for the air having to turn
+                                            # through 90 degrees to leave.
+
     mini_pc_env: tuple[float, float, float] = (117.0, 112.0, 54.0)   # NUC 13 Pro tall
 
     # ---- sheet goods ------------------------------------------------------
@@ -193,6 +262,88 @@ class Station:
         """HALF blanks the station rack holds on edge."""
         return int(self.bay_stock_w // self.sheet_pitch)
 
+    # ---- the fitted extractor, and the one v2 has to accept ---------------
+
+    @property
+    def spec(self) -> dict:
+        """The EXTRACTORS row for the unit that is actually going in."""
+        return EXTRACTORS[self.extractor]
+
+    @property
+    def growth_spec(self) -> dict:
+        """The EXTRACTORS row v2 has to accept without a redesign."""
+        return EXTRACTORS[self.extractor_growth]
+
+    @property
+    def extractor_env(self) -> tuple[float, float, float]:
+        """(long axis in Y, width in X, height in Z) of the fitted unit.
+
+        Derived from the selector, never written down twice. The unit's long axis
+        runs front to back so it pulls toward the operator; see the carcass
+        module's note on why all three front bays load from the front."""
+        return self.spec["env"]
+
+    @property
+    def consumables(self) -> dict:
+        """Bag and filter for whatever is fitted. Bags are per size."""
+        return {"filter_bag": self.spec["bag"], "main_filter": MAIN_FILTER}
+
+    # ---- lungs bay width, derived rather than estimated -------------------
+
+    def lungs_allowance(self) -> float:
+        """Total width the bay spends on everything that is not the extractor:
+        acoustic lining, slide member and hand clearance, both sides."""
+        return 2 * (self.lungs_lining_t + self.lungs_slide_t + self.lungs_side_clear)
+
+    def lungs_w_for(self, key: str) -> float:
+        """Clear lungs width that housing EXTRACTORS[key] needs, on the grid.
+
+        Snapped UP: the bay is allowed to be generous, never short. This is the
+        one bay dimension the fitted unit sets, which is what makes the growth
+        path a divider move rather than a rebuild."""
+        need = EXTRACTORS[key]["env"][1] + self.lungs_allowance()
+        return _snap_up(need)
+
+    @property
+    def bay_lungs_w(self) -> float:
+        """Clear width of the lungs bay, set by the FITTED extractor."""
+        return self.lungs_w_for(self.extractor)
+
+    @property
+    def bay_lungs_w_growth(self) -> float:
+        """What the lungs bay becomes under the growth extractor. The difference
+        between this and bay_lungs_w is the whole cost of the conversion, and it
+        comes out of stock."""
+        return self.lungs_w_for(self.extractor_growth)
+
+    # ---- VFD panel venting ------------------------------------------------
+
+    @property
+    def vfd_vent_face(self) -> tuple[float, float]:
+        """(depth, height) of the drive's vented LEFT face, standing vertically
+        in Carbide's stock orientation."""
+        return (self.vfd_box[1], self.vfd_box[2])
+
+    @property
+    def vfd_vent_face_area(self) -> float:
+        d, h = self.vfd_vent_face
+        return d * h
+
+    @property
+    def louvre_free_area_req(self) -> float:
+        """Free area the brain-band louvre has to present for the traded
+        clearance to be paid for. See the vfd_vent_mode comment block."""
+        return self.vfd_vent_face_area * self.vfd_louvre_free_ratio
+
+
+def _snap_up(mm: float) -> float:
+    """Round up to the bench grid.
+
+    carcass.py has the same helper, but params sits underneath carcass and
+    cannot import from it without a cycle. Both derive from house.GRID, so
+    there is one grid, not two."""
+    return ceil(mm / GRID - 1e-9) * GRID
+
 
 STATION = Station()
 
@@ -217,6 +368,14 @@ def check(s: Station = STATION) -> list[str]:
             "open item: one tape measurement between the inside faces of the legs."
         )
 
+    if CONFIDENCE.get("leg_x_inner") == "low":
+        problems.append(
+            f"leg_x_inner is still {s.leg_x_inner:.0f}mm scaled off a photograph, "
+            "not measured. It is the one unsourced number the whole model stands "
+            "on, and stock is the bay that absorbs whatever the tape says. This "
+            "note does not clear until CONFIDENCE says it was measured."
+        )
+
     if s.leg_x_inner >= s.footprint_x:
         problems.append(
             f"leg_x_inner {s.leg_x_inner:.0f}mm is not inside the machine's own "
@@ -233,10 +392,10 @@ def check(s: Station = STATION) -> list[str]:
 
     if s.extractor_env[2] > s.clear_h:
         problems.append(
-            f"extractor is taller than the clearance under the frame "
+            f"{s.spec['name']} is taller than the clearance under the frame "
             f"({s.extractor_env[2]:.0f} into {s.clear_h:.0f}, over by "
-            f"{s.extractor_env[2] - s.clear_h:.0f}mm). The CT48's published height "
-            "does not stand under this machine in any orientation the bay allows."
+            f"{s.extractor_env[2] - s.clear_h:.0f}mm). It does not stand under "
+            "this machine in any orientation the bay allows."
         )
 
     if s.extractor_env[0] > s.front_bay_d():
@@ -255,7 +414,30 @@ def check(s: Station = STATION) -> list[str]:
     if s.vfd_box[2] > s.clear_h:
         problems.append("VFD box is taller than the clearance under the frame")
 
-    if s.bay_brain_d < s.vfd_box[1] + s.vfd_vent_clear:
+    if s.vfd_vent_mode == "panel":
+        # The old question was whether the bay is deep enough to hold Carbide's
+        # 300mm inside it. Under the 2026-09-02 ruling that is the wrong question:
+        # the clearance is deliberately taken outside the box. What has to hold
+        # instead is that the trade was actually paid for.
+        problems.append(
+            f"TRADED CLEARANCE, standing note. Carbide asks {s.vfd_vent_clear:.0f}mm "
+            f"of clear air off the drive's vented face. It gets "
+            f"{s.vfd_panel_standoff:.0f}mm and then a louvre to room air. Ruled by "
+            "Jared 2026-09-02. This note never clears; it is here so a passing check "
+            "is never read as Carbide's clearance having been met. Paid for by a "
+            f"louvre of at least {s.louvre_free_area_req / 100.0:.0f}cm2 free area "
+            f"({s.vfd_louvre_free_ratio:.1f}x the "
+            f"{s.vfd_vent_face[0]:.0f} x {s.vfd_vent_face[1]:.0f}mm vented face), "
+            "intake low through the plinth, exhaust high through the top cap."
+        )
+        if s.bay_brain_d < s.vfd_box[1] + s.vfd_panel_standoff:
+            problems.append(
+                f"brain bay {s.bay_brain_d:.0f}mm deep cannot hold the VFD's "
+                f"{s.vfd_box[1]:.0f}mm depth plus the {s.vfd_panel_standoff:.0f}mm "
+                "standoff its vented face needs to the louvre. Panel venting does "
+                "not remove the standoff, only Carbide's 300mm."
+            )
+    elif s.bay_brain_d < s.vfd_box[1] + s.vfd_vent_clear:
         problems.append(
             f"brain bay {s.bay_brain_d:.0f}mm deep cannot hold the VFD's "
             f"{s.vfd_box[1]:.0f}mm depth plus Carbide's {s.vfd_vent_clear:.0f}mm "
@@ -300,11 +482,89 @@ def check(s: Station = STATION) -> list[str]:
     return problems
 
 
+def check_growth_path(s: Station = STATION) -> list[str]:
+    """Can the station still take the growth extractor without a redesign.
+
+    The promise made on 2026-09-02 is that swapping a CT 15 for a CT 36 costs a
+    divider move and a slide member, not a new carcass. That promise is only
+    worth anything if it is tested, so this asserts every dimension that would
+    be EXPENSIVE to revisit against the growth unit, not the fitted one.
+
+    Anything this reports is a dimension where the growth path has quietly been
+    lost and the model is still claiming it.
+    """
+    g = s.growth_spec
+    env = g["env"]
+    problems: list[str] = []
+
+    if env[0] > s.front_bay_d():
+        problems.append(
+            f"GROWTH LOST: {g['name']} is {env[0]:.0f}mm long into a "
+            f"{s.front_bay_d():.0f}mm front bay. Bay depth is expensive to change, "
+            "so this has to be sized for the growth unit from the start."
+        )
+
+    if env[2] > s.clear_h:
+        problems.append(
+            f"GROWTH LOST: {g['name']} is {env[2]:.0f}mm tall into {s.clear_h:.0f}mm "
+            "of clearance under the frame. No divider move recovers this."
+        )
+
+    if s.clear_h - env[2] < s.hose_bend_r():
+        problems.append(
+            f"GROWTH LOST: {s.clear_h - env[2]:.0f}mm of headroom over "
+            f"{g['name']} against a {s.hose_bend_r():.0f}mm hose bend radius"
+        )
+
+    grow_w = s.bay_lungs_w_growth
+    if grow_w + s.bay_hands_w >= s.leg_x_inner:
+        problems.append(
+            f"GROWTH LOST: lungs {grow_w:.0f}mm plus hands {s.bay_hands_w:.0f}mm "
+            f"leaves nothing for stock inside {s.leg_x_inner:.0f}mm"
+        )
+
+    return problems
+
+
+def conversion_steps(s: Station = STATION) -> list[str]:
+    """The named cost of going from the fitted extractor to the growth one.
+
+    If this list ever grows past a divider, a rack and a slide member, the
+    growth path has stopped being cheap and the claim in the brief is stale.
+    """
+    delta = s.bay_lungs_w_growth - s.bay_lungs_w
+    return [
+        f"set extractor = {s.extractor_growth!r} in params. One line.",
+        f"move the lungs/stock divider {delta:.0f}mm right, into the second dado "
+        "station already cut in the deck and the top cap. Lift the birch spline "
+        "out of it and drop it into the vacated one.",
+        f"recut the stock rack: it loses {delta:.0f}mm of width and the blanks "
+        "it holds drop accordingly.",
+        f"swap the lungs slide member for one no taller than the growth stack "
+        "allows, and change the bag to " + s.growth_spec["bag"] + ".",
+    ]
+
+
 if __name__ == "__main__":
     s = STATION
+    print(f"fitted:  {s.spec['name']}  {s.extractor_env[0]:.0f} x "
+          f"{s.extractor_env[1]:.0f} x {s.extractor_env[2]:.0f}")
+    print(f"growth:  {s.growth_spec['name']}  lungs bay would go "
+          f"{s.bay_lungs_w:.0f} -> {s.bay_lungs_w_growth:.0f}mm")
     print(f"front bays {s.front_bays():.0f}mm into {s.leg_x_inner:.0f}mm, "
           f"slack {s.slack():.0f}mm")
     print(f"station rack holds {s.stock_capacity()} HALF blanks on edge")
+
+    grown = check_growth_path(s)
+    if grown:
+        print(f"\n{len(grown)} GROWTH PATH failure(s):")
+        for p in grown:
+            print(f"  - {p}")
+    else:
+        print("\ngrowth path intact. Conversion to the CT 36:")
+        for i, step in enumerate(conversion_steps(s), 1):
+            print(f"  {i}. {step}")
+
     found = check(s)
     if found:
         print(f"\n{len(found)} constraint note(s):")

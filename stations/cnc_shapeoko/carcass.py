@@ -121,7 +121,7 @@ from build123d import (
     export_step,
 )
 
-from lib.house import CARCASS_T, GRID, PANEL_T, SHEET_5X5_BALTIC, fits
+from lib.house import CARCASS_T, GRID, PANEL_T, SHEET_5X5_BALTIC, fits, on_grid
 from stations.cnc_shapeoko.params import STATION, Station
 
 __all__ = [
@@ -153,6 +153,8 @@ __all__ = [
     "SERVICE_GAP",
     "TOP_GAP_MIN",
     "LEG_SLOT_V",
+    "STOCK_HEADROOM",
+    "GROWTH_SLIDE_MEMBER_H",
     "Datums",
     "DATUMS",
     "snap_up",
@@ -236,6 +238,17 @@ ISOLATOR_H = 15.0       # rubber isolation feet under the extractor platform
 SERVICE_GAP = GRID      # clearance above the tallest thing in any bay
 TOP_GAP_MIN = GRID      # the carcass never touches the machine frame
 
+STOCK_HEADROOM = GRID   # lift a HALF blank clear of its slot to get it out
+GROWTH_SLIDE_MEMBER_H = 25.0
+"""Cabinet-member height the CT 36 conversion assumes.
+
+The fitted CT 15 rides an Accuride 3832 class member at 45mm and has height to
+spare. The growth unit does not: at 45mm its stack wants 676mm into a bay that
+the machine's own clearance caps near 664. A 25mm low-profile member is the
+third and last step of the conversion, and it is named here so the promise is
+costed rather than assumed.
+"""
+
 LEG_SLOT_V = 60.0
 """Vertical travel in the leg-tie slots.
 
@@ -293,6 +306,22 @@ class Datums:
         """
         x0 = self.x_left
         x1 = x0 + self.t + self.s.bay_lungs_w
+        x3 = self.x_right - self.t
+        x2 = x3 - self.s.bay_hands_w - self.t
+        return (x0, x1, x2, x3)
+
+    @property
+    def wall_x_growth(self) -> tuple[float, float, float, float]:
+        """The same four panels, positioned for the GROWTH extractor.
+
+        Only index 1, the lungs/stock divider, differs. The deck and the top cap
+        carry dado stations at BOTH positions from day one, the unused one
+        filled with a removable birch spline, so converting to the growth unit
+        moves one panel into a slot that is already cut instead of recutting the
+        two largest panels in the station.
+        """
+        x0 = self.x_left
+        x1 = x0 + self.t + self.s.bay_lungs_w_growth
         x3 = self.x_right - self.t
         x2 = x3 - self.s.bay_hands_w - self.t
         return (x0, x1, x2, x3)
@@ -376,10 +405,36 @@ class Datums:
         )
 
     @property
+    def growth_stack_h(self) -> float:
+        """The lungs stack under the GROWTH extractor, standing on the
+        low-profile slide member the conversion assumes."""
+        return (
+            GROWTH_SLIDE_MEMBER_H
+            + ISOLATOR_H
+            + self.s.growth_spec["env"][2]
+            + SERVICE_GAP
+        )
+
+    @property
     def bay_h(self) -> float:
-        """Clear height of every bay. Set by the tallest content, which is the
-        extractor on its carriage."""
-        return self.lungs_stack_h
+        """Clear height of every bay.
+
+        NOT set by the fitted extractor, which is the trap this property exists
+        to avoid. A CT 15 on its carriage is 488mm and sizing the bay off it
+        would leave a 600mm HALF blank unable to stand on edge in the stock
+        rack, which is the whole point of the stock bay. Two things are taller
+        than the fitted unit and both are expensive to discover late: the blank,
+        and the growth extractor the station promises to accept.
+
+        Bay height is therefore the tallest of what the rack needs and what the
+        growth path needs, and the fitted extractor simply sits in it with room.
+        """
+        return snap_up(
+            max(
+                self.s.sheet_slot[1] + STOCK_HEADROOM,
+                self.growth_stack_h,
+            )
+        )
 
     @property
     def top_z(self) -> tuple[float, float]:
@@ -400,23 +455,88 @@ class Datums:
     # -- brain band: the ventilation corridor -------------------------------
 
     @property
-    def vent_corridor_x(self) -> tuple[float, float]:
-        """X span of the brain band reserved for the VFD and its air.
+    def vfd_x(self) -> tuple[float, float]:
+        """X span the VFD body occupies in the brain band.
 
-        The VFD is turned 90 degrees about Z from the brief's arrangement so its
-        vented face looks ALONG the brain band, into open span, instead of at a
-        panel 130mm away. Carbide asks for 300mm off that face; the band is
-        1064mm long and can give it. The band is a chimney, not a sealed box:
-        intake through the plinth, exhaust through the top cap.
+        Ruling 2026-09-02: the drive vents THROUGH THE PANEL. It keeps Carbide's
+        stock vertical orientation and stands at the LEFT end of the brain band
+        with its vented left face looking at the left brain-band cheek, which
+        carries the louvre. Carbide's 300mm is satisfied by the room on the far
+        side of that louvre.
+
+        This replaces the turned-drive arrangement, which met the 300mm inside
+        the box by spending 430mm of the band as an empty corridor. The band is
+        where the electrical wants room to be laid out legibly and that was the
+        wrong thing to spend it on.
         """
-        x0 = self.wall_x[0] + self.t
-        return (x0, x0 + self.s.vfd_box[1] + self.s.vfd_vent_clear)
+        x0 = self.wall_x[0] + self.t + self.s.vfd_panel_standoff
+        return (x0, x0 + self.s.vfd_box[0])
 
     @property
     def vfd_footprint(self) -> tuple[float, float]:
-        """(X, Y) the VFD body occupies, turned. Its 200mm width goes into the
-        band's depth, its 130mm depth across the band's length."""
-        return (self.s.vfd_box[1], self.s.vfd_box[0])
+        """(X, Y) the VFD body occupies, in Carbide's stock orientation: its
+        200mm width across the band, its 130mm depth into the band."""
+        return (self.s.vfd_box[0], self.s.vfd_box[1])
+
+    @property
+    def vfd_keepout_x(self) -> tuple[float, float]:
+        """X span of the brain band that belongs to the drive and its air.
+
+        Nothing may sit in it: no pass-through, no bore, no shelf. It runs from
+        the inner face of the louvred cheek to the far side of the drive, so it
+        covers the standoff the vented face breathes through as well as the body.
+
+        This replaces vent_corridor_x, and it is the whole material gain from
+        the 2026-09-02 ruling. The corridor reserved the drive's depth plus
+        Carbide's 300mm, roughly 430mm of the band. This reserves the standoff
+        plus the drive's width, and hands the difference back to the electrical.
+        """
+        return (self.wall_x[0] + self.t, self.vfd_x[1])
+
+    @property
+    def brain_split_x(self) -> float:
+        """Left face of the brain-band partition dividing sealed power from
+        exposed signal. It sits on the right face of the stock/hands divider so
+        one plane runs unbroken from the open front to the rear panel.
+
+        Lives here rather than in spine_panel because the top cap needs it too:
+        the exhaust field stops at this plane.
+        """
+        return self.wall_x[2] + self.t
+
+    @property
+    def brain_exhaust_x(self) -> tuple[float, float]:
+        """X span of the top cap's exhaust louvre field.
+
+        The chimney has to let the air that rises off the drive leave, and that
+        plume spreads as it climbs, so the field is wider than vfd_keepout_x.
+        It stops at the sealed/exposed split for two reasons: the heat is all on
+        the sealed side, and slots over the signal side would be a route for a
+        dropped object into a band carrying mains.
+
+        Anchoring the field here rather than to the keep-out is what keeps the
+        2026-09-02 trade paid for. The keep-out shrank from 430mm to 240mm when
+        the drive stopped needing an internal corridor, and an exhaust tied to
+        it would have shrunk with it, which is the opposite of what venting
+        through a panel asks for.
+        """
+        return (self.vfd_keepout_x[0], self.brain_split_x)
+
+    @property
+    def louvre_x(self) -> tuple[float, float]:
+        """X span of the louvre field in the left brain-band cheek. The cheek is
+        a Y-Z panel, so the louvre's own extent is in Y and Z; this is the wall
+        it lives in, kept here so parts do not rediscover which panel it is."""
+        return (self.wall_x[0], self.wall_x[0] + self.t)
+
+    @property
+    def louvre_area_avail(self) -> float:
+        """Gross area the left cheek can give the louvre over the brain band.
+
+        The free area is a fraction of this once the grille is drawn, which is
+        why the check compares the requirement against the gross with margin
+        rather than pretending the panel is an open hole."""
+        return self.brain_d * self.bay_h
 
     @property
     def brain_intake_y(self) -> tuple[float, float]:
@@ -940,19 +1060,47 @@ def check_carcass(d: Datums = DATUMS) -> list[str]:
             f"{d.bay_h:.0f}mm bay. It will not stand in the rack."
         )
 
-    corridor = d.vent_corridor_x
-    if corridor[1] > d.wall_x[3]:
+    if d.vfd_x[1] > d.wall_x[3]:
         notes.append(
-            f"the VFD ventilation corridor runs to x={corridor[1]:.0f} and the "
-            f"brain band ends at x={d.wall_x[3]:.0f}. Turning the drive's vented "
-            "face along the band no longer buys the clearance."
+            f"the VFD runs to x={d.vfd_x[1]:.0f} and the brain band ends at "
+            f"x={d.wall_x[3]:.0f}. It does not stand at the left end of the band."
         )
 
     if d.vfd_footprint[1] > d.brain_d:
         notes.append(
-            f"turned, the VFD needs {d.vfd_footprint[1]:.0f}mm of the brain "
-            f"band's {d.brain_d:.0f}mm depth. It does not fit sideways either."
+            f"the VFD needs {d.vfd_footprint[1]:.0f}mm of the brain band's "
+            f"{d.brain_d:.0f}mm depth in Carbide's stock orientation"
         )
+
+    if d.s.vfd_vent_mode == "panel" and d.louvre_area_avail < d.s.louvre_free_area_req:
+        notes.append(
+            f"the left brain-band cheek is {d.brain_d:.0f} x {d.bay_h:.0f}mm gross "
+            f"and the traded clearance wants {d.s.louvre_free_area_req / 100.0:.0f}cm2 "
+            "of FREE area out of it. A louvre never gives its gross area, so this "
+            "one cannot be paid for out of this panel."
+        )
+
+    if abs(d.wall_x_growth[1] - d.wall_x[1]) < GRID - 1e-9:
+        notes.append(
+            f"the growth divider station is {d.wall_x_growth[1] - d.wall_x[1]:.0f}mm "
+            "from the fitted one, under one grid module. Two dado stations that "
+            "close together share material and neither is sound."
+        )
+
+    # The BAY CLEAR WIDTHS are what the grid governs, and lungs_w_for already
+    # snaps those up. The divider's absolute x is clear width plus an 18mm end
+    # wall and lands off-grid by construction, which is fine: it is a dado in a
+    # carcass, not a fence indexed off a bench dog.
+    for label, w in (
+        ("fitted", d.s.bay_lungs_w),
+        ("growth", d.s.bay_lungs_w_growth),
+    ):
+        if not on_grid(w):
+            notes.append(
+                f"the {label} lungs bay is {w:.1f}mm clear, off the "
+                f"{GRID:.0f}mm grid. The rack pitch and the lining lay-up both "
+                "assume a bay that divides by the grid."
+            )
 
     if s.vfd_box[2] + SERVICE_GAP > d.bay_h:
         notes.append(
@@ -1019,8 +1167,18 @@ if __name__ == "__main__":
         f"{d.stock_capacity} HALF blanks on edge"
     )
     print(
-        f"  vent corridor x {d.vent_corridor_x[0]:.0f}..{d.vent_corridor_x[1]:.0f} "
-        f"in a {d.wall_x[3] - d.t:.0f}mm band"
+        f"  VFD x {d.vfd_x[0]:.0f}..{d.vfd_x[1]:.0f} in a "
+        f"{d.wall_x[3] - d.t:.0f}mm band, vented face "
+        f"{d.s.vfd_panel_standoff:.0f}mm off the left cheek louvre"
+    )
+    print(
+        f"  bay {d.bay_h:.0f} = max(blank {d.s.sheet_slot[1]:.0f}+"
+        f"{STOCK_HEADROOM:.0f}, growth stack {d.growth_stack_h:.0f}); "
+        f"fitted stack {d.lungs_stack_h:.0f}"
+    )
+    print(
+        f"  divider stations x {d.wall_x[1]:.0f} fitted, "
+        f"{d.wall_x_growth[1]:.0f} growth"
     )
     print(
         f"  blanks: deck {d.deck_size[0]:.0f}x{d.deck_size[1]:.0f}  "
