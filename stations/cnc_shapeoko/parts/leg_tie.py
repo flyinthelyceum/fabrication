@@ -65,13 +65,18 @@ WHAT PLACING THESE FOUND
 ========================
 
 This part is last because it registers to the assembled carcass AND to the
-machine, and putting it where the legs are turns up a hole in the carcass: the
-four bay walls are cut to ``front_bay_d``, so they stop at the spine, and the
-brain band's left and right ends are open air. The front ties land on the end
-walls. The rear ties land on nothing. The tie goes where the leg is, so what is
-missing is a part rather than a placement, and ``check_leg_tie`` names it with
-its dimensions: a brain-band end cheek per side. It also closes the electrical
-band, which the brief asks for on its own account.
+machine, so it is the part that finds out whether the carcass presents birch
+where the legs are. All four ties do land on birch: the DIVIDERS stop at the
+spine, but the two end walls run the full depth, which is what
+``Datums.end_wall_y`` says and what ``bay_walls.blank_size`` cuts.
+
+This module said otherwise until 2026-09-02. It read the dividers' depth as
+though it were the end walls' and reported that the rear ties landed on air,
+which put a brain-band end cheek on the build list that the end walls had been
+since the day they were drawn. The lesson is in the fix: ``CARCASS_FACE_Y``
+reads the shared datum now instead of re-deriving a boundary another part owns.
+The check below is kept, pointed at that datum, so it still fires if the end
+walls are ever shortened.
 
 ASSEMBLY ORDER
 ==============
@@ -124,7 +129,15 @@ from stations.cnc_shapeoko.carcass import (
 )
 from stations.cnc_shapeoko.params import STATION
 
-__all__ = ["build", "placements", "placed", "check_leg_tie", "NAME", "MATERIAL"]
+__all__ = [
+    "build",
+    "placements",
+    "placed",
+    "pads",
+    "check_leg_tie",
+    "NAME",
+    "MATERIAL",
+]
 
 NAME = "leg_tie"
 MATERIAL = MATERIALS["wear"]
@@ -193,11 +206,12 @@ SHIM_SWING = LEG_SLOT_V * TAN_SPLAY  # standoff the wedge stops filling once the
 CORNER_X = (D.wall_x[0], D.wall_x[3] + T)       # outer faces of the two end walls
 CORNER_Y = (D.y_front, D.y_rear)
 
-# How much vertical birch the carcass currently presents on those outer faces.
-# The end walls are cut to front_bay_d, so they stop at the spine and the brain
-# band's ends are open. Derived, not assumed: if the end walls ever run full
-# depth this span follows them and the check below goes quiet.
-CARCASS_FACE_Y = (D.y_front, D.front_bay_d)
+# How much birch the carcass presents on those outer faces, from the datum the
+# end walls are cut to rather than from this module's own reading of them. It
+# used to be (y_front, front_bay_d), which is the DIVIDERS' depth: on that
+# arithmetic the two rear ties landed on air and check_leg_tie asked for a
+# brain-band end cheek that the end walls had been all along.
+CARCASS_FACE_Y = D.end_wall_y
 
 OVER = 4 * max(W, H, T_MAX)         # cutter overshoot, so no boolean grazes a face
 
@@ -304,6 +318,21 @@ def placed(part: Part | None = None) -> list[tuple[str, Part]]:
     return [(name, plane * p) for name, plane in placements()]
 
 
+def pads(d=D) -> list[tuple[str, tuple[float, float], tuple[float, float]]]:
+    """(name, station Y span, station Z span) of each tie's PAD FACE.
+
+    The pad bears flat on the outer face of an end wall and is bolted through
+    it, so nothing may be cut out of the birch inside this rectangle. Published
+    because ``bay_walls`` has to keep the brain-band louvre off it, the same way
+    the top cap keeps its exhaust field off the mast pads.
+    """
+    out: list[tuple[str, tuple[float, float], tuple[float, float]]] = []
+    for name, plane in placements(d):
+        y0 = min(plane.origin.Y, plane.origin.Y + W * plane.x_dir.Y)
+        out.append((name, (y0, y0 + W), (Z0, Z0 + H)))
+    return out
+
+
 # ============================================================ export layers
 
 
@@ -385,9 +414,7 @@ def check_leg_tie(d=D) -> list[str]:
             "fix the frame. Expected, and worth knowing before drilling."
         )
 
-    for name, plane in placements(d):
-        y0 = min(plane.origin.Y, plane.origin.Y + W * plane.x_dir.Y)
-        y1 = y0 + W
+    for name, (y0, y1), _z in pads(d):
         if y0 < CARCASS_FACE_Y[0] - 1e-6 or y1 > CARCASS_FACE_Y[1] + 1e-6:
             notes.append(
                 f"the {name} tie needs a birch face at y {y0:.0f}..{y1:.0f} and "

@@ -22,6 +22,7 @@ WHAT THIS PART OWNS
   * the drawer slide mounts, on the two faces of the hands bay
   * the stock rack rail housings, which set the rack's pitch line
   * the hose port through the left end wall
+  * the VFD louvre through the left end wall, over the brain band
   * the clearance holes that fasten the spine's two ends to the end walls
 
 
@@ -59,6 +60,30 @@ not fight the spine's own tongues into the same two housings.
 
 The end walls take the spine's end faces as a butt joint, fastened with a
 vertical row of clearance holes through the wall on the spine's centreline.
+
+
+THE LEFT END WALL IS THE LOUVRED CHEEK
+======================================
+
+The 2026-09-02 ruling gave up Carbide's 300mm of clear air off the drive's
+vented face and bought it back with a louvre to room air. This panel is that
+louvre. Nothing else was ever going to be: ``Datums.louvre_x`` names the left
+end wall, the drive stands ``vfd_panel_standoff`` off its inner face, and the
+end walls already run the full depth, so the brain band's left side IS this
+blank rather than a separate cheek.
+
+Until the field below existed the ruling was a comment. ``check_carcass`` only
+asked whether the panel was big enough GROSS, which a 250 x 660 panel always is;
+what the ruling actually owes is FREE area, and free area only exists once slots
+are cut. ``check_bay_walls`` now measures the field it cut against
+``Station.louvre_free_area_req`` rather than against the panel it came out of.
+
+The slots run UP. Over the brain band the top cap is carried by the spine and by
+these two end walls and by nothing in between, so the ribs between the slots are
+that load path and a field of horizontal slots would have cut straight across
+it. Running them vertically also puts the aperture in the direction the air is
+already going: in low through the plinth, up past the drive, out high through
+the top cap.
 """
 
 from __future__ import annotations
@@ -93,11 +118,13 @@ from stations.cnc_shapeoko.carcass import (
     screw_positions,
     through_slot,
 )
+from stations.cnc_shapeoko.parts import leg_tie
 
 __all__ = [
     "WallSpec",
     "WALLS",
     "blank_size",
+    "louvre_field",
     "build",
     "build_all",
     "place",
@@ -166,6 +193,29 @@ a HALF blank is supported inboard of both its ends."""
 HOSE_PORT_CLEAR = 4.0
 """Radial clearance around ``hose_id`` for the cuff that lands in the port."""
 
+# ---- the VFD louvre, left end wall only -----------------------------------
+LOUVRE_PITCH = GRID
+LOUVRE_RIB_W = GRID * 0.4
+LOUVRE_SLOT_W = LOUVRE_PITCH - LOUVRE_RIB_W
+"""Louvre field on the bench grid: a 12mm slot and an 8mm rib repeat every 20mm.
+
+60% open, where the top cap's exhaust field is 50%. The difference is not taste.
+That field answers ``VENT_MIN_OPEN_FRAC``, an assumption this repo made up; this
+one answers ``Station.louvre_free_area_req``, which is the price of a clearance
+Carbide asked for and did not get. At the house 50% the brain band's slice of
+this panel comes up roughly 30cm2 short of that price, so the field opens until
+it pays. The rib is what gets spent, and ``LOUVRE_RIB_MIN`` is the floor."""
+
+LOUVRE_RIB_MIN = ROUTER_D
+"""Thinnest rib the field may leave. One cutter diameter of 18mm birch: below it
+the ribs stop being the top cap's load path over the brain band and the panel is
+a grille pretending to be a wall."""
+
+LOUVRE_LAND = T
+"""Solid birch at every bound of the field: the spine's end bearing in front,
+the rear door's landing behind, the deck and top-cap housings below and above,
+and around any leg-tie pad the field would otherwise run under."""
+
 
 # ================================================================ wall table
 
@@ -221,8 +271,13 @@ def blank_size(spec: WallSpec, d: Datums = D) -> tuple[float, float]:
     """(width, height) of the cut blank for one wall.
 
     End walls run the full depth so the spine's ends and the brain band's sides
-    have material. Dividers stop at the spine, plus their tongue into it."""
-    w = d.y_rear if spec.is_end else d.front_bay_d + TONGUE_D
+    have material. Dividers stop at the spine, plus their tongue into it.
+
+    The end wall's depth comes from ``Datums.end_wall_y`` rather than from
+    ``y_rear`` directly, because the leg ties read the same property to know how
+    much birch this panel presents to them."""
+    y0, y1 = d.end_wall_y
+    w = y1 - y0 if spec.is_end else d.front_bay_d + TONGUE_D
     return (w, d.wall_size[1] + 2 * TONGUE_D)
 
 
@@ -330,6 +385,86 @@ def _hose_port(d: Datums = D) -> Part:
     )
 
 
+@dataclass(frozen=True)
+class _Louvre:
+    """The VFD louvre, resolved in panel-local coordinates.
+
+    ``bottoms`` is per slot rather than one number for the field: a slot whose
+    column crosses a leg-tie pad starts above it instead of being dropped, so
+    the field loses the pad's height on six columns and not the columns.
+    """
+
+    x_centres: tuple[float, ...]
+    bottoms: tuple[float, ...]
+    y1: float
+
+    @property
+    def count(self) -> int:
+        return len(self.x_centres)
+
+    @property
+    def free_area(self) -> float:
+        """What the ruling is actually paid in: open area through the panel."""
+        return sum(LOUVRE_SLOT_W * (self.y1 - b) for b in self.bottoms)
+
+
+def _tie_pads_local(spec: WallSpec, d: Datums = D) -> list[tuple[tuple, tuple]]:
+    """Leg-tie pad footprints on this wall's outer face, in panel-local XY."""
+    side = "left" if spec.index == 0 else "right"
+    return [
+        ((y0, y1), (_y(z0, d), _y(z1, d)))
+        for name, (y0, y1), (z0, z1) in leg_tie.pads(d)
+        if name.startswith(side)
+    ]
+
+
+def louvre_field(d: Datums = D) -> _Louvre:
+    """Vertical slots through the left end wall, over the brain band only.
+
+    In front of the brain band the panel is the lungs bay's outer skin and a
+    slot there would open a bay that is meant to be acoustically lined. Behind
+    it there is nothing to open into. So the field starts at the spine's rear
+    face and ends at the blank's rear edge, a ``LOUVRE_LAND`` in from each.
+    """
+    x0 = d.y_spine + d.t + LOUVRE_LAND
+    x_limit = d.end_wall_y[1] - LOUVRE_LAND
+    n = max(int((x_limit - x0 + LOUVRE_RIB_W) // LOUVRE_PITCH), 0)
+    centres = tuple(x0 + LOUVRE_SLOT_W / 2 + i * LOUVRE_PITCH for i in range(n))
+
+    y0 = TONGUE_D + LOUVRE_LAND
+    y1 = TONGUE_D + d.bay_h - LOUVRE_LAND
+
+    pads = _tie_pads_local(WALLS[0], d)
+    bottoms = []
+    for cx in centres:
+        bottom = y0
+        for (px0, px1), (py0, py1) in pads:
+            crosses = (
+                cx + LOUVRE_SLOT_W / 2 > px0 - LOUVRE_LAND
+                and cx - LOUVRE_SLOT_W / 2 < px1 + LOUVRE_LAND
+            )
+            if crosses:
+                bottom = max(bottom, py1 + LOUVRE_LAND)
+        bottoms.append(bottom)
+
+    return _Louvre(centres, tuple(bottoms), y1)
+
+
+def _louvre(d: Datums = D) -> Part | None:
+    """Through slots for the field. ``None`` when the band has closed up, so a
+    degenerate field is reported by the check rather than raised in build."""
+    v = louvre_field(d)
+    cutters = None
+    for cx, bottom in zip(v.x_centres, v.bottoms):
+        if v.y1 - bottom <= 0:
+            continue
+        c = through_slot(
+            (cx, (bottom + v.y1) / 2), v.y1 - bottom, LOUVRE_SLOT_W, angle=90.0
+        )
+        cutters = c if cutters is None else cutters + c
+    return cutters
+
+
 # ================================================================ build
 
 
@@ -352,6 +487,9 @@ def build(i: int = 0, d: Datums = D) -> Part:
 
     if spec.index == 0:
         p -= _hose_port(d)
+        louvre = _louvre(d)
+        if louvre is not None:
+            p -= louvre
 
     return p
 
@@ -454,6 +592,38 @@ def check_bay_walls(d: Datums = D) -> list[str]:
             f"end wall's {w:.0f} x {h:.0f} blank"
         )
 
+    # -- the VFD louvre, which is what the traded clearance was bought with
+    v = louvre_field(d)
+    if s.vfd_vent_mode == "panel":
+        if v.count == 0:
+            notes.append(
+                f"the brain band is {d.brain_d:.0f}mm deep and the louvre's "
+                f"{LOUVRE_LAND:.0f}mm lands eat it. No slot left, so the drive "
+                "vents into a sealed cheek."
+            )
+        elif v.free_area < s.louvre_free_area_req:
+            notes.append(
+                f"the brain-band louvre is {v.free_area / 100:.0f}cm2 free "
+                f"against the {s.louvre_free_area_req / 100:.0f}cm2 the traded "
+                f"clearance was paid for with ({s.vfd_louvre_free_ratio:.1f}x "
+                f"the {s.vfd_vent_face[0]:.0f} x {s.vfd_vent_face[1]:.0f}mm "
+                "vented face). Carbide's 300mm was given up for this aperture "
+                "and the aperture is short."
+            )
+
+    if LOUVRE_SLOT_W < ROUTER_D:
+        notes.append(
+            f"louvre slot is {LOUVRE_SLOT_W:.1f}mm and the carcass cutter is "
+            f"{ROUTER_D:.2f}mm. The field needs a smaller tool."
+        )
+    if LOUVRE_RIB_W < LOUVRE_RIB_MIN:
+        notes.append(
+            f"louvre ribs are {LOUVRE_RIB_W:.1f}mm against a "
+            f"{LOUVRE_RIB_MIN:.2f}mm floor. Over the brain band these ribs carry "
+            "the top cap, and the field has opened until they stopped being a "
+            "load path."
+        )
+
     # -- the two blank widths are the ones the geometry demands, not a choice
     if not isclose(blank_size(WALLS[1], d)[0], d.front_bay_d + TONGUE_D):
         notes.append("divider blank width has drifted off front_bay_d")
@@ -481,6 +651,13 @@ if __name__ == "__main__":
         f"  clear opening per Datums.wall_size "
         f"{D.wall_size[0]:.0f} x {D.wall_size[1]:.0f}, plus {TONGUE_D:.0f}mm of "
         f"tongue top and bottom"
+    )
+    lv = louvre_field()
+    print(
+        f"  VFD louvre in wall 0: {lv.count} slots {LOUVRE_SLOT_W:.0f} wide at "
+        f"{LOUVRE_PITCH:.0f} pitch on {LOUVRE_RIB_W:.0f}mm ribs, "
+        f"{lv.free_area / 100:.0f}cm2 free against "
+        f"{D.s.louvre_free_area_req / 100:.0f}cm2 required"
     )
 
     written: list[str] = []

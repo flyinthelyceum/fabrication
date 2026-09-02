@@ -379,6 +379,22 @@ class Datums:
         """Clear depth of the brain band, spine to the rear-panel plane."""
         return self.y_rear - (self.y_spine + self.t)
 
+    @property
+    def end_wall_y(self) -> tuple[float, float]:
+        """Station Y span of the two END walls, which is not the same as a bay.
+
+        The dividers stop at the spine. The end walls run the FULL depth, because
+        the spine's end faces land on them, the brain band has to have two side
+        walls, and the rear door has to land on something. That makes this span
+        the birch the carcass presents on its outer faces, which is what the leg
+        ties bolt to and what the brain-band louvre is cut out of.
+
+        Here rather than in a part because two parts read it and they disagreed:
+        ``bay_walls`` cut the end walls to this and ``leg_tie`` assumed they
+        stopped at ``front_bay_d``, which invented a missing part.
+        """
+        return (self.y_front, self.y_rear)
+
     # -- Z: the stack-up ----------------------------------------------------
 
     @property
