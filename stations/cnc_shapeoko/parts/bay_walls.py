@@ -1,0 +1,512 @@
+"""Bay walls: the four verticals of the Shapeoko station carcass.
+
+One generator, four panels, at ``Datums.wall_x[0..3]``:
+
+    0  left end wall        outboard face left, lungs bay right
+    1  lungs/stock divider  lungs left, stock right
+    2  stock/hands divider  stock left, hands right
+    3  right end wall       hands left, outboard face right
+
+They are one part because they share one joint vocabulary, and because they are
+exactly what moves when ``leg_x_inner`` moves. Lungs is pinned to the left end
+and hands to the right, so only wall 2 travels: the stock bay narrows and
+nothing is redrawn.
+
+
+WHAT THIS PART OWNS
+===================
+
+  * the blank, its tongues into the deck and top-cap housings, and (on the
+    dividers) its tongue into the spine's front-face housing
+  * the extractor carriage slide mounts, on the two faces of the lungs bay
+  * the drawer slide mounts, on the two faces of the hands bay
+  * the stock rack rail housings, which set the rack's pitch line
+  * the hose port through the left end wall
+  * the clearance holes that fasten the spine's two ends to the end walls
+
+
+TWO PLACES THIS PART DEPARTS FROM ``Datums.wall_size``, ON PURPOSE
+=================================================================
+
+``Datums.wall_size`` is (front_bay_d, bay_h) = the CLEAR opening, shoulder to
+shoulder. It is not the blank. Two corrections, both derived, neither a literal:
+
+1. HEIGHT. The blank is ``bay_h + 2 * TONGUE_D``. The wall seats ``TONGUE_D``
+   into a housing in the deck's top face and the same into the top cap's
+   underside. A vertical that merely butts a deck face has nothing locating it
+   during glue-up and nothing but screws resisting rack, which is the joint the
+   spine's own docstring calls the reason to have a spine at all.
+
+2. WIDTH, and only on the end walls. The spine is ``x_right - 2t`` wide, which
+   is exactly the clear span between the end walls' inner faces, so the spine's
+   two END faces land on the end walls and need material behind them. A wall
+   stopped at ``y_spine`` shares nothing with the spine but a line. The end
+   walls therefore run the full depth, ``y_rear``, which also gives the brain
+   band the two side walls it has to have and gives the rear panel something to
+   land on. The dividers stop at the spine, plus one tongue.
+
+So there are two blank widths, differing by exactly the amount the geometry
+demands. Both come out of ``Datums``.
+
+
+THE DIVIDER / SPINE JOINT
+=========================
+
+A divider's rear edge carries a ``TONGUE_D`` tongue into a housing in the
+spine's FRONT face. Its bottom-rear and top-rear corners are notched back by
+``TONGUE_D`` square so the deck and top-cap tongues stop at ``y_spine`` and do
+not fight the spine's own tongues into the same two housings.
+
+The end walls take the spine's end faces as a butt joint, fastened with a
+vertical row of clearance holes through the wall on the spine's centreline.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from math import isclose
+
+from build123d import Compound, Location, Part
+
+from lib.house import GRID
+from stations.cnc_shapeoko.carcass import (
+    DADO_D,
+    DADO_W,
+    DATUMS,
+    ISOLATOR_H,
+    RABBET_D,
+    ROUTER_D,
+    SCREW_CLEAR_D,
+    SCREW_END_INSET,
+    SCREW_PILOT_D,
+    SCREW_PITCH,
+    SERVICE_GAP,
+    T,
+    Datums,
+    bore,
+    export_part,
+    groove,
+    panel,
+    relief,
+    screw_line,
+    screw_positions,
+    through_slot,
+)
+
+__all__ = [
+    "WallSpec",
+    "WALLS",
+    "blank_size",
+    "build",
+    "build_all",
+    "place",
+    "placed_all",
+    "check_bay_walls",
+]
+
+D: Datums = DATUMS
+
+
+# ================================================================ parameters
+# Everything specific to the four verticals. Everything else comes from
+# carcass.py (joinery, tooling, stack-up), params.py (the machine and its
+# contents) or house.py (the grid and the materials). No dimension literal
+# appears below this block.
+
+# ---- joinery allowance ----------------------------------------------------
+TONGUE_D = DADO_D
+"""How far a wall enters the deck, top-cap and spine housings.
+
+Same depth as the housing that receives it, so one number moves both sides of
+the joint and it is already the house third-of-thickness."""
+
+# ---- slides, the one vendor fact this part needs --------------------------
+# Side-mount ball-bearing slides, the class the BOM buys for both the extractor
+# carriage and the drawers. Height and thickness are the member's section;
+# length is the pair's rated travel.
+SLIDE_MEMBER_H = 45.0       # cabinet-member height, Accuride 3832 class
+SLIDE_MEMBER_T = 12.7       # one member plus its clearance, per side
+SLIDE_LEN = 500.0           # BOM slide length
+SLIDE_FRONT_INSET = GRID    # slide's front end set back from the open front
+
+SLIDE_BORE_D = SCREW_PILOT_D    # blind pilot for the slide's fixing screw
+SLIDE_BORE_DEPTH = RABBET_D     # half the panel, so an end wall shows nothing
+
+EXTRACTOR_SLIDE_Z = SLIDE_MEMBER_H / 2
+"""Slide centreline above ``deck_top`` in the lungs bay.
+
+Puts the cabinet member's lower edge on the deck face, which is as low as a
+side-mount slide goes. See ``check_bay_walls``: this is 27mm higher than the
+platform height the spine's stack-up assumes, and that is a real open item
+rather than something to round away."""
+
+# ---- lungs bay lining -----------------------------------------------------
+LINING_T = 12.0
+"""Mass-loaded vinyl plus open-cell foam, bonded to the bay faces. Not modelled
+as geometry, because it is a bonded lay-up rather than a part, but it eats bay
+width and the check has to know."""
+
+# ---- hands bay ------------------------------------------------------------
+DRAWER_SHARES = (4, 3, 2)
+"""Bottom to top: deep workholding, medium instruments, shallow cutters. Shares
+of ``bay_h`` rather than heights, so the drawers re-proportion if the bay
+changes instead of leaving a gap at the top."""
+
+# ---- stock bay ------------------------------------------------------------
+RACK_RAIL_H = GRID * 2
+"""Height of the comb rail that carries the slot pitch. Two grid modules: tall
+enough to hold a 600 blank upright, short enough to lift one out over."""
+
+RACK_RAIL_FRACS = (0.25, 0.75)
+"""Where the two comb rails sit along the blank's own depth. Quarter points, so
+a HALF blank is supported inboard of both its ends."""
+
+# ---- hose port ------------------------------------------------------------
+HOSE_PORT_CLEAR = 4.0
+"""Radial clearance around ``hose_id`` for the cuff that lands in the port."""
+
+
+# ================================================================ wall table
+
+
+@dataclass(frozen=True)
+class WallSpec:
+    """One of the four verticals: which bay is on which face, and how deep it
+    runs. ``left`` and ``right`` name the bay each face looks into, or None for
+    an outboard face."""
+
+    index: int
+    name: str
+    left: str | None
+    right: str | None
+
+    @property
+    def is_end(self) -> bool:
+        return self.left is None or self.right is None
+
+    def side_of(self, bay: str) -> str | None:
+        """Which panel face looks into ``bay``, in ``groove``/``relief`` terms.
+
+        The wall plane maps local +Z to station +X, so the panel's back face
+        (local Z=0) is the wall's LEFT face and its front face (local Z=t) is
+        the wall's RIGHT face."""
+        if self.left == bay:
+            return "back"
+        if self.right == bay:
+            return "front"
+        return None
+
+
+WALLS: tuple[WallSpec, ...] = (
+    WallSpec(0, "left_end", None, "lungs"),
+    WallSpec(1, "lungs_stock", "lungs", "stock"),
+    WallSpec(2, "stock_hands", "stock", "hands"),
+    WallSpec(3, "right_end", "hands", None),
+)
+
+
+# ================================================================ local frame
+# local X = station Y (0 at the open front)
+# local Y = up, with local Y = TONGUE_D sitting on deck_top
+# local Z = thickness, back face at station x = wall_x[i]
+
+
+def _y(station_z: float, d: Datums = D) -> float:
+    """Station Z to panel-local Y."""
+    return station_z - d.deck_top + TONGUE_D
+
+
+def blank_size(spec: WallSpec, d: Datums = D) -> tuple[float, float]:
+    """(width, height) of the cut blank for one wall.
+
+    End walls run the full depth so the spine's ends and the brain band's sides
+    have material. Dividers stop at the spine, plus their tongue into it."""
+    w = d.y_rear if spec.is_end else d.front_bay_d + TONGUE_D
+    return (w, d.wall_size[1] + 2 * TONGUE_D)
+
+
+# ================================================================ features
+
+
+def _outline(spec: WallSpec, d: Datums = D) -> Part:
+    """The blank, with the divider's two rear corner notches."""
+    w, h = blank_size(spec, d)
+    p = panel(w, h)
+    if not spec.is_end:
+        # Clear the spine's own tongues out of the deck and top-cap housings.
+        for y0 in (TONGUE_D / 2, h - TONGUE_D / 2):
+            p -= through_slot(
+                (d.front_bay_d + TONGUE_D / 2, y0), TONGUE_D, TONGUE_D
+            )
+    return p
+
+
+def _slide_row(y_local: float, side: str, d: Datums = D) -> Part:
+    """Blind pilot bores for one slide's cabinet member, on one face."""
+    x0 = SLIDE_FRONT_INSET
+    cutters = None
+    for p in screw_positions(SLIDE_LEN, pitch=SCREW_PITCH, inset=SCREW_END_INSET):
+        c = bore(
+            x0 + p, y_local, SLIDE_BORE_D, depth=SLIDE_BORE_DEPTH, side=side
+        )
+        cutters = c if cutters is None else cutters + c
+    return cutters
+
+
+def _lungs_face(side: str, d: Datums = D) -> Part:
+    """Extractor carriage: one slide row, low in the bay."""
+    return _slide_row(TONGUE_D + EXTRACTOR_SLIDE_Z, side, d)
+
+
+def drawer_openings(d: Datums = D) -> list[tuple[float, float]]:
+    """(floor, height) of each drawer opening above deck_top, bottom first."""
+    total = sum(DRAWER_SHARES)
+    out: list[tuple[float, float]] = []
+    floor = 0.0
+    for share in DRAWER_SHARES:
+        height = d.bay_h * share / total
+        out.append((floor, height))
+        floor += height
+    return out
+
+
+def _hands_face(side: str, d: Datums = D) -> Part:
+    """Drawers: one slide row per opening."""
+    cutters = None
+    for floor, _height in drawer_openings(d):
+        row = _slide_row(TONGUE_D + floor + SLIDE_MEMBER_H / 2, side, d)
+        cutters = row if cutters is None else cutters + row
+    return cutters
+
+
+def rack_rail_y(d: Datums = D) -> tuple[float, ...]:
+    """Panel-local X of each stock rack comb rail.
+
+    The blanks stand at the open front, because the front face is the one with
+    no door and the rack is meant to be read from across the room."""
+    depth = d.s.sheet_slot[0]
+    return tuple(depth * f for f in RACK_RAIL_FRACS)
+
+
+def _stock_face(side: str, d: Datums = D) -> Part:
+    """Stock rack: a housing for each comb rail's end, sitting on the deck.
+
+    The rails carry ``sheet_pitch``. The wall carries where the rails go, which
+    is the rack's pitch line."""
+    y0 = TONGUE_D
+    y1 = TONGUE_D + RACK_RAIL_H
+    cutters = None
+    for x in rack_rail_y(d):
+        c = groove(
+            (x, y0), (x, y1), width=DADO_W, depth=DADO_D, side=side
+        )
+        # A round cutter cannot cut the four inside corners of a blind housing.
+        for cx in (x - DADO_W / 2, x + DADO_W / 2):
+            for cy in (y0, y1):
+                c += relief(cx, cy, r=ROUTER_D / 2, depth=DADO_D, side=side)
+        cutters = c if cutters is None else cutters + c
+    return cutters
+
+
+def _spine_screws(d: Datums = D) -> Part:
+    """Clearance holes through an end wall into the spine's end grain."""
+    x = d.y_spine + T / 2
+    return screw_line(
+        (x, TONGUE_D),
+        (x, TONGUE_D + d.bay_h),
+        d=SCREW_CLEAR_D,
+    )
+
+
+def _hose_port(d: Datums = D) -> Part:
+    """Through port in the left end wall. The hose leaves sideways and turns in
+    free air: ``hose_bend_r`` is bigger than anything inside the carcass."""
+    _x, y_station, z_station = d.hose_port
+    return bore(
+        y_station,
+        _y(z_station, d),
+        d.s.hose_id + 2 * HOSE_PORT_CLEAR,
+    )
+
+
+# ================================================================ build
+
+
+def build(i: int = 0, d: Datums = D) -> Part:
+    """The flat, panel-local solid for wall ``i``."""
+    spec = WALLS[i]
+    p = _outline(spec, d)
+
+    for bay, feature in (
+        ("lungs", _lungs_face),
+        ("stock", _stock_face),
+        ("hands", _hands_face),
+    ):
+        side = spec.side_of(bay)
+        if side is not None:
+            p -= feature(side, d)
+
+    if spec.is_end:
+        p -= _spine_screws(d)
+
+    if spec.index == 0:
+        p -= _hose_port(d)
+
+    return p
+
+
+def build_all(d: Datums = D) -> list[Part]:
+    return [build(i, d) for i in range(len(WALLS))]
+
+
+def place(i: int, flat: Part, d: Datums = D) -> Part:
+    """Stand a flat wall up in station coordinates.
+
+    The blank's local Y=0 is the bottom of the tongue, ``TONGUE_D`` below
+    ``deck_top``, so it drops by that much before meeting ``wall_plane``."""
+    return d.wall_plane(i) * flat.moved(Location((0, -TONGUE_D, 0)))
+
+
+def placed_all(d: Datums = D) -> list[Part]:
+    return [place(i, w, d) for i, w in enumerate(build_all(d))]
+
+
+# ================================================================ checks
+
+
+def check_bay_walls(d: Datums = D) -> list[str]:
+    """Constraints these four panels own."""
+    s = d.s
+    notes: list[str] = []
+
+    # -- the lungs stack-up, which is where this part disagrees with the spine
+    platform_top = SLIDE_MEMBER_H
+    assumed_top = T
+    if platform_top > assumed_top:
+        needed = platform_top + ISOLATOR_H + s.extractor_env[2] + SERVICE_GAP
+        over = needed - d.bay_h
+        notes.append(
+            f"side-mount slides put the extractor platform {platform_top:.0f}mm "
+            f"above deck_top, not the {assumed_top:.0f}mm lungs_stack_h assumes: "
+            f"a {SLIDE_MEMBER_H:.0f}mm cabinet member cannot sit lower than the "
+            f"deck face. The lungs stack wants {needed:.0f}mm into a "
+            f"{d.bay_h:.0f}mm bay, over by {over:.0f}mm, which would take the "
+            f"{d.top_gap:.0f}mm reveal down to {d.top_gap - over:.0f}mm. "
+            "Three ways out and all of them are Jared's call: a shorter slide "
+            "member, spending the service gap, or letting the carcass grow."
+        )
+
+    # -- lungs bay width, once the acoustic lining and the slides are in
+    carriage_w = (
+        d.lungs_x[1] - d.lungs_x[0] - 2 * LINING_T - 2 * SLIDE_MEMBER_T
+    )
+    if carriage_w < s.extractor_env[1]:
+        notes.append(
+            f"lungs carriage is {carriage_w:.0f}mm wide once "
+            f"{LINING_T:.0f}mm of lining and {SLIDE_MEMBER_T:.1f}mm of slide "
+            f"go on each side, against the extractor's {s.extractor_env[1]:.0f}mm"
+        )
+
+    # -- the extractor still has to lie down in the bay
+    if s.extractor_env[0] + SLIDE_FRONT_INSET > d.front_bay_d:
+        notes.append(
+            f"extractor {s.extractor_env[0]:.0f}mm long plus a "
+            f"{SLIDE_FRONT_INSET:.0f}mm slide inset does not lie in a "
+            f"{d.front_bay_d:.0f}mm bay"
+        )
+
+    # -- drawers
+    for k, (floor, height) in enumerate(drawer_openings(d)):
+        if height < SLIDE_MEMBER_H + SERVICE_GAP:
+            notes.append(
+                f"drawer {k} opening is {height:.0f}mm, under a "
+                f"{SLIDE_MEMBER_H:.0f}mm slide plus {SERVICE_GAP:.0f}mm service"
+            )
+        if TONGUE_D + floor + SLIDE_MEMBER_H > blank_size(WALLS[2], d)[1]:
+            notes.append(f"drawer {k} slide runs off the top of the wall")
+
+    # -- stock rack
+    if s.sheet_slot[0] > d.front_bay_d:
+        notes.append(
+            f"a HALF blank is {s.sheet_slot[0]:.0f}mm deep into a "
+            f"{d.front_bay_d:.0f}mm bay, so the rack rails fall outside the wall"
+        )
+    if d.stock_capacity < 1:
+        notes.append(
+            f"stock bay is {d.stock_clear_w:.0f}mm clear and holds no blanks at "
+            f"{s.sheet_pitch:.0f}mm pitch. The bay has stopped being a rack."
+        )
+
+    # -- hose port has to be in the panel, clear of the edges
+    w, h = blank_size(WALLS[0], d)
+    port_r = (s.hose_id + 2 * HOSE_PORT_CLEAR) / 2
+    px, py = d.hose_port[1], _y(d.hose_port[2], d)
+    if not (port_r < px < w - port_r and port_r < py < h - port_r):
+        notes.append(
+            f"hose port at local ({px:.0f}, {py:.0f}) does not clear the left "
+            f"end wall's {w:.0f} x {h:.0f} blank"
+        )
+
+    # -- the two blank widths are the ones the geometry demands, not a choice
+    if not isclose(blank_size(WALLS[1], d)[0], d.front_bay_d + TONGUE_D):
+        notes.append("divider blank width has drifted off front_bay_d")
+
+    return notes
+
+
+# ================================================================ main
+
+_EXPORT_STEM = "bay_wall"
+
+
+if __name__ == "__main__":
+    walls = build_all()
+    placed = placed_all()
+
+    print("BAY WALLS: four verticals, one generator")
+    print(
+        f"  blanks: end wall {blank_size(WALLS[0])[0]:.0f} x "
+        f"{blank_size(WALLS[0])[1]:.0f} x {T:.0f}   "
+        f"divider {blank_size(WALLS[1])[0]:.0f} x "
+        f"{blank_size(WALLS[1])[1]:.0f} x {T:.0f}"
+    )
+    print(
+        f"  clear opening per Datums.wall_size "
+        f"{D.wall_size[0]:.0f} x {D.wall_size[1]:.0f}, plus {TONGUE_D:.0f}mm of "
+        f"tongue top and bottom"
+    )
+
+    written: list[str] = []
+    for spec, flat, up in zip(WALLS, walls, placed):
+        fb = flat.bounding_box()
+        pb = up.bounding_box()
+        print(
+            f"\n  wall {spec.index} {spec.name}"
+            f"\n    flat bbox   {fb.size.X:.1f} x {fb.size.Y:.1f} x {fb.size.Z:.1f}"
+            f"   volume {flat.volume / 1000:.0f} cm3"
+            f"\n    placed      x {pb.min.X:.1f}..{pb.max.X:.1f}"
+            f"   y {pb.min.Y:.1f}..{pb.max.Y:.1f}"
+            f"   z {pb.min.Z:.1f}..{pb.max.Z:.1f}"
+        )
+        for p in export_part(flat, f"{_EXPORT_STEM}_{spec.index}_{spec.name}"):
+            written.append(str(p))
+
+    ab = Compound(children=placed).bounding_box()
+    print(
+        f"\n  four walls placed: "
+        f"{ab.size.X:.1f} x {ab.size.Y:.1f} x {ab.size.Z:.1f}   "
+        f"x {ab.min.X:.1f}..{ab.max.X:.1f}  y {ab.min.Y:.1f}..{ab.max.Y:.1f}  "
+        f"z {ab.min.Z:.1f}..{ab.max.Z:.1f}"
+    )
+
+    print("\n  wrote:")
+    for p in written:
+        print(f"    {p}")
+
+    found = check_bay_walls()
+    if found:
+        print(f"\n{len(found)} bay-wall note(s):")
+        for n in found:
+            print(f"  - {n}")
+    else:
+        print("\nno bay-wall constraint violations")
