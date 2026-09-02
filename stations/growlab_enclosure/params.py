@@ -62,6 +62,8 @@ class Tray:
     margin: float = 6.0            # tray plate margin around the board footprint
     insert_od: float = 4.0         # M2.5 heat-set insert outer diameter
     insert_hole_d: float = 3.8     # receiving hole = OD minus ~0.2 for the melt
+    insert_depth: float = 7.0      # hole depth from the boss top; must stop short of the floor
+    boss_wall: float = 1.5         # printed wall around the insert, sets the boss radius
     fastener: str = "M2.5"         # board -> standoff, and HAT -> standoff
 
     # ---- context (from lib.house) -----------------------------------------
@@ -82,6 +84,14 @@ class Tray:
     def stack_h(self) -> float:
         """Tray floor to the top of the HAT PCB."""
         return self.board_lift + self.hat_standoff_h
+
+    def boss_r(self) -> float:
+        """Standoff boss radius: the insert plus a printed wall around it."""
+        return self.insert_od / 2 + self.boss_wall
+
+    def floor_under_insert(self) -> float:
+        """Material left under the insert hole. Must be positive or the hole punches through."""
+        return (self.tray_t + self.board_lift) - self.insert_depth
 
 
 TRAY = Tray()
@@ -127,6 +137,13 @@ def check(t: Tray = TRAY) -> list[str]:
         problems.append(
             f"tray margin {t.margin}mm is too thin for an {t.insert_od}mm insert "
             "plus a 1mm wall"
+        )
+
+    # the insert hole must stop short of the plate floor
+    if t.floor_under_insert() < 1.0:
+        problems.append(
+            f"insert hole {t.insert_depth}mm leaves only {t.floor_under_insert():.1f}mm "
+            f"under it (boss {t.board_lift} + plate {t.tray_t}); it punches through or nearly does"
         )
 
     return problems
