@@ -10,16 +10,16 @@ T020,#202 .25in Ball Endmill,D1,cutter,6.35,6.35,63.5,,,,1,ok,
 T021,#251 .25in Downcut Flat Endmill,D1,cutter,6.35,6.35,63.5,,,,1,ok,
 T022,#301 .50in 90-degree V-bit,D1,cutter,6.35,12.7,50.8,,,,1,ok,
 T023,#302 .50in 60-degree V-bit,D1,cutter,6.35,12.7,50.8,,,,1,ok,
-T024,McFly Surfacing Cutter (1/4in shank),D1,cutter,6.35,25.4,,,,,1,MEASURE,
-T025,16mm spindle-shaft wrench,D1,wrench,,,,,,,1,MEASURE,
-T026,22mm collet-nut wrench,D1,wrench,,,,,,,1,MEASURE,
-T027,ER-16 collet nut (M19 thread),D1,block,,,,,,,1,MEASURE,
-T028,Spare carbide inserts for McFly (included set),D1,block,,,,,,,4,MEASURE,
-T029,2-meter USB cable (removable),D2,block,,,,,,,1,MEASURE,
-T030,Quick Draw pen holder,D2,block,,,,,,,1,MEASURE,
-T031,"Mobil Vactra Way Oil, 2oz",D2,block,,,,,,,1,MEASURE,
-T032,Assembly hex keys / assembly tools,D2,hex,,,,,,,1,MEASURE,
-T033,Jog Pendant,D2,block,,,,,,,1,MEASURE,
+T024,McFly Surfacing Cutter (1/4in shank),D1,cutter,6.35,25.4,47,,,,1,ok,"oal photo-derived 2026-09-03, +/-5%. Socket depth caps at GRID (20mm) so this tolerance never reaches the geometry; bore comes off the nominal 6.35 shank."
+T025,16mm spindle-shaft wrench,D1,wrench,,,,150,41,,1,MEASURE,"photo 2026-09-03, +/-5%. Thickness not captured: lay flat in both frames."
+T026,22mm collet-nut wrench,D1,wrench,,,,167,50,,1,MEASURE,"photo 2026-09-03, +/-5%. Thickness not captured: lay flat in both frames."
+T027,ER-16 collet nut (M19 thread),D1,block,,,,,,,1,MEASURE,"not resolvable from the photos: only candidate in frame is the tube labelled COLLETS ER16 1/8, which is T014 packaging."
+T028,Spare carbide inserts for McFly (included set),D1,block,,,,,,,4,MEASURE,not photographed loose. The inserts were installed in the McFly body.
+T029,2-meter USB cable (removable),D2,block,,,,213,49,,1,MEASURE,"coiled footprint, photo 2026-09-03, +/-5%."
+T030,Quick Draw pen holder,D2,block,,,,,,,1,MEASURE,"green ring clamp in frame is probably this, not confirmed."
+T031,"Mobil Vactra Way Oil, 2oz",D2,block,,,,76,23,23,1,MEASURE,"2oz bottle lying down, photo 2026-09-03, +/-5%. 76 is the standing height, 23 the diameter."
+T032,Assembly hex keys / assembly tools,D2,hex,,,,,,,1,MEASURE,"one set of 6 keys photographed, but T032 and T034 are both hex-key rows."
+T033,Jog Pendant,D2,block,,,,228,73,,1,MEASURE,"photo 2026-09-03, +/-5%. Thickness readable from the edge-on frame, not yet reduced."
 T034,Metric Allen (hex) key set,D2,hex,,,,,,,1,MEASURE,
 T035,Pipettes,D2,block,,,,,,,6,MEASURE,
 T036,Silicone O-rings,D2,block,,,,,,,5,MEASURE,
