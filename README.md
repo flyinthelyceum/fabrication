@@ -55,6 +55,8 @@ same model.
 
 ## Related
 
-- CNC station brief v4: https://notes.aaand.space/cnc-station-enclosure.html
+- CNC station brief v7: https://notes.aaand.space/cnc-station-enclosure.html
+- CNC station build sequence: https://notes.aaand.space/cnc-station-build.html
+- Working the station in Fusion: https://notes.aaand.space/cnc-station-fusion.html
 - Design Standards tab on the Personal Bench BOM sheet is the human source of truth
   for the house standards mirrored in `lib/house.py`.
