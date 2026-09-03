@@ -17,6 +17,14 @@ height, the four frame gussets, the VFD enclosure and its fans, and the CT 15
 are measured now rather than scaled or published, and their CONFIDENCE says so.
 The gussets are what replaced ``clear_h``: the ceiling under this machine is a
 function of X and Y, not a number. See GUSSETS and ``Station.clear_z``.
+
+Measured pass 2026-09-03: the leg bolt pattern and the leg itself. The whole
+``LegHoles`` block is calipered rather than inferred, the legs are ANGLE IRON
+and not tube -- which settles ``walls_in_path`` at 1 and kills the crush-sleeve
+risk -- and ``z_beam`` is a direct tape reading instead of a derivation that had
+implied an impossibly thin frame beam. Two BLOCKING conflicts fell out of that
+pass and are Jared's to rule on, not the model's to paper over: see check() and
+``parts.leg_joint.check_leg_joint``.
 """
 
 from dataclasses import dataclass
@@ -34,13 +42,16 @@ SOURCES = {
     "t_slot_pitch": "https://carbide3d.com/shapeoko/shapeoko5pro-specs/",
     "table_h_no_feet": "https://shop.carbide3d.com/products/shapeoko51pro-leg44",
     "table_h_with_feet": "https://shop.carbide3d.com/products/shapeoko51pro-leg44",
-    "leg_wall_t": "https://shop.carbide3d.com/products/shapeoko51pro-leg44",
-    "leg_holes": "https://community.carbide3d.com/t/leg-kit-center-to-center-spacing-and-hole-diameter/105167"
-                  " -- a Carbide staff reply on the forum, not a spec sheet, and it "
-                  "covers the pitch and the hole diameter ONLY. The row heights, the "
-                  "edge offset, which faces carry holes and whether a bolt crosses one "
-                  "leg wall or two are this repo's placeholders. Jared calipers the "
-                  "legs 2026-09-03.",
+    "leg_wall_t": "MEASURED 2026-09-03, calipers, 0.1385 in. Was the leg kit "
+                   "page's 10-gauge: https://shop.carbide3d.com/products/shapeoko51pro-leg44",
+    "leg_holes": "MEASURED 2026-09-03, Jared's calipers on the machine: pitch "
+                  "1.58in both ways, lower row 15-3/4in off the floor, edge offset "
+                  "0.9in, hole 0.26in, holes on the left and right sides only, and "
+                  "the leg is an ANGLE IRON in profile, not a tube. Supersedes "
+                  "https://community.carbide3d.com/t/leg-kit-center-to-center-spacing-and-hole-diameter/105167"
+                  " -- a Carbide staff forum reply, not a spec sheet, which had "
+                  "covered the pitch and the hole diameter only. Still open: the "
+                  "angle's flange width, LegHoles.flange_w.",
     "leg_x_inner": "MEASURED 2026-09-02, tape. Was 1100 scaled off a photograph.",
     "leg_y_inner": "MEASURED 2026-09-02, tape. Was 1150 scaled off a photograph.",
     "leg_splay": "Jared, 2026-09-02: the legs are square. The 6 deg was an "
@@ -170,12 +181,17 @@ CONFIDENCE = {
     "t_slot_pitch": "high",      # carbide3d spec table
     "table_h_no_feet": "high",   # carbide leg kit page
     "table_h_with_feet": "high", # carbide leg kit page
-    "leg_wall_t": "high",        # 10-gauge powder-coated steel, carbide leg kit page
+    "leg_wall_t": "measured",    # 2026-09-03 calipers, 0.1385in, against the leg
+                                 # kit page's 10-gauge nominal
     # ONE tag for the whole LegHoles block, because the block is one measurement
     # session and not seven independent numbers. check() reports it as unmeasured
     # until this reads "measured".
-    "leg_holes": "pitch/rows_z/edge_off/faces measured 2026-09-03; hole_d and "
-                 "walls_in_path (leg cross-section) still forum/placeholder",
+    "leg_holes": "measured",     # 2026-09-03 calipers, the whole block: pitch,
+                                 # rows, edge offset, hole diameter, which faces
+                                 # carry holes, and the angle-iron profile that
+                                 # settles walls_in_path at 1. The flange WIDTH
+                                 # is not a LegHoles number the geometry reads;
+                                 # it gates check_leg_joint's reach note instead.
     "hose_id": "high",           # carbide sweepy pro doc, 35/36mm
     "hose_bend_mult": "assumption",  # nobody publishes one. Flagged, not sourced.
     "vfd_vent_clear": "high",    # carbide 65mm spindle doc, 30cm
@@ -359,10 +375,18 @@ class LegHoles:
     that placeholder; back ON the 20mm bench grid is still not true (40.132mm),
     which is why nothing bolted to a leg can be grid-indexed on both axes."""
 
-    hole_d: float = 7.0
-    """The leg's own through hole. FORUM: same reply, still unmeasured this
-    session -- Jared calipered the pattern, not the hole diameter. 7mm thru is
-    an M6 clearance hole, which is what sets the bolt size for the whole joint."""
+    hole_d: float = 6.604
+    """MEASURED 2026-09-03, calipers, 0.26in. The leg's own through hole.
+    Supersedes the 7mm FORUM figure. 6.604mm is an M6 NORMAL clearance hole
+    (DIN 66 medium is 6.6), where 7mm would have been a loose one, so the bolt
+    the leg chose is M6 either way and no hardware moves.
+
+    ONE LABEL TO CONFIRM: Jared reported this as the diameter "on y bolt holes".
+    Read here as the holes this joint uses -- the pattern on the x_inner faces,
+    whose in-face horizontal coordinate IS y in station coordinates, which is how
+    ``bolts()`` names them. The alternative reading, a second pattern on the
+    Y-FACING flange, would contradict the same session's "nothing on front and
+    rear" and nothing in the carcass could use it anyway."""
 
     rows_z: tuple[float, ...] = (400.05, 440.182)
     """MEASURED 2026-09-03, calipers. Height above the FLOOR of each hole row
@@ -404,16 +428,28 @@ class LegHoles:
     carry nothing, confirmed."""
 
     walls_in_path: int = 1
-    """STILL PLACEHOLDER, and the one field that can change the hardware order.
-    Not part of the 2026-09-03 bolt-pattern calipers -- the leg CROSS-SECTION
-    (open channel vs. closed tube) is a separate measurement Jared has not
-    reported yet.
+    """CONFIRMED 2026-09-03: "Each leg is an angle iron in profile, not tube."
 
-    How many thicknesses of leg wall a bolt crosses on its way to the insert. 1
-    is an open section -- channel or angle -- where the head bears on the single
-    wall the hole is in. If the leg is a CLOSED tube this is 2, the bolt grows by
-    the tube's depth, and the tube needs a crush sleeve or it dents when the bolt
-    is pulled up. ``check_leg_joint`` carries that warning."""
+    How many thicknesses of leg wall a bolt crosses on its way to the insert. An
+    angle is an OPEN section, so the answer is 1: the head bears on the single
+    wall the hole is in, there is no cavity to span, and THE CRUSH SLEEVE RISK IS
+    DEAD. A closed tube would have made this 2, grown the bolt by the tube's
+    depth and needed a sleeve or an internal spacer nobody had bought. The
+    placeholder guessed 1 and the calipers agreed, which is luck rather than
+    method, and it is written down because the next station's legs get measured
+    and not assumed."""
+
+    flange_w: float | None = None
+    """UNMEASURED. Width of the angle's bolt-bearing flange, from the leg's inner
+    corner outward, in the same in-face direction ``edge_off`` runs.
+
+    This is the ONE number still open on the leg. The holes prove the flange
+    reaches at least far enough to contain them -- the outer column sits 62.99mm
+    off the corner and its own hole wants 3.30mm more, so 66.29mm is proven by
+    the pattern's own existence. What is NOT proven is whether the flange runs
+    far enough past the outer hole for the joint check's full reach. ``None``
+    keeps ``check_leg_joint`` reporting the gap; a number closes it or fails it
+    outright."""
 
     def columns_h(self) -> tuple[float, ...]:
         """Column offsets in from the leg's inner edge, at ``pitch_h``."""
@@ -502,7 +538,10 @@ class Station:
     t_slot_pitch: float = 102.6     # centre to centre, carbide3d spec table
     table_h_no_feet: float = 893.0  # carbide leg kit page, its own mm for 35 in
     table_h_with_feet: float = 945.0    # carbide leg kit page, 36 in
-    leg_wall_t: float = 3.4         # 10-gauge steel, carbide leg kit page.
+    leg_wall_t: float = 3.5179      # MEASURED 2026-09-03, calipers, 0.1385 in.
+                                    # Carbide's leg kit page says 10-gauge (3.4mm);
+                                    # the extra 0.12mm is powder coat on both faces,
+                                    # which is the direction that does not matter.
                                     # Anything bolted to a leg gets a backing washer.
     leg_holes: LegHoles = LegHoles()
     """The leg's own bolt pattern, in one block. See LegHoles and check()."""

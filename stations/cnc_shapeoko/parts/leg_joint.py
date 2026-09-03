@@ -37,9 +37,9 @@ THE JOINT
     inside the birch   a threaded insert, driven below the bearing face so
                        nothing stands proud of it
 
-The bolt size is not chosen. A 7mm through hole is an M6 clearance hole, so the
-leg picked M6 for us; ``BOLT_D`` derives from ``leg_holes.hole_d`` and follows it
-if the calipers say the hole is something else.
+The bolt size is not chosen. The calipered 6.604mm through hole is an M6 normal
+clearance hole, so the leg picked M6 for us; ``BOLT_D`` derives from
+``leg_holes.hole_d`` and follows it if a future leg's hole is something else.
 
 The counterbore is the part that is easy to leave out and fatal to leave out.
 The insert has a head, the head would stand proud of the birch, and the birch is
@@ -84,14 +84,18 @@ floor, or whether the carcass would have to be lifted off its plinth to reach a
 row -- which would be hanging, and which would be wrong.
 
 
-WHAT IS UNMEASURED
-==================
+WHAT IS MEASURED, AND THE ONE THING LEFT
+=======================================
 
-The pattern. All of it except the pitch and the hole diameter, and those two are
-a Carbide staff forum reply rather than a spec sheet. ``params.LegHoles`` is one
-block with one confidence tag because it is one measurement session; Jared
-calipers the legs 2026-09-03 and the numbers drop into that block and nowhere
-else. Everything below derives from it.
+``params.LegHoles`` is calipered as of 2026-09-03: pitch, row heights, edge
+offset, hole diameter, and which faces carry holes. The leg is an ANGLE IRON in
+profile and not a tube, which settles ``walls_in_path`` at 1 -- one wall under
+the head, no cavity to span, and no crush sleeve to buy.
+
+Left open: ``LegHoles.flange_w``, the width of the angle's bolt-bearing flange.
+The holes prove it reaches far enough to contain them; what it does not prove is
+whether it runs far enough past the outer column for the reach ``check_leg_joint``
+asks for. That is the last number on the leg.
 
 
 MATERIAL NON-ARTIFICE
@@ -162,7 +166,13 @@ and the front is open, so these two panels are the entire joint."""
 BOLT_CLEAR = 1.0
 """Clearance a through hole carries over its bolt. 7mm thru is M6, 9mm is M8."""
 
-BOLT_D = S.leg_holes.hole_d - BOLT_CLEAR
+BOLT_D = float(round(S.leg_holes.hole_d - BOLT_CLEAR))
+"""Nominal bolt diameter the leg's hole implies, SNAPPED to the nearest whole
+millimetre because a bolt is bought in nominal sizes and a hole is measured in
+whatever the calipers say. The 2026-09-03 hole is 6.604mm: minus the clearance
+that is 5.604, and a 5.6mm bolt does not exist. It rounds to the M6 it always
+was. Without the snap this quantity silently becomes 5.604 and drags ENGAGE_MIN
+down with it, understating the thread the insert needs by most of a millimetre."""
 BOLT_THREAD = f"M{BOLT_D:.0f}-1.0"
 BOLT_HEAD = "socket cap, hex drive"
 """A socket head, not a hex head. The head sits against a leg face with the
@@ -172,8 +182,9 @@ WASHER = "DIN 125 flat, steel"
 WASHER_T = 1.6
 WASHER_D = 12.0
 """The flat washer is the whole of what is outside the leg besides the head, and
-it is not optional: ``leg_wall_t`` is 3.4mm of 10-gauge steel and a bare M6 head
-dimples it. It spreads the head and it is the last part of this joint."""
+it is not optional: ``leg_wall_t`` is 3.52mm of calipered 10-gauge steel and a
+bare M6 head dimples it. It spreads the head and it is the last part of this
+joint."""
 
 BOLT_STOCK_LEN = (12.0, 16.0, 20.0, 25.0, 30.0, 35.0, 40.0)
 """Stock lengths under the head, so the BOM buys a length that exists."""
@@ -488,10 +499,8 @@ def check_leg_joint(d: Datums = D) -> list[str]:
     if CONFIDENCE.get("leg_holes") != "measured":
         notes.append(
             f"every one of the {len(bolts(d))} inserts below is placed off a leg "
-            "pattern that is PARTLY measured. 2026-09-03 calipers gave the "
-            f"pitch, rows_z, edge_off and confirmed which faces carry holes. "
-            f"STILL UNMEASURED: hole_d (forum) and walls_in_path -- the leg "
-            "cross-section, which is the crush-sleeve question below."
+            "pattern that is not measured. Every insert in the end walls moves "
+            "when it is."
         )
 
     # -- the bolt itself ----------------------------------------------------
@@ -571,19 +580,34 @@ def check_leg_joint(d: Datums = D) -> list[str]:
     # -- what the columns assume about the leg itself ------------------------
     # The datum sits on the leg's inner corner: birch runs inward from it, steel
     # runs outward. A bolt needs both, so every column has to sit in the band
-    # where the leg's own face reaches BACK across that corner into the opening.
-    # Nobody has measured how wide that band is.
+    # where the leg's own flange reaches BACK across that corner into the opening.
+    # The leg is an angle (2026-09-03), so there IS such a flange; how wide it is
+    # is the last unmeasured thing on this joint.
     reach = h.span_h + WALL_CBORE_D / 2
-    notes.append(
-        f"the columns assume the leg's bolt face reaches {reach:.1f}mm into the "
-        f"opening past its inner corner ({h.cols_per_leg} columns from "
-        f"{h.edge_off:.0f}mm at {h.pitch_h:.0f}mm pitch, plus the counterbore's "
-        "radius). Inboard of that corner is birch and outboard of it is steel, so "
-        "that band is the only place a bolt has both. It is not measured. If the "
-        "leg turns out to be a plain tube whose face stops at the corner, this "
-        "joint has no overlap at all and the columns have to come off a face that "
-        "does reach in. Calipers 2026-09-03."
-    )
+    proven = h.span_h + h.hole_d / 2
+    if h.flange_w is None:
+        notes.append(
+            f"the angle's flange width is not measured, so the columns still "
+            f"ASSUME the leg's bolt face reaches {reach:.1f}mm into the opening "
+            f"past its inner corner ({h.cols_per_leg} columns from "
+            f"{h.edge_off:.1f}mm at {h.pitch_h:.1f}mm pitch, plus the "
+            "counterbore's radius). Inboard of that corner is birch and outboard "
+            "of it is steel, so that band is the only place a bolt has both. The "
+            f"pattern's own existence proves {proven:.1f}mm of it: the outer hole "
+            "is drilled in that flange and its own edge has to be. What is open "
+            f"is the remaining {reach - proven:.1f}mm. Measure the angle's flange "
+            "and write it into params.LegHoles.flange_w."
+        )
+    elif h.flange_w < reach:
+        notes.append(
+            f"the angle's flange is {h.flange_w:.1f}mm wide and the columns need "
+            f"{reach:.1f}mm of it ({h.cols_per_leg} columns from {h.edge_off:.1f}mm "
+            f"at {h.pitch_h:.1f}mm pitch, plus the counterbore's radius). The "
+            f"outer column overhangs the steel by {reach - h.flange_w:.1f}mm, so "
+            "its bolt has birch behind it and nothing in front. Either that column "
+            "goes unused and the joint runs one column per leg, or the counterbore "
+            "comes down to fit inside the flange."
+        )
 
     # -- the levelling swing, resolved by order rather than by a slot -------
     swing = s.table_h_with_feet - s.table_h_no_feet
