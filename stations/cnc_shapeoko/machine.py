@@ -1,8 +1,8 @@
 """The machine's own steel, as geometry the carcass has to duck under.
 
-Build order 7. This module owns no station geometry. It builds the four frame
-gussets Jared measured on 2026-09-02 and asks the one question no part can ask
-about itself: does this part reach into the machine?
+Build order 7. This module owns no station geometry. It builds the eight frame
+gusset plates Jared measured on 2026-09-02 and asks the one question no part
+can ask about itself: does this part reach into the machine?
 
 
 WHY THIS EXISTS, AND WHAT IT REPLACED
@@ -42,14 +42,18 @@ Neither is a recommendation. Which one to spend is a design decision and it is
 Jared's.
 
 
-THE ONE THING THE MODEL IS DELIBERATELY PESSIMISTIC ABOUT
-=========================================================
+THE ONE ASSUMPTION NO TAPE HAS CONFIRMED
+=========================================
 
-Each gusset's extent along the axis it does NOT constrain was not measured, so
-``Station.gussets`` runs all four of them wall to wall. A gusset that really
-stops short opens the envelope further than anything here says. ``params.check``
-carries that note, and it is the reason this module never reports a clearance as
-comfortable, only as present.
+Jared's photographs and calipers make the gussets flat plates,
+``gusset_plate_t`` thick (6.35mm, 1/4in), at the leg they brace, not the
+wall-to-wall solids the first pass modelled for want of that measurement.
+What the calipers cannot answer is how many of them there are: the hand
+elevations are one gusset per side per axis, four drawings, and the table has
+four legs. ``Station.gussets`` therefore ASSUMES each leg carries two plates,
+one bracing X and one bracing Y -- eight plates, not four. ``params.check``
+carries the note asking Jared to confirm it on the machine. If the real count
+is four, half of what this module reports as a clash disappears with it.
 """
 
 from __future__ import annotations
@@ -57,7 +61,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from build123d import Compound, Part, Plane, Polygon, Unit, export_step, extrude
+from build123d import (
+    Compound,
+    Location,
+    Part,
+    Plane,
+    Polygon,
+    Unit,
+    export_step,
+    extrude,
+)
 
 from stations.cnc_shapeoko.assembly import NOISE_VOL, Component, components
 from stations.cnc_shapeoko.carcass import DATUMS, EXPORT_DIR, Datums
@@ -80,13 +93,15 @@ MACHINE_NAME = "machine_gussets"
 
 
 def solid(g: Gusset) -> Part:
-    """One gusset as a trapezoidal prism in station coordinates.
+    """One gusset plate as a trapezoidal prism in station coordinates.
 
     The profile is drawn in the plane the gusset constrains: the sketch's first
     coordinate is the axis it eats into, its second is Z, and the extrusion runs
-    the whole way along the other axis. Four points, because the shape is four
-    points: it hangs off the beam at full intrusion for its top band, then
-    tapers back to the leg's inner face.
+    ``plate_t`` along the other axis -- the plate's own measured thickness, not
+    the full opening. Four points, because the shape is four points: it hangs
+    off the beam at full intrusion for its top band, then tapers back to the
+    leg's inner face. The extrusion is drawn at cross = 0 and then moved out to
+    ``cross_lo``, the leg end this plate actually sits against.
     """
     profile = [
         (0.0, g.z_bot),
@@ -100,12 +115,14 @@ def solid(g: Gusset) -> Part:
         # face normal and would extrude the prism out of the opening.
         pts.reverse()
 
-    plane, amount = (Plane.XZ, -g.span) if g.axis == "x" else (Plane.YZ, g.span)
-    return extrude(plane * Polygon(*pts), amount)
+    plane, amount = (Plane.XZ, -g.plate_t) if g.axis == "x" else (Plane.YZ, g.plate_t)
+    body = extrude(plane * Polygon(*pts), amount)
+    shift = (0.0, g.cross_lo, 0.0) if g.axis == "x" else (g.cross_lo, 0.0, 0.0)
+    return body.moved(Location(shift))
 
 
 def gussets(d: Datums = DATUMS) -> list[tuple[Gusset, Part]]:
-    """All four, each paired with the parameters it was built from."""
+    """All eight, each paired with the parameters it was built from."""
     return [(g, solid(g)) for g in d.s.gussets]
 
 

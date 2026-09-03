@@ -43,6 +43,9 @@ SOURCES = {
     "clear_h_min": "MEASURED 2026-09-02, tape, floor to the lowest obstruction.",
     "gusset_x": "MEASURED 2026-09-02, tape plus a hand-dimensioned elevation.",
     "gusset_y": "MEASURED 2026-09-02, tape plus a hand-dimensioned elevation.",
+    "gusset_plate_t": "MEASURED 2026-09-02. Photographs and calipers: the "
+                       "gussets are flat plates, not solids, no thicker than "
+                       "1/4in (6.35mm).",
     "z_beam": "DERIVED from clear_h_min + gusset_y_h. See check(); confirm it.",
     "extractor_env": "See EXTRACTORS. Each entry carries its own festoolusa URL.",
     "hose_id": "https://carbide3d.com/hub/docs/sweepy-pro-s5-pro/",
@@ -110,6 +113,9 @@ CONFIDENCE = {
                              # params.check() carries the note that says so.
     "gusset_x": "measured",  # both X gussets, height, top band and clear span
     "gusset_y": "measured",  # both Y gussets, plus the inner block
+    "gusset_plate_t": "measured",   # 2026-09-02 photographs and calipers:
+                             # flat plate, <= 1/4in. Which LEG each plate sits
+                             # at is still an assumption; see check().
     "leg_x_inner": "measured",   # 2026-09-02 tape, was 1100 off a photograph
     "leg_y_inner": "measured",   # same tape
     "leg_splay": "low",      # visible in the leg-kit render
@@ -151,11 +157,28 @@ CONFIDENCE = {
 # usable full height on y. Model the gussets in their entirety and let's develop
 # around them."
 #
-# So there are four of them, two per axis, one at each end. Each hangs from the
-# underside of a frame beam, runs at FULL intrusion for a top band, then tapers
-# back to the leg's inner face. Below a gusset entirely, the full leg opening is
-# clear. ``Station.clear_z(x, y)`` is the resulting ceiling and
-# ``Station.clear_h_min`` is only its lowest value.
+# Each one hangs from the underside of a frame beam, runs at FULL intrusion
+# for a top band, then tapers back to the leg's inner face -- along the axis
+# it braces. Below a gusset entirely, the full leg opening is clear.
+# ``Station.clear_z(x, y)`` is the resulting ceiling and ``Station.clear_h_min``
+# is only its lowest value.
+#
+# MEASURED 2026-09-02, second pass: Jared's photographs and calipers. The
+# gussets are flat plates, ``gusset_plate_t`` thick (6.35mm, 1/4in), bolted
+# between a leg and the frame beam -- not the wall-to-wall solids the first
+# pass modelled for want of that measurement. Along the axis a gusset braces,
+# nothing changes: the heights, the top bands, the tapers and the inboard
+# intrusions are the same numbers already committed. Along the axis it does
+# NOT brace, each gusset is now the plate thickness, positioned at the leg it
+# sits against, not a solid run to the far wall.
+#
+# What is still NOT measured: how many plates there are. The hand elevations
+# are one gusset per side per axis -- four drawings. The table has four legs.
+# ``Station.gussets`` ASSUMES each leg carries two plates, one bracing X and
+# one bracing Y, which is EIGHT plates, not four. ``check()`` carries the note
+# asking Jared to confirm it on the machine; see the docstring on
+# ``Station.gussets`` for the arrangement this model commits to in the
+# meantime.
 #
 # One constraint rides on top of all of it, ruled the same day: "We should be
 # building the carcass to fit between the legs flush to the edges of the CNC
@@ -166,16 +189,18 @@ CONFIDENCE = {
 
 @dataclass(frozen=True)
 class Gusset:
-    """One frame gusset, expressed as the ceiling it imposes.
+    """One frame gusset plate, expressed as the ceiling it imposes.
 
     ``axis`` is the axis the gusset eats into and ``side`` is which end of that
     axis it hangs off. The profile is read in ``u``, the distance in from the
-    leg inner face on that side, so the two gussets on an axis share one set of
-    measurements and differ only in which way ``u`` runs.
+    leg inner face on that side, so the two gussets braced against the same
+    axis share one set of measurements and differ only in which way ``u`` runs.
 
-    ``span`` is the extent along the axis this gusset does NOT constrain. It was
-    not measured; see ``check()``, which says so and says which way the model
-    errs.
+    Along the axis it does NOT brace, a gusset is a flat plate: ``plate_t``
+    thick (MEASURED, see SOURCES), sitting at one end of that axis --
+    ``cross_side`` says which -- rather than running the full ``span`` between
+    the legs. ``cross_lo``/``cross_hi`` are that plate's extent, in station
+    coordinates on the cross axis.
     """
 
     label: str
@@ -186,7 +211,11 @@ class Gusset:
     top_h: float        # the band at full intrusion, down from z_beam
     intrude: float      # how far in from the leg face, at full intrusion
     length: float       # full clear span of the constrained axis
-    span: float         # full clear span of the other axis
+    span: float         # full clear span of the axis this gusset does NOT
+                        # constrain, i.e. the leg opening the plate sits in
+    plate_t: float      # MEASURED. The plate's own thickness, on the cross axis
+    cross_side: str     # "near" (cross = 0 end) | "far", which leg the plate
+                        # sits against on the axis it does not constrain
 
     @property
     def z_bot(self) -> float:
@@ -225,6 +254,21 @@ class Gusset:
         if u <= 0.0:
             return self.z_bot
         return self.z_bot + self.taper_h * (u / self.intrude)
+
+    @property
+    def cross_lo(self) -> float:
+        """Low-coordinate edge of the plate on the axis it does not brace."""
+        return 0.0 if self.cross_side == "near" else self.span - self.plate_t
+
+    @property
+    def cross_hi(self) -> float:
+        """High-coordinate edge of the plate on the axis it does not brace."""
+        return self.cross_lo + self.plate_t
+
+    def applies_at(self, cross: float) -> bool:
+        """Whether this plate is present at ``cross``, the coordinate on the
+        axis it does not brace. Off the plate, this gusset imposes nothing."""
+        return self.cross_lo <= cross <= self.cross_hi
 
 
 @dataclass(frozen=True)
@@ -266,6 +310,12 @@ class Station:
     at its inner end, the envelope opens by whatever is behind the block. Kept
     because it is a real measurement and the day someone models the gusset as a
     part rather than as a keep-out, this is the shape."""
+    gusset_plate_t: float = 6.35    # MEASURED 2026-09-02, photographs and
+                                    # calipers, 1/4in. Each gusset is a flat
+                                    # plate this thick along the axis it does
+                                    # NOT brace, sitting at the leg it braces --
+                                    # not a solid run to the far wall. See the
+                                    # gusset docstring block above and check().
 
     # ---- machine, as published --------------------------------------------
     # The station has to live inside these. None of them were in the brief.
@@ -481,45 +531,68 @@ class Station:
 
     @property
     def gussets(self) -> tuple[Gusset, ...]:
-        """The four of them, in station coordinates.
+        """Eight of them, in station coordinates: one per leg per axis.
 
-        ``span`` is the full opening on the other axis in every case: the extent
-        of a gusset along the axis it does not constrain was not measured, so
-        the model runs it wall to wall. That is the conservative direction.
+        Each of the four measured profiles (X left, X right, Y front, Y rear)
+        is now a plate, ``gusset_plate_t`` thick, at ONE end of the axis it does
+        not brace -- not a solid run to the far wall. Which leg was not
+        measured directly: Jared's elevations are one gusset per side per axis,
+        four drawings, and the table has four legs. This ASSUMES each leg
+        carries two plates, one bracing X and one bracing Y, so every measured
+        profile is placed twice, once per leg on the axis it does not
+        constrain -- eight plates, not four. ``check()`` carries the note
+        asking Jared to confirm it on the machine.
         """
         z = self.z_beam
-        return (
-            Gusset("X gusset left", "x", "near", z, self.gusset_x_h,
-                   self.gusset_x_top_h, self.gusset_x_intrude,
-                   self.leg_x_inner, self.leg_y_inner),
-            Gusset("X gusset right", "x", "far", z, self.gusset_x_h,
-                   self.gusset_x_top_h, self.gusset_x_intrude,
-                   self.leg_x_inner, self.leg_y_inner),
-            Gusset("Y gusset front", "y", "near", z, self.gusset_y_h,
-                   self.gusset_y_top_h, self.gusset_y_intrude,
-                   self.leg_y_inner, self.leg_x_inner),
-            Gusset("Y gusset rear", "y", "far", z, self.gusset_y_h,
-                   self.gusset_y_top_h, self.gusset_y_intrude,
-                   self.leg_y_inner, self.leg_x_inner),
+        profiles = (
+            ("X gusset left", "x", "near", self.gusset_x_h, self.gusset_x_top_h,
+             self.gusset_x_intrude, self.leg_x_inner, self.leg_y_inner,
+             ("front", "rear")),
+            ("X gusset right", "x", "far", self.gusset_x_h, self.gusset_x_top_h,
+             self.gusset_x_intrude, self.leg_x_inner, self.leg_y_inner,
+             ("front", "rear")),
+            ("Y gusset front", "y", "near", self.gusset_y_h, self.gusset_y_top_h,
+             self.gusset_y_intrude, self.leg_y_inner, self.leg_x_inner,
+             ("left", "right")),
+            ("Y gusset rear", "y", "far", self.gusset_y_h, self.gusset_y_top_h,
+             self.gusset_y_intrude, self.leg_y_inner, self.leg_x_inner,
+             ("left", "right")),
         )
+        out: list[Gusset] = []
+        for label, axis, side, height, top_h, intrude, length, span, corners in profiles:
+            for cross_side, corner in (("near", corners[0]), ("far", corners[1])):
+                out.append(Gusset(
+                    f"{label} @ {corner}", axis, side, z, height, top_h,
+                    intrude, length, span, self.gusset_plate_t, cross_side,
+                ))
+        return tuple(out)
 
     def clear_z(self, x: float, y: float) -> float:
         """Highest z anything may reach at (x, y). THE envelope.
 
-        This is what replaced the scalar clear_h. Every gusset votes and the
-        lowest ceiling wins."""
-        return min(
-            g.ceiling_at(g.u_at(x if g.axis == "x" else y)) for g in self.gussets
-        )
+        This is what replaced the scalar clear_h. Every gusset whose plate
+        covers this point votes and the lowest ceiling wins; a gusset whose
+        plate sits elsewhere on the cross axis imposes nothing here."""
+        z = self.z_beam
+        for g in self.gussets:
+            coord, cross = (x, y) if g.axis == "x" else (y, x)
+            if g.applies_at(cross):
+                z = min(z, g.ceiling_at(g.u_at(coord)))
+        return z
 
     def clear_z_over(
         self, xs: tuple[float, float], ys: tuple[float, float]
     ) -> float:
         """Lowest ceiling anywhere over a rectangular footprint.
 
-        The four corners are enough. Every gusset's ceiling is monotonic in one
-        coordinate and flat in the other, so a rectangle's worst point is always
-        a corner of it."""
+        The four corners are enough for the one caller of this, which always
+        asks about the full leg opening: every gusset plate meets a leg face
+        exactly at a corner, at u = 0 on its constrained axis, which is its
+        worst point regardless of the plate's cross-axis position. A footprint
+        that does NOT sit on the leg faces could miss a plate's cross-axis band
+        at its corners and still catch it in the middle of an edge; this method
+        does not search for that, because nothing calls it with such a
+        footprint yet."""
         return min(self.clear_z(x, y) for x in xs for y in ys)
 
     # ---- VFD panel venting ------------------------------------------------
@@ -605,12 +678,19 @@ def check(s: Station = STATION) -> list[str]:
     )
 
     problems.append(
-        "each gusset's extent along the axis it does NOT constrain was not "
-        "measured, so the model runs all four of them wall to wall. That errs "
-        "toward less room, never more: if the X gussets stop short in Y, or the "
-        f"Y gussets are only the {s.gusset_y_block[0]:.1f} x "
-        f"{s.gusset_y_block[1]:.1f}mm block at their inner end rather than solid "
-        "back to the leg, the envelope opens further than this model says."
+        "each gusset's extent along the axis it does NOT constrain is now "
+        f"measured: it is a flat plate, {s.gusset_plate_t:.2f}mm thick "
+        "(photographs and calipers, 2026-09-02), at the leg it braces, not the "
+        "wall-to-wall solid the first pass modelled for want of that "
+        "measurement. Which leg was not measured directly: the hand elevations "
+        "are one gusset per side per axis, four drawings, and the table has "
+        "four legs, so this model ASSUMES each leg carries two plates, one "
+        "bracing X and one bracing Y -- eight plates, not four. Confirm on the "
+        "machine whether every leg really carries its own pair before this "
+        "clears. Unrelated and still open: the intrusion depth stays solid "
+        f"from the leg face rather than only the {s.gusset_y_block[0]:.1f} x "
+        f"{s.gusset_y_block[1]:.1f}mm block at a Y gusset's inner end, which if "
+        "true opens the envelope further than this model says."
     )
 
     if s.extractor_env[2] > s.clear_h_min:
