@@ -488,11 +488,10 @@ def check_leg_joint(d: Datums = D) -> list[str]:
     if CONFIDENCE.get("leg_holes") != "measured":
         notes.append(
             f"every one of the {len(bolts(d))} inserts below is placed off a leg "
-            "pattern that is not measured. The pitch and the hole diameter are a "
-            "Carbide staff forum reply; the row heights, the edge offset, the "
-            "column count and which faces carry holes are placeholders. Jared "
-            "calipers the legs 2026-09-03 into params.LegHoles, and nothing else "
-            "in the repo has to move when he does."
+            "pattern that is PARTLY measured. 2026-09-03 calipers gave the "
+            f"pitch, rows_z, edge_off and confirmed which faces carry holes. "
+            f"STILL UNMEASURED: hole_d (forum) and walls_in_path -- the leg "
+            "cross-section, which is the crush-sleeve question below."
         )
 
     # -- the bolt itself ----------------------------------------------------

@@ -55,7 +55,9 @@ SOURCES = {
                      "gussets so eight total mirrored across the centerline "
                      "of each axis.\" Confirms the eight-plate model in "
                      "Station.gussets.",
-    "z_beam": "DERIVED from clear_h_min + gusset_y_h. See check(); confirm it.",
+    "z_beam": "MEASURED 2026-09-03, tape, floor to the underside of the frame "
+              "beam directly. Was DERIVED from clear_h_min + gusset_y_h "
+              "(920.75mm); see check().",
     "extractor_env": "See EXTRACTORS. Each entry carries its own festoolusa URL.",
     "hose_id": "https://carbide3d.com/hub/docs/sweepy-pro-s5-pro/",
     "hose_bend_mult": "UNSOURCED ASSUMPTION. No maker publishes a bend radius for D36/32.",
@@ -134,8 +136,9 @@ CONFIDENCE = {
                              # it is Carbide's 945 config and not the 893 one.
     "clear_h_min": "measured",   # floor to the LOWEST obstruction, which is the
                              # bottom of a Y gusset. The floor of the envelope.
-    "z_beam": "derived",     # clear_h_min + gusset_y_h, NOT a tape reading.
-                             # params.check() carries the note that says so.
+    "z_beam": "measured",    # 2026-09-03 tape, floor to the underside of the
+                             # frame beam directly. Was derived from
+                             # clear_h_min + gusset_y_h; see SOURCES.
     "gusset_x": "measured",  # both X gussets, height, top band and clear span
     "gusset_y": "measured",  # both Y gussets, plus the inner block
     "gusset_plate_t": "measured",   # 2026-09-02 photographs and calipers:
@@ -171,7 +174,8 @@ CONFIDENCE = {
     # ONE tag for the whole LegHoles block, because the block is one measurement
     # session and not seven independent numbers. check() reports it as unmeasured
     # until this reads "measured".
-    "leg_holes": "forum, calipers 2026-09-03",
+    "leg_holes": "pitch/rows_z/edge_off/faces measured 2026-09-03; hole_d and "
+                 "walls_in_path (leg cross-section) still forum/placeholder",
     "hose_id": "high",           # carbide sweepy pro doc, 35/36mm
     "hose_bend_mult": "assumption",  # nobody publishes one. Flagged, not sourced.
     "vfd_vent_clear": "high",    # carbide 65mm spindle doc, 30cm
@@ -343,33 +347,38 @@ class LegHoles:
     them silently.
     """
 
-    pitch_h: float = 40.0
-    """Horizontal centre-to-centre, in the face. FORUM: Carbide staff, 105167."""
+    pitch_h: float = 40.132
+    """Horizontal centre-to-centre, in the face. MEASURED 2026-09-03, calipers,
+    1.58in. Confirms the 40mm FORUM figure (Carbide staff, 105167) almost
+    exactly."""
 
-    pitch_v: float = 65.0
-    """Vertical centre-to-centre, in the face. FORUM: same reply. Off the 20mm
-    bench grid, which is why nothing bolted to a leg can be grid-indexed on both
-    axes."""
+    pitch_v: float = 40.132
+    """Vertical centre-to-centre, in the face. MEASURED 2026-09-03, calipers,
+    1.58in -- the same reading as ``pitch_h``: the pattern is a square 2x2
+    cluster, not the tall two-row brace the 65mm placeholder assumed. Replaces
+    that placeholder; back ON the 20mm bench grid is still not true (40.132mm),
+    which is why nothing bolted to a leg can be grid-indexed on both axes."""
 
     hole_d: float = 7.0
-    """The leg's own through hole. FORUM: same reply. 7mm thru is an M6 clearance
-    hole, which is what sets the bolt size for the whole joint."""
+    """The leg's own through hole. FORUM: same reply, still unmeasured this
+    session -- Jared calipered the pattern, not the hole diameter. 7mm thru is
+    an M6 clearance hole, which is what sets the bolt size for the whole joint."""
 
-    rows_z: tuple[float, ...] = (150.0, 650.0)
-    """PLACEHOLDER. Height above the FLOOR of each hole row the carcass uses.
-
-    Nobody has measured where on the leg the holes actually are. These two are
-    chosen to be plausible and to land in birch: one low, near the deck, and one
-    high, near the top cap, which is where a brace wants to be. Replace them with
-    the calipers' rows and the geometry follows."""
+    rows_z: tuple[float, ...] = (400.05, 440.182)
+    """MEASURED 2026-09-03, calipers. Height above the FLOOR of each hole row
+    the carcass uses: the lower row at 15-3/4in (400.05mm), the upper row one
+    ``pitch_v`` above it. Replaces the (150, 650)mm placeholder, which assumed
+    two widely-spaced rows -- one low, one near the top cap -- rather than the
+    single tight cluster the calipers found."""
 
     cols_per_leg: int = 2
-    """PLACEHOLDER. Hole columns per leg, at ``pitch_h``, starting ``edge_off``
-    in from the leg's inner edge."""
+    """Hole columns per leg, at ``pitch_h``, starting ``edge_off`` in from the
+    leg's inner edge. Confirmed by the 2026-09-03 calipers, unchanged from the
+    placeholder."""
 
-    edge_off: float = 30.0
-    """PLACEHOLDER. First column, measured from the leg's INNER edge INTO the
-    opening.
+    edge_off: float = 22.86
+    """MEASURED 2026-09-03, calipers, 0.9in. First column, measured from the
+    leg's INNER edge INTO the opening.
 
     From that edge and not from the leg's outer face, for two reasons. The inner
     edge is the datum: the station origin sits on the intersection of the left
@@ -377,21 +386,28 @@ class LegHoles:
     end wall's birch runs from it inward and the leg's steel runs from it
     outward, so the only place a bolt can have steel in front of it AND birch
     behind it is where the leg's face reaches back across that edge into the
-    opening. 30mm clears the wall's own edge land by 5mm and asserts the leg
-    reaches at least ``span_h`` in. ``leg_joint.check_leg_joint`` states that
-    assumption; the calipers settle it."""
+    opening. 22.86mm (0.9in) asserts the leg reaches at least ``span_h`` in.
+    ``leg_joint.check_leg_joint`` states that assumption against the measured
+    value; it is no longer a placeholder but the leg's own reach past its inner
+    corner is still what determines whether this overlap is real -- see
+    ``walls_in_path``, still unmeasured."""
 
     faces: tuple[str, ...] = ("x_inner",)
-    """PLACEHOLDER. Which leg faces carry the pattern.
+    """CONFIRMED 2026-09-03: "Bolt holes are only on left and right sides of
+    machine. Nothing on front and rear." Which leg faces carry the pattern.
 
     ``x_inner`` is the face whose normal runs in X: the one a left leg presents
     to the left end wall and a right leg to the right end wall. Those are the
     only faces the carcass has birch against, because the front of the station
-    is open and the rear is a door. If the calipers find the Y-facing faces
-    carry the same pattern, nothing in the carcass can use it."""
+    is open and the rear is a door. Left/right on the machine IS the X-facing
+    pair, so the placeholder guess was right; the Y-facing (front/rear) faces
+    carry nothing, confirmed."""
 
     walls_in_path: int = 1
-    """PLACEHOLDER, and the one field that can change the hardware order.
+    """STILL PLACEHOLDER, and the one field that can change the hardware order.
+    Not part of the 2026-09-03 bolt-pattern calipers -- the leg CROSS-SECTION
+    (open channel vs. closed tube) is a separate measurement Jared has not
+    reported yet.
 
     How many thicknesses of leg wall a bolt crosses on its way to the insert. 1
     is an open section -- channel or angle -- where the head bears on the single
@@ -427,6 +443,14 @@ class Station:
                                     # the clearance envelope and not the envelope:
                                     # anything whose footprint is smaller than the
                                     # leg opening asks clear_z(x, y) instead.
+    z_beam: float = 839.9875        # MEASURED 2026-09-03, 33-1/16 in, floor to the
+                                    # UNDERSIDE OF THE FRAME BEAM directly, per the
+                                    # standing request in check(). Supersedes the
+                                    # clear_h_min + gusset_y_h derivation (920.75mm),
+                                    # which implied a 24.25mm beam and was flagged as
+                                    # too thin to be real. This measurement implies
+                                    # 105.0mm instead, which is plausible for a
+                                    # member carrying the gantry.
     leg_x_inner: float = 1254.125   # MEASURED 2026-09-02, 49-3/8 in, inside faces of
                                     # the legs, left to right. Was 1100 scaled off the
                                     # leg-kit photo, so the model gained 154mm here.
@@ -721,17 +745,6 @@ class Station:
         return (self.leg_y_inner - self.gusset_y_clear) / 2
 
     @property
-    def z_beam(self) -> float:
-        """Underside of the machine's frame beam, the absolute ceiling.
-
-        DERIVED, NOT MEASURED. The tape read the floor to the LOWEST obstruction,
-        which is the bottom of a Y gusset, so the beam is that plus the Y
-        gusset's own height. ``check()`` carries the note, and the note stays up
-        because the implied beam thickness is thin enough to be worth a second
-        tape reading."""
-        return self.clear_h_min + self.gusset_y_h
-
-    @property
     def gussets(self) -> tuple[Gusset, ...]:
         """Eight of them, in station coordinates: one per leg per axis.
 
@@ -870,27 +883,30 @@ def check(s: Station = STATION) -> list[str]:
     if CONFIDENCE.get("leg_holes") != "measured":
         h = s.leg_holes
         problems.append(
-            f"the leg bolt pattern is not measured. Carbide staff gave the "
-            f"{h.pitch_h:.0f} x {h.pitch_v:.0f}mm pitch and the {h.hole_d:.0f}mm "
-            "hole on forum thread 105167 and nothing else. The row heights "
-            f"({', '.join(f'{z:.0f}' for z in h.rows_z)}mm off the floor), the "
-            f"{h.edge_off:.0f}mm edge offset, the {h.cols_per_leg} columns per "
-            f"leg, the {h.faces} face list and walls_in_path={h.walls_in_path} "
-            "are all this repo's placeholders. Jared calipers the legs "
-            "2026-09-03; every insert in the end walls moves with them. The "
-            "whole block clears at once when CONFIDENCE[\"leg_holes\"] says "
-            "measured, because it is one measurement session."
+            f"the leg bolt pattern is PARTLY measured. 2026-09-03 calipers gave "
+            f"the {h.pitch_h:.2f} x {h.pitch_v:.2f}mm pitch (a square 2x2 "
+            f"cluster, not the tall two-row placeholder), rows_z at "
+            f"{', '.join(f'{z:.2f}' for z in h.rows_z)}mm off the floor, the "
+            f"{h.edge_off:.2f}mm edge offset and confirmed the {h.faces} face "
+            "list. STILL UNMEASURED: hole_d "
+            f"({h.hole_d:.0f}mm, forum) and walls_in_path={h.walls_in_path} -- "
+            "the leg cross-section, open channel vs. closed tube, which is "
+            "the crush-sleeve question and the one field that can change the "
+            "hardware order. The block clears when CONFIDENCE[\"leg_holes\"] "
+            "says measured, because it is one measurement session and this "
+            "is not the whole session yet."
         )
 
-    problems.append(
-        f"z_beam {s.z_beam:.2f}mm is DERIVED and not measured. The tape read "
-        f"{s.clear_h_min:.2f}mm from the floor to the LOWEST obstruction, which "
-        f"is the bottom of a Y gusset, and the gusset's own {s.gusset_y_h:.1f}mm "
-        f"was added to it. That implies a frame beam {s.table_h - s.z_beam:.2f}mm "
-        "thick, which is thin for a member carrying a gantry. Measure floor to "
-        "the UNDERSIDE OF THE FRAME BEAM directly and write the answer into "
-        "z_beam. Everything above the gussets moves with it."
-    )
+    if CONFIDENCE.get("z_beam") != "measured":
+        problems.append(
+            f"z_beam {s.z_beam:.2f}mm is DERIVED and not measured. The tape read "
+            f"{s.clear_h_min:.2f}mm from the floor to the LOWEST obstruction, which "
+            f"is the bottom of a Y gusset, and the gusset's own {s.gusset_y_h:.1f}mm "
+            f"was added to it. That implies a frame beam {s.table_h - s.z_beam:.2f}mm "
+            "thick, which is thin for a member carrying a gantry. Measure floor to "
+            "the UNDERSIDE OF THE FRAME BEAM directly and write the answer into "
+            "z_beam. Everything above the gussets moves with it."
+        )
 
     if CONFIDENCE.get("gusset_count") == "low":
         problems.append(
