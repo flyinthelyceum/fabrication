@@ -363,6 +363,7 @@ def build_deck() -> Part:
             (cx, (INTAKE_Y[0] + INTAKE_Y[1]) / 2),
             INTAKE_Y[1] - INTAKE_Y[0],
             INTAKE_SLOT_W,
+            corner_r=INTAKE_SLOT_W / 2,   # aperture: capsule, nothing seats here
             angle=90.0,
         )
 
@@ -418,6 +419,7 @@ def build_plinth_rail_x(*, grille: bool = False) -> Part:
                 (cx, (band[0] + band[1]) / 2),
                 band[1] - band[0],
                 INTAKE_SLOT_W,
+                corner_r=INTAKE_SLOT_W / 2,   # aperture: capsule
                 angle=90.0,
             )
 

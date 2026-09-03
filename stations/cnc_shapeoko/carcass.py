@@ -747,11 +747,58 @@ def through_slot(
     *,
     thickness: float = T,
     angle: float = 0.0,
+    corner_r: float | None = None,
 ) -> Part:
     """Cutter for a through slot centred at ``center``, ``length`` along the
-    slot axis (rotated ``angle`` degrees from +X)."""
+    slot axis (rotated ``angle`` degrees from +X).
+
+    A ROUND CUTTER CANNOT LEAVE A SQUARE INSIDE CORNER, and this slot has two
+    different right answers depending on what the slot is for. Getting them the
+    wrong way round is how a joint ends up 3mm tight on every corner.
+
+    APERTURE (a vent, a hose port, a hand hole). Nothing seats in it, so the
+    corner may simply be round. Pass ``corner_r=width / 2`` for a full capsule,
+    which is the roundest a slot of that width can be and reads as intended.
+
+    JOINERY (a tongue housing). A square member has to seat, so the corner must
+    be relieved OUTWARD with a dogbone, never rounded inward. Leave
+    ``corner_r`` alone and drop a ``relief()`` on each inside corner, which is
+    what the blind housings in this file already do.
+
+    The default is therefore 0.0, a square cutter: it changes nothing for the
+    joinery callers, and it refuses to guess an aperture's intent on their
+    behalf. ``corner_r`` is clamped to half of each side, so a capsule is the
+    roundest available result and no argument turns the cutter inside out.
+    """
+    r = 0.0 if corner_r is None else corner_r
+    r = max(0.0, min(r, width / 2, length / 2))
+
     over = thickness  # overshoot both faces so the boolean is clean
-    cutter = Box(length, width, thickness + 2 * over, align=(Align.CENTER,) * 3)
+    h = thickness + 2 * over
+
+    if r <= 0.0:
+        cutter = Box(length, width, h, align=(Align.CENTER,) * 3)
+    else:
+        # Rounded rectangle as a union: a cross of two boxes plus a cylinder on
+        # each corner. Built from Box and Cylinder rather than a rounded sketch
+        # so the slot stays one primitive family with the rest of this file.
+        # Either cross-arm degenerates when the radius reaches half that side:
+        # at r == width/2 the slot is a capsule, and at both it is a plain
+        # circle. Build only the arms that still have material in them, because
+        # a zero-thickness Box is not an empty solid, it is an OCP failure.
+        cutter = None
+        if length - 2 * r > 0:
+            cutter = Box(length - 2 * r, width, h, align=(Align.CENTER,) * 3)
+        if width - 2 * r > 0:
+            arm = Box(length, width - 2 * r, h, align=(Align.CENTER,) * 3)
+            cutter = arm if cutter is None else cutter + arm
+        for sx in (-1, 1):
+            for sy in (-1, 1):
+                cyl = Cylinder(r, h, align=(Align.CENTER,) * 3).moved(
+                    Location((sx * (length / 2 - r), sy * (width / 2 - r), 0))
+                )
+                cutter = cyl if cutter is None else cutter + cyl
+
     return cutter.moved(Location((center[0], center[1], thickness / 2), (0, 0, angle)))
 
 

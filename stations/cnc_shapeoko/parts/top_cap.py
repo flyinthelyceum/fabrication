@@ -450,7 +450,12 @@ def build(d: Datums = DATUMS) -> Part:
     y_mid = (v.y0 + v.y1) / 2
     for xc in v.x_centres:
         p -= through_slot(
-            (xc, y_mid), v.slot_len, VENT_SLOT_W, thickness=t, angle=90.0
+            (xc, y_mid),
+            v.slot_len,
+            VENT_SLOT_W,
+            thickness=t,
+            angle=90.0,
+            corner_r=VENT_SLOT_W / 2,   # aperture: capsule, same as the louvre
         )
 
     # -- the mast base pads -------------------------------------------------

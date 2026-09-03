@@ -523,6 +523,33 @@ def export(comp: Compound, out_dir: Path | None = None) -> Path:
     return p
 
 
+def export_in_machine(
+    comps: list[Component] | None = None,
+    d: Datums = DATUMS,
+    out_dir: Path | None = None,
+) -> Path:
+    """One STEP carrying the carcass AND the machine's gussets.
+
+    Both are already modelled on the same datum, so the honest way to see the
+    fit is one file that opens with everything where it belongs, rather than
+    two files and a positioning job done by hand in Fusion. A hand-positioned
+    import is a second chance to be wrong about the very relationship the file
+    exists to show.
+    """
+    from stations.cnc_shapeoko.machine import gussets
+
+    comps = comps if comps is not None else components(d)
+    parts: list[Shape] = [c.part for c in comps]
+    for g, solid in gussets(d):
+        parts.append(solid)
+
+    out_dir = out_dir or EXPORT_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+    p = out_dir / "carcass_in_machine.step"
+    export_step(Compound(children=parts), p, unit=Unit.MM)
+    return p
+
+
 # ---------------------------------------------------------------- main
 
 
@@ -571,6 +598,10 @@ def main() -> None:
 
     path = export(asm)
     print(f"\nwrote {path}  {path.stat().st_size:,} bytes")
+
+    in_machine = export_in_machine(comps, d)
+    print(f"wrote {in_machine}  {in_machine.stat().st_size:,} bytes"
+          "   (carcass + the machine's gussets, one datum, for Fusion)")
 
     for name, notes in (
         ("carcass", check_carcass(d)),

@@ -89,7 +89,7 @@ the top cap.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import isclose
+from math import isclose, pi
 
 from build123d import Compound, Location, Part
 
@@ -407,8 +407,20 @@ class _Louvre:
 
     @property
     def free_area(self) -> float:
-        """What the ruling is actually paid in: open area through the panel."""
-        return sum(LOUVRE_SLOT_W * (self.y1 - b) for b in self.bottoms)
+        """What the ruling is actually paid in: open area through the panel.
+
+        Measured on the CAPSULE, not on the rectangle that used to stand in for
+        it. Rounding both ends of a slot costs ``(4 - pi) * r**2`` of opening,
+        which is small per slot and is counted across the whole field because
+        this number is the price of a traded clearance. Reporting the rectangle
+        would claim free area the panel does not have.
+        """
+        r = LOUVRE_SLOT_W / 2
+        corner_loss = (4.0 - pi) * r * r
+        return sum(
+            max(LOUVRE_SLOT_W * (self.y1 - b) - corner_loss, 0.0)
+            for b in self.bottoms
+        )
 
 
 def _tie_pads_local(spec: WallSpec, d: Datums = D) -> list[tuple[tuple, tuple]]:
@@ -455,14 +467,26 @@ def louvre_field(d: Datums = D) -> _Louvre:
 
 def _louvre(d: Datums = D) -> Part | None:
     """Through slots for the field. ``None`` when the band has closed up, so a
-    degenerate field is reported by the check rather than raised in build."""
+    degenerate field is reported by the check rather than raised in build.
+
+    The slots are CAPSULES, not rectangles. Two reasons, and the second is the
+    one that matters. A round cutter cannot leave a square inside corner, so a
+    rectangular slot is undeliverable geometry. And this field is the visible
+    face of the vent ruling, where a radius that reads as deliberate is worth
+    more than a corner that has to be explained; a half-width radius is the
+    roundest a slot of this width can be, so it is the one that looks intended.
+    """
     v = louvre_field(d)
     cutters = None
     for cx, bottom in zip(v.x_centres, v.bottoms):
         if v.y1 - bottom <= 0:
             continue
         c = through_slot(
-            (cx, (bottom + v.y1) / 2), v.y1 - bottom, LOUVRE_SLOT_W, angle=90.0
+            (cx, (bottom + v.y1) / 2),
+            v.y1 - bottom,
+            LOUVRE_SLOT_W,
+            angle=90.0,
+            corner_r=LOUVRE_SLOT_W / 2,
         )
         cutters = c if cutters is None else cutters + c
     return cutters
