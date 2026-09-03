@@ -41,6 +41,17 @@ SHEET_5X5_BALTIC = (1525.0, 1525.0)
 LASER_BED_SMALL = (304.8, 609.6)    # Universal, 12 x 24 in
 LASER_BED_LARGE = (457.2, 812.8)    # Universal, 18 x 32 in
 
+PRINT_BED_AD5M = (220.0, 220.0, 220.0)      # Flashforge Adventurer 5M
+PRINT_BED_BAMBU = (256.0, 256.0, 256.0)     # Bambu P1S / X1C
+PRINT_BED_MIN = PRINT_BED_AD5M
+"""The smallest bed in the room. A printed part sized to this one runs on
+either machine, which is the only reason to have a house figure rather than
+per-printer figures scattered through the parts."""
+
+PRINT_BED_MARGIN = 10.0
+"""Kept clear at every edge of a print bed. Skirt, purge line, and the fact
+that a bed's stated size is its glass, not its first layer."""
+
 
 def fits(blank: tuple[float, float], bed: tuple[float, float]) -> bool:
     """True when a blank fits a bed in either orientation."""

@@ -64,6 +64,22 @@ SOURCES = {
     "vfd_vent_clear": "https://carbide3d.com/hub/docs/65mm-er16-spindle/",
     "vfd_mount_pitch": "https://carbide3d.com/hub/docs/65mm-er16-spindle/",
     "mini_pc_env": "https://download.intel.com/newsroom/2023/client-computing/Intel-NUC-13-Pro-Tech-Product-Spec.pdf",
+    "drawer_slide_side_clear": "https://www.accuride.com/hardware/3832 -- the 3832 "
+                  "series sheet: \"clearance required .50in +0.031/-0.0 [12.7mm "
+                  "+0.8/-0.0]\", and the slides may not function with less than "
+                  "12.7mm of side space. Read 2026-09-02.",
+    "drawer_slide_build_under": "https://www.accuride.com/hardware/3832 -- same "
+                  "sheet, the build recommendation rather than the constraint: "
+                  "\"the drawer should be constructed 1-1/16in [27.0mm] less than "
+                  "the cabinet opening\". 13.5mm per side, which is the 12.7 "
+                  "minimum plus most of its +0.8 band.",
+    "er16_collet_od": "DIN 6499 / ISO 15488 ER collet series, ER-16 body: 17.0mm "
+                  "OD x 27.5mm long. Chart: "
+                  "https://carbideprocessors.com/content/collet-guide-chart.pdf "
+                  "and https://www.cgtk.co.uk/metalwork/data/er . Corroborated "
+                  "by tool_list.csv, which carries oal 27.5 on all three ER16 "
+                  "collets. NOT calipered: Jared's calipers supersede this. "
+                  "Read by parts/trays.py, which owns the socket that uses it.",
 }
 
 # ---------------------------------------------------------------- extractors
@@ -140,6 +156,9 @@ CONFIDENCE = {
     "lungs_lining_t": "medium",  # MLV plus open-cell foam, lay-up not yet bought
     "lungs_slide_t": "high",     # Accuride 3832 class member section
     "lungs_side_clear": "medium",   # a hand's clearance, chosen not sourced
+    "drawer_slide_side_clear": "high",      # Accuride 3832 sheet, the constraint
+    "drawer_slide_build_under": "high",     # same sheet, the recommendation
+    "er16_collet_od": "high",       # DIN 6499 standard size, not calipered
     "footprint_x": "high",       # carbide3d spec table
     "footprint_y": "high",       # carbide3d spec table
     "footprint_z": "medium",     # live spec 23.25in, older forum quotes of the same field 21in
@@ -480,6 +499,21 @@ class Station:
                                     # this is kept only so check() can report
                                     # how far the brief's arithmetic was out.
     bay_hands_w: float = 400.0      # drawer width
+
+    # ---- drawer slides, as the maker specifies them ------------------------
+    # The BOM buys 500mm full-extension side-mount slides, Accuride 3832 class,
+    # which is the same family the lungs carriage rides. Two numbers come off
+    # the maker's own sheet and they are not the same number:
+    drawer_slide_side_clear: float = 12.7   # the CONSTRAINT: .50in +.031/-0.0
+                                    # of side space per side. Below this the
+                                    # slide does not run. See SOURCES.
+    drawer_slide_build_under: float = 27.0  # the RECOMMENDATION: build the box
+                                    # 1-1/16in narrower than the opening, which
+                                    # is 13.5 per side and lands inside the
+                                    # tolerance band rather than on its floor.
+                                    # parts/drawers.py sizes the box from this
+                                    # and checks the result against the
+                                    # constraint above.
 
     # ---- lungs bay allowance ----------------------------------------------
     # bay_lungs_w is DERIVED from these and the fitted extractor. It used to be a

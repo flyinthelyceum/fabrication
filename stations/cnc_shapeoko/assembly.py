@@ -80,9 +80,11 @@ from stations.cnc_shapeoko.carcass import (
 from stations.cnc_shapeoko.parts import (
     base_deck,
     bay_walls,
+    drawers,
     leg_joint,
     spine_panel,
     top_cap,
+    trays,
 )
 
 __all__ = [
@@ -171,6 +173,15 @@ def components(d: Datums = DATUMS) -> list[Component]:
     # 5. the leg joint adds no solid. It is bolts through the machine's own legs
     # into inserts in the end walls, so what it contributes to the carcass is
     # holes, already cut by bay_walls, and the axes main() prints.
+
+    # 6. the three drawers, panel by panel rather than fused, for the same
+    # reason the plinth is enumerated rail by rail: a rabbet between a side and
+    # a front is a joint like any other and a fused box would hide it.
+    for label, part in drawers.placed_all(d):
+        out.append(Component(label, "drawer", part))
+
+    # 7. the fitted tray in drawer 1, generated from the tool list
+    out.append(Component(trays.TRAY_LABEL, "tray", trays.place(d=d)))
 
     return out
 
@@ -274,6 +285,19 @@ def joints(d: Datums = DATUMS) -> dict[frozenset[str], Joint]:
                   rear_face, rear_face + HOUSE_ENGAGE,
                   "cross rail bottoms out in the rear rail's housing")
         )
+
+    # -- inside each drawer box, and the tray that sits in one -------------
+    for a, b, kind, axis, lo, hi, note in drawers.joint_table(d):
+        js.append(Joint(a, b, kind, axis, lo, hi, note))
+    js.append(
+        Joint(
+            trays.TRAY_LABEL,
+            f"{trays.spec_for(trays.TRAY_V1).name}_bottom",
+            "bearing",
+            None,
+            note="the tray stands on the drawer's bottom panel",
+        )
+    )
 
     # The leg joint declares nothing here. It is not a joint between two CARCASS
     # parts: it is a bolt from the machine into one of them, and the machine is
@@ -471,11 +495,40 @@ def envelope(comps: list[Component] | None = None, d: Datums = DATUMS) -> list[F
     # assumption those two modules' own build() functions make.
     ceiling = clear_over_relieved((d.x_left, d.x_right), (d.y_front, d.y_rear), s)
 
-    return [
+    fits = [
         Fit("carcass + plinth", x1 - x0, s.leg_x_inner, "X"),
         Fit("carcass + plinth", y1 - y0, s.leg_y_inner, "Y"),
         Fit("carcass + plinth", z1 - z0, ceiling, "Z"),
     ]
+
+    # Each drawer against the two things that size it: the opening less the
+    # slide maker's side clearance, and the slide's own length. Both rooms are
+    # the vendor's numbers, not the cabinet's, which is the point of reporting
+    # them here rather than inside the part.
+    room_w = s.bay_hands_w - 2 * s.drawer_slide_side_clear
+    for spec in drawers.DRAWERS:
+        w, dep, _h = drawers.box_size(spec, d)
+        fits.append(Fit(f"{spec.name} width", w, room_w, "X"))
+        fits.append(Fit(f"{spec.name} depth", dep, bay_walls.SLIDE_LEN, "Y"))
+
+    # and the stack against the bay it slides into, once: all three boxes are
+    # the same depth, and this is the row that moves if the spine moves.
+    fits.append(
+        Fit(
+            "drawers in bay",
+            bay_walls.SLIDE_LEN + bay_walls.SLIDE_FRONT_INSET,
+            d.front_bay_d,
+            "Y",
+        )
+    )
+
+    tray_spec = trays.spec_for(trays.TRAY_V1)
+    plan = trays.plan(trays.TRAY_V1, d)
+    iw, idep, _ih = drawers.interior(tray_spec, d)
+    fits.append(Fit(f"{trays.TRAY_LABEL} width", plan.w, iw, "X"))
+    fits.append(Fit(f"{trays.TRAY_LABEL} depth", plan.d, idep, "Y"))
+
+    return fits
 
 
 # ---------------------------------------------------------------- checks
@@ -584,9 +637,35 @@ def main() -> None:
     print("\nfit under the machine")
     for f in envelope(comps, d):
         print(f"  {f.line()}")
+    relieved = clear_over_relieved(
+        (d.x_left, d.x_right), (d.y_front, d.y_rear), d.s
+    ) - d.carcass_h
     print(
-        f"  reveal above the top cap: {d.top_gap:.1f}mm "
-        f"(minimum {TOP_GAP_MIN:.0f}mm)"
+        f"  reveal above the top cap: Datums.top_gap {d.top_gap:.1f}mm under "
+        f"the UNRELIEVED ceiling, clear_over_relieved {relieved:.1f}mm once the "
+        f"corner reliefs are cut (minimum {TOP_GAP_MIN:.0f}mm; check_carcass "
+        "uses the relieved one)"
+    )
+
+    print("\nhands bay: three drawers and the D1 tray")
+    for spec in drawers.DRAWERS:
+        w, dep, h = drawers.box_size(spec, d)
+        floor, clear_h = drawers.opening(spec, d)
+        iw, idep, ih = drawers.interior(spec, d)
+        print(
+            f"  {spec.number} {spec.callout:<12} {w:6.1f} x {dep:6.1f} x "
+            f"{h:6.1f} outside   inside {iw:6.1f} x {idep:6.1f} x {ih:5.1f}   "
+            f"floor z {d.deck_top + floor:6.1f}   "
+            f"{drawers.side_clearance(spec, d):.1f}mm per side on a "
+            f"{bay_walls.SLIDE_LEN:.0f}mm slide"
+        )
+    plan = trays.plan(trays.TRAY_V1, d)
+    miss = trays.skipped(trays.TRAY_V1)
+    print(
+        f"  {trays.TRAY_LABEL}: {plan.w:.1f} x {plan.d:.1f} x {plan.h:.1f}, "
+        f"{len(plan.sockets)} sockets from the tool list, "
+        f"{len(miss)} {trays.TRAY_V1} row(s) still MEASURE, "
+        f"{len(trays.tiles(plan))} print tiles"
     )
 
     print("\nleg joint: bolt axes, station coordinates")

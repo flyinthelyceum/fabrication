@@ -42,7 +42,15 @@ from stations.cnc_shapeoko.assembly import (
 )
 from stations.cnc_shapeoko.carcass import DATUMS, check_carcass
 from stations.cnc_shapeoko.machine import check_machine
-from stations.cnc_shapeoko.parts import base_deck, bay_walls, leg_joint, spine_panel, top_cap
+from stations.cnc_shapeoko.parts import (
+    base_deck,
+    bay_walls,
+    drawers,
+    leg_joint,
+    spine_panel,
+    top_cap,
+    trays,
+)
 
 # A note is STANDING when it says so itself. These phrases are written into the
 # check messages deliberately; grep for them there before editing this list.
@@ -100,6 +108,8 @@ def collect() -> list[tuple[str, str, str]]:
         ("carcass", check_carcass(d)),
         ("base_deck", base_deck.check_base_deck()),
         ("bay_walls", bay_walls.check_bay_walls(d)),
+        ("drawers", drawers.check_drawers(d)),
+        ("trays", trays.check_trays(d)),
         ("spine_panel", spine_panel.check_spine(d)),
         ("top_cap", top_cap.check_top_cap(d)),
         ("leg_joint", leg_joint.check_leg_joint(d)),
