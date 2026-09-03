@@ -550,10 +550,19 @@ class Station:
     extractor: str = "CT15"
     """The unit that was ORDERED and that v1 is built around."""
 
-    extractor_growth: str = "CT36EI"
-    """The unit v2 has to accept without a redesign. Everything expensive to
-    change is sized for this one; only the lungs/stock divider, the stock rack
-    and the slide member are sized for the fitted unit. See check_growth_path."""
+    extractor_growth: str = "CT15"
+    """The unit v2 has to accept without a redesign.
+
+    RULED by Jared 2026-09-03: "maximize the space we have and we'll live with
+    what we must." This read CT36EI and that promise is WITHDRAWN. It was not
+    given up to a choice in the carcass, it was taken by the tape: floor to the
+    underside of the frame beam is 33-1/16in, not the 920.75mm the old derivation
+    implied, and a CT 36 EI wants its 596mm body plus a 144mm hose bend under a
+    ceiling 39mm short of carrying both. No divider move recovers a ceiling.
+
+    Growth now equals fitted, so check_growth_path tests the CT 15 against its own
+    bay and passes. The surrender is recorded as a standing note in check() so a
+    passing gate is never read as the CT 36 still fitting."""
 
     # ---- bays -------------------------------------------------------------
     bay_brain_d: float = 250.0      # rear band, full width
@@ -722,6 +731,17 @@ class Station:
     def spec(self) -> dict:
         """The EXTRACTORS row for the unit that is actually going in."""
         return EXTRACTORS[self.extractor]
+
+    @property
+    def growth_station_wanted(self) -> bool:
+        """Whether a SECOND divider dado is a real station or a duplicate.
+
+        False once growth equals fitted, which is where Jared's 2026-09-03 ruling
+        left it. The deck and the top cap still subtract the growth groove, and
+        that stays sound because the two positions coincide exactly and a boolean
+        subtract of the same volume twice is one dado, not two. What is NOT sound
+        is telling a reader there are two stations."""
+        return self.extractor_growth != self.extractor
 
     @property
     def growth_spec(self) -> dict:
@@ -945,6 +965,18 @@ def check(s: Station = STATION) -> list[str]:
             "thick, which is thin for a member carrying a gantry. Measure floor to "
             "the UNDERSIDE OF THE FRAME BEAM directly and write the answer into "
             "z_beam. Everything above the gussets moves with it."
+        )
+
+    if s.extractor_growth == s.extractor:
+        problems.append(
+            "EXTRACTOR GROWTH SURRENDERED, standing note. The station is sized "
+            f"for the {EXTRACTORS[s.extractor]['name']} and for nothing "
+            "larger. The "
+            "CT 36 EI growth path was withdrawn by Jared 2026-09-03 after the "
+            "measured z_beam left it 39mm short on hose-bend headroom, which no "
+            "divider move recovers. This note never clears; it is here so a "
+            "passing growth check is never read as the CT 36 EI still fitting. "
+            "Swapping up later is a new carcass, not a conversion."
         )
 
     if CONFIDENCE.get("gusset_count") == "low":

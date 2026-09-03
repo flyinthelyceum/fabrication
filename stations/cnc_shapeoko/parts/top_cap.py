@@ -348,7 +348,9 @@ def wall_housings(d: Datums = DATUMS) -> list[_Housing]:
         y1 = d.y_rear if is_end else d.y_spine
         out.append(_Housing(x0, x1, d.y_front, y1, x + d.t / 2, not is_end, is_end))
 
-    # The GROWTH lungs/stock divider station, cut on day one and left empty.
+    # The GROWTH lungs/stock divider station. Coincides EXACTLY with the fitted
+    # station since the 2026-09-03 ruling withdrew the CT 36 EI, so this subtract
+    # is idempotent and the cap carries one dado. Historically:
     # Converting to the growth extractor moves one panel into a slot that is
     # already there instead of recutting the cap, which is one of the two
     # largest panels in the station. A removable birch spline fills it meanwhile.

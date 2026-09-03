@@ -245,8 +245,36 @@ finished face."""
 
 # -- where the joint may sit on the panel -----------------------------------
 EDGE_LAND = T
-"""Solid birch between an insert's counterbore and any edge of the panel, its
-tongues included. One panel thickness, the same land the louvre field keeps."""
+"""Solid birch around the PILOT BORE, between it and any edge of the panel, its
+tongues included. One panel thickness, the same land the louvre field keeps.
+
+This is the STRUCTURAL land. The pilot runs nearly the whole thickness and it is
+what the knife thread expands into, so the material around it is what takes the
+driving force and the pull-out load."""
+
+CBORE_EDGE_LAND = T / 2
+"""Solid birch around the COUNTERBORE, a weaker requirement than EDGE_LAND.
+
+Patched 2026-09-03. Jared's calipers put the leg's hole 22.86mm off the inner
+corner and the old single land rejected all eight inner-column bolts by 2.14mm.
+That rule applied the counterbore's full 14mm diameter as though the whole hole
+were 14mm wide. It is not. WALL_CBORE_DEPTH is 1.5mm, a seat for the insert's
+head, and below it the hole is the 9.525mm pilot. A 1.5mm-deep clearance seat
+takes no hoop load; it needs enough birch not to break out at the surface and no
+more. Half a panel thickness is that, and the real joint has 15.86mm.
+
+The bolts were never too close to the edge. The check was measuring the wrong
+bore."""
+
+
+def edge_margin() -> float:
+    """Least distance from a panel edge to an insert's CENTRE.
+
+    Both bores are asked and the worse one wins, so changing either the insert or
+    the counterbore moves this on its own. Today the pilot binds: 18.0 + 4.76 =
+    22.76 against the counterbore's 9.0 + 7.0 = 16.0."""
+    return max(EDGE_LAND + INSERT_PILOT_D / 2,
+               CBORE_EDGE_LAND + WALL_CBORE_D / 2)
 
 
 # ============================================================ derived
@@ -283,7 +311,7 @@ def wall_band(d: Datums = D) -> tuple[float, float]:
     the band is the wall's CLEAR height, less a land and the counterbore's own
     radius at each end.
     """
-    margin = EDGE_LAND + WALL_CBORE_D / 2
+    margin = edge_margin()
     return (d.deck_top + margin, d.top_z[0] - margin)
 
 
@@ -551,7 +579,7 @@ def check_leg_joint(d: Datums = D) -> list[str]:
     # -- every bolt has to land in birch ------------------------------------
     band = wall_band(d)
     y_lo, y_hi = d.end_wall_y
-    y_land = EDGE_LAND + WALL_CBORE_D / 2
+    y_land = edge_margin()
     for b in bolts(d):
         if not (band[0] <= b.z <= band[1]):
             where = (

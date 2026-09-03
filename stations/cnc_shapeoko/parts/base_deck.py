@@ -295,7 +295,10 @@ def build_deck() -> Part:
                     side_x, SPINE_HOUSING_FRONT, depth=DADO_D, side="front"
                 )
 
-    # The GROWTH lungs/stock divider station, cut now and left empty. Converting
+    # The GROWTH lungs/stock divider station. Since the 2026-09-03 ruling withdrew
+    # the CT 36 EI, this coincides EXACTLY with the fitted station, so the two
+    # subtracts are one dado and the panel is unchanged. Kept rather than deleted
+    # so a future growth unit is one params line again. Historically: converting
     # to the growth extractor moves one panel into a slot that already exists
     # instead of recutting the deck, which is the largest panel in the station.
     # It takes a removable birch spline meanwhile so the stock bay floor stays

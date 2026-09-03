@@ -1283,7 +1283,8 @@ def check_carcass(d: Datums = DATUMS) -> list[str]:
             "one cannot be paid for out of this panel."
         )
 
-    if abs(d.wall_x_growth[1] - d.wall_x[1]) < GRID - 1e-9:
+    if (d.s.growth_station_wanted
+            and abs(d.wall_x_growth[1] - d.wall_x[1]) < GRID - 1e-9):
         notes.append(
             f"the growth divider station is {d.wall_x_growth[1] - d.wall_x[1]:.0f}mm "
             "from the fitted one, under one grid module. Two dado stations that "
