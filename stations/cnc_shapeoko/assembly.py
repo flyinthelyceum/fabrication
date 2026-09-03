@@ -1,4 +1,4 @@
-"""The five carcass parts, brought together in station coordinates.
+"""The carcass parts, brought together in station coordinates.
 
 Build order 6. This module owns no geometry. It imports every part module's
 builder, places each part with the same datum plane the part's own module uses,
@@ -8,6 +8,11 @@ and then asks three questions the individual parts cannot ask about themselves:
     2. do any two parts occupy the same mm3   -> the interference report
     3. does the assembled envelope fit under the machine
                                               -> the fit report
+
+It also prints the leg-bolt axes. Those are not parts and never appear in a
+solid: the joint is the machine's steel, the carcass's birch and a fastener, and
+what an assembly report can usefully say about it is where each axis runs. See
+``parts/leg_joint.py``.
 
 Nothing here may invent a location. If a part module publishes a placement
 helper (``place``, ``placed_all``, ``build_assembly``), this module calls it.
@@ -75,7 +80,7 @@ from stations.cnc_shapeoko.carcass import (
 from stations.cnc_shapeoko.parts import (
     base_deck,
     bay_walls,
-    leg_tie,
+    leg_joint,
     spine_panel,
     top_cap,
 )
@@ -116,7 +121,7 @@ class Component:
     """One placed solid in the assembly."""
 
     label: str
-    group: str          # carcass | plinth | tie
+    group: str          # carcass | plinth
     part: Part
 
     @property
@@ -163,9 +168,9 @@ def components(d: Datums = DATUMS) -> list[Component]:
     # 4. the top cap
     out.append(Component("top_cap", "carcass", d.top_plane * top_cap.build(d)))
 
-    # 5. the four leg ties
-    for name, tie in leg_tie.placed():
-        out.append(Component(f"leg_tie_{name}", "tie", tie))
+    # 5. the leg joint adds no solid. It is bolts through the machine's own legs
+    # into inserts in the end walls, so what it contributes to the carcass is
+    # holes, already cut by bay_walls, and the axes main() prints.
 
     return out
 
@@ -270,13 +275,10 @@ def joints(d: Datums = DATUMS) -> dict[frozenset[str], Joint]:
                   "cross rail bottoms out in the rear rail's housing")
         )
 
-    # -- leg ties bear on the outer faces of the end walls -----------------
-    for name, _ in leg_tie.placements():
-        wall = wall_names[0] if name.startswith("left") else wall_names[3]
-        js.append(
-            Joint(wall, f"leg_tie_{name}", "bearing", None,
-                  note="tie pad bears on the end wall's outer face, screwed from inside")
-        )
+    # The leg joint declares nothing here. It is not a joint between two CARCASS
+    # parts: it is a bolt from the machine into one of them, and the machine is
+    # not in this assembly. ``leg_joint.check_leg_joint`` and
+    # ``bay_walls.check_bay_walls`` own it.
 
     return {j.key(): j for j in js}
 
@@ -443,10 +445,12 @@ class Fit:
 def envelope(comps: list[Component] | None = None, d: Datums = DATUMS) -> list[Fit]:
     """The assembled solid measured against the hole it has to live in.
 
-    Reported twice on X, because the leg ties are deliberately OUTSIDE the leg
-    inner faces: they reach across the splay gap to the leg itself. A tie that
-    did not cross x=0 would not be a tie. The carcass proper is the number that
-    has to clear ``leg_x_inner``.
+    Reported ONCE on X now. It used to be reported twice, because the leg ties
+    reached outboard across an assumed splay gap to the leg itself and the
+    carcass had to be measured with and without them. Both halves of that are
+    gone: the legs are square, and the joint is a bolt into the end wall's own
+    outer face, so nothing in this assembly sits outside ``leg_x_inner`` and
+    there is no second number to report.
     """
     comps = components(d) if comps is None else comps
     s = d.s
@@ -456,11 +460,9 @@ def envelope(comps: list[Component] | None = None, d: Datums = DATUMS) -> list[F
         hi = max(getattr(c.bbox.max, axis) for c in sel)
         return lo, hi
 
-    body = [c for c in comps if c.group != "tie"]
-    x0, x1 = span(body, "X")
-    y0, y1 = span(body, "Y")
-    z0, z1 = span(body, "Z")
-    tx0, tx1 = span(comps, "X")
+    x0, x1 = span(comps, "X")
+    y0, y1 = span(comps, "Y")
+    z0, z1 = span(comps, "Z")
 
     # The carcass footprint is the leg opening -- flush to the leg inner
     # faces by the 2026-09-02 ruling -- and every corner is where a gusset
@@ -471,7 +473,6 @@ def envelope(comps: list[Component] | None = None, d: Datums = DATUMS) -> list[F
 
     return [
         Fit("carcass + plinth", x1 - x0, s.leg_x_inner, "X"),
-        Fit("with leg ties", tx1 - tx0, s.leg_x_inner, "X"),
         Fit("carcass + plinth", y1 - y0, s.leg_y_inner, "Y"),
         Fit("carcass + plinth", z1 - z0, ceiling, "Z"),
     ]
@@ -486,14 +487,13 @@ def check_assembly(comps: list[Component] | None = None, d: Datums = DATUMS) -> 
     notes: list[str] = []
 
     for f in envelope(comps, d):
-        if f.slack < 0 and f.label != "with leg ties":
+        if f.slack < 0:
             notes.append(
                 f"assembled {f.axis} extent {f.have:.1f}mm does not fit "
                 f"{f.room:.1f}mm ({-f.slack:.1f}mm over)"
             )
 
-    body = [c for c in comps if c.group != "tie"]
-    top = max(c.bbox.max.Z for c in body)
+    top = max(c.bbox.max.Z for c in comps)
     ceiling = clear_over_relieved((d.x_left, d.x_right), (d.y_front, d.y_rear), d.s)
     reveal = ceiling - top
     if reveal < TOP_GAP_MIN:
@@ -502,7 +502,7 @@ def check_assembly(comps: list[Component] | None = None, d: Datums = DATUMS) -> 
             "minimum; the carcass is touching the machine frame"
         )
 
-    floor = min(c.bbox.min.Z for c in body)
+    floor = min(c.bbox.min.Z for c in comps)
     if abs(floor) > BAND_EPS:
         notes.append(f"the assembly does not stand on the floor: lowest z is {floor:.2f}")
 
@@ -588,6 +588,29 @@ def main() -> None:
         f"  reveal above the top cap: {d.top_gap:.1f}mm "
         f"(minimum {TOP_GAP_MIN:.0f}mm)"
     )
+
+    print("\nleg joint: bolt axes, station coordinates")
+    bs = leg_joint.bolts(d)
+    length = leg_joint.bolt_length()
+    st = leg_joint.floor_state(d)
+    print(
+        f"  {len(bs)} x {leg_joint.BOLT_THREAD} through the legs' own "
+        f"{d.s.leg_holes.hole_d:.0f}mm holes into {leg_joint.INSERT_PART}"
+    )
+    print(
+        f"  plinth {'ON THE FLOOR' if st.on_floor else 'OFF THE FLOOR, the carcass HANGS'}"
+        f"; rows {st.lowest:.0f}..{st.highest:.0f} against the end wall's usable "
+        f"band {st.band[0]:.0f}..{st.band[1]:.0f}"
+    )
+    for b in bs:
+        hx, hy, hz = b.head_face()
+        tx, ty, tz = b.tip(length)
+        print(
+            f"  {b.label:<20} {bay_walls.WALLS[b.wall].name:<10} "
+            f"head ({hx:8.2f}, {hy:7.1f}, {hz:6.1f})  ->  "
+            f"tip ({tx:8.2f}, {ty:7.1f}, {tz:6.1f})   "
+            f"{'+X' if b.inward > 0 else '-X'}"
+        )
 
     print("\ninterference")
     found = interference(comps, d)

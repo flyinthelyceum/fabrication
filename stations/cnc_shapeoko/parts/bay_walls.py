@@ -24,6 +24,9 @@ WHAT THIS PART OWNS
   * the hose port through the left end wall
   * the VFD louvre through the left end wall, over the brain band
   * the clearance holes that fasten the spine's two ends to the end walls
+  * the leg-bolt inserts in the two end walls' OUTER faces, which is the joint
+    that holds the whole station to the machine. ``leg_joint`` owns where they
+    go and what hole they want; this panel is where they land.
 
 
 TWO PLACES THIS PART DEPARTS FROM ``Datums.wall_size``, ON PURPOSE
@@ -89,7 +92,7 @@ the top cap.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import isclose, pi
+from math import hypot, isclose, pi
 
 from build123d import Compound, Location, Part
 
@@ -121,7 +124,7 @@ from stations.cnc_shapeoko.carcass import (
     through_slot,
     to_local,
 )
-from stations.cnc_shapeoko.parts import leg_tie
+from stations.cnc_shapeoko.parts import leg_joint
 
 __all__ = [
     "WallSpec",
@@ -217,7 +220,7 @@ a grille pretending to be a wall."""
 LOUVRE_LAND = T
 """Solid birch at every bound of the field: the spine's end bearing in front,
 the rear door's landing behind, the deck and top-cap housings below and above,
-and around any leg-tie pad the field would otherwise run under."""
+and around any leg-bolt insert the field would otherwise run through."""
 
 
 # ================================================================ wall table
@@ -277,8 +280,8 @@ def blank_size(spec: WallSpec, d: Datums = D) -> tuple[float, float]:
     have material. Dividers stop at the spine, plus their tongue into it.
 
     The end wall's depth comes from ``Datums.end_wall_y`` rather than from
-    ``y_rear`` directly, because the leg ties read the same property to know how
-    much birch this panel presents to them."""
+    ``y_rear`` directly, because ``leg_joint`` reads the same property to know
+    how much birch this panel presents to a leg bolt."""
     y0, y1 = d.end_wall_y
     w = y1 - y0 if spec.is_end else d.front_bay_d + TONGUE_D
     return (w, d.wall_size[1] + 2 * TONGUE_D)
@@ -392,13 +395,16 @@ def _hose_port(d: Datums = D) -> Part:
 class _Louvre:
     """The VFD louvre, resolved in panel-local coordinates.
 
-    ``bottoms`` is per slot rather than one number for the field: a slot whose
-    column crosses a leg-tie pad starts above it instead of being dropped, so
-    the field loses the pad's height on six columns and not the columns.
+    Every slot runs the full height of the field. A column that would cross a
+    leg-bolt insert is not shortened, it is DROPPED: an insert sits in the
+    middle of the field's height rather than at its foot, so trimming a slot
+    around one leaves two stubs and a rib that carries nothing, where omitting
+    the column leaves solid birch exactly where the bolt is. See
+    ``louvre_field``.
     """
 
     x_centres: tuple[float, ...]
-    bottoms: tuple[float, ...]
+    y0: float
     y1: float
 
     @property
@@ -417,19 +423,24 @@ class _Louvre:
         """
         r = LOUVRE_SLOT_W / 2
         corner_loss = (4.0 - pi) * r * r
-        return sum(
-            max(LOUVRE_SLOT_W * (self.y1 - b) - corner_loss, 0.0)
-            for b in self.bottoms
+        return self.count * max(
+            LOUVRE_SLOT_W * (self.y1 - self.y0) - corner_loss, 0.0
         )
 
 
-def _tie_pads_local(spec: WallSpec, d: Datums = D) -> list[tuple[tuple, tuple]]:
-    """Leg-tie pad footprints on this wall's outer face, in panel-local XY."""
-    side = "left" if spec.index == 0 else "right"
+def _insert_keepouts_local(
+    spec: WallSpec, d: Datums = D
+) -> list[tuple[tuple[float, float], tuple[float, float]]]:
+    """Leg-bolt insert footprints on this wall, in panel-local XY.
+
+    ``leg_joint`` publishes them in station Y and Z, the same way the leg ties
+    published their pads, and this converts: local X is station Y and ``_y``
+    carries station Z. Nothing here re-derives where a bolt goes.
+    """
     return [
         ((y0, y1), (_y(z0, d), _y(z1, d)))
-        for name, (y0, y1), (z0, z1) in leg_tie.pads(d)
-        if name.startswith(side)
+        for _label, wall, (y0, y1), (z0, z1) in leg_joint.keepouts(d)
+        if wall == spec.index
     ]
 
 
@@ -449,20 +460,21 @@ def louvre_field(d: Datums = D) -> _Louvre:
     y0 = TONGUE_D + LOUVRE_LAND
     y1 = TONGUE_D + d.bay_h - LOUVRE_LAND
 
-    pads = _tie_pads_local(WALLS[0], d)
-    bottoms = []
-    for cx in centres:
-        bottom = y0
-        for (px0, px1), (py0, py1) in pads:
-            crosses = (
-                cx + LOUVRE_SLOT_W / 2 > px0 - LOUVRE_LAND
-                and cx - LOUVRE_SLOT_W / 2 < px1 + LOUVRE_LAND
-            )
-            if crosses:
-                bottom = max(bottom, py1 + LOUVRE_LAND)
-        bottoms.append(bottom)
+    # A slot may not run through a leg bolt. The rear leg's insert columns land
+    # in this band, so the field gives up whichever columns reach them and keeps
+    # solid birch around the bolt instead.
+    keepouts = _insert_keepouts_local(WALLS[0], d)
+    kept = tuple(
+        cx
+        for cx in centres
+        if not any(
+            cx + LOUVRE_SLOT_W / 2 > kx0 - LOUVRE_LAND
+            and cx - LOUVRE_SLOT_W / 2 < kx1 + LOUVRE_LAND
+            for (kx0, kx1), _ky in keepouts
+        )
+    )
 
-    return _Louvre(centres, tuple(bottoms), y1)
+    return _Louvre(kept, y0, y1)
 
 
 def _louvre(d: Datums = D) -> Part | None:
@@ -477,13 +489,13 @@ def _louvre(d: Datums = D) -> Part | None:
     roundest a slot of this width can be, so it is the one that looks intended.
     """
     v = louvre_field(d)
+    if v.y1 - v.y0 <= 0:
+        return None
     cutters = None
-    for cx, bottom in zip(v.x_centres, v.bottoms):
-        if v.y1 - bottom <= 0:
-            continue
+    for cx in v.x_centres:
         c = through_slot(
-            (cx, (bottom + v.y1) / 2),
-            v.y1 - bottom,
+            (cx, (v.y0 + v.y1) / 2),
+            v.y1 - v.y0,
             LOUVRE_SLOT_W,
             angle=90.0,
             corner_r=LOUVRE_SLOT_W / 2,
@@ -523,6 +535,25 @@ def _gusset_relief(spec: WallSpec, d: Datums = D) -> Part | None:
     return cutters
 
 
+# ================================================================ leg joint
+#
+# The end walls' OUTER faces ARE the leg inner faces: the carcass footprint is
+# flush to them by the 2026-09-02 ruling, and the legs are square, so a bolt
+# through a leg's own hole lands straight in this panel with nothing between.
+# ``leg_joint`` owns the pattern and the hole; this panel receives them, the same
+# way it receives the gusset relief -- as a station-coordinate solid brought into
+# the panel's frame, so the cut and the check that verifies it are one solid.
+
+
+def _insert_cuts(spec: WallSpec, d: Datums = D) -> Part | None:
+    """Counterbore and pilot for every leg-bolt insert in this wall.
+
+    ``None`` on the two dividers, which touch no leg.
+    """
+    cut = leg_joint.insert_cutters(spec.index, d)
+    return None if cut is None else _wall_local(cut, spec.index, d)
+
+
 # ================================================================ build
 
 
@@ -549,6 +580,10 @@ def build(i: int = 0, d: Datums = D) -> Part:
         if louvre is not None:
             p -= louvre
 
+    inserts = _insert_cuts(spec, d)
+    if inserts is not None:
+        p -= inserts
+
     relief_cut = _gusset_relief(spec, d)
     if relief_cut is not None:
         p -= relief_cut
@@ -570,6 +605,73 @@ def place(i: int, flat: Part, d: Datums = D) -> Part:
 
 def placed_all(d: Datums = D) -> list[Part]:
     return [place(i, w, d) for i, w in enumerate(build_all(d))]
+
+
+# ================================================================ feature map
+#
+# What is already cut in a panel, as circles in panel-local XY, so a new feature
+# can be asked whether it lands on an old one. Built from the SAME helpers the
+# build cuts with -- ``screw_positions``, ``rack_rail_y``, ``drawer_openings`` --
+# so a feature that moves cannot move here without moving there.
+
+
+FEATURE_WEB = ROUTER_D
+"""Birch that has to survive between two features. One cutter diameter: below it
+the router is cutting air on both sides of a rib it cannot support."""
+
+
+def _wall_features(
+    spec: WallSpec, d: Datums = D
+) -> list[tuple[str, float, float, float]]:
+    """(label, local x, local y, radius) of every feature already in this wall.
+
+    Blind and through alike. An insert is blind from the OUTER face and a slide
+    bore is blind from the INNER face, but they are cut in the same 18mm of
+    birch from opposite sides, and 9mm plus 15mm does not fit in 18: two blind
+    features that overlap in plan meet in the middle of the panel.
+    """
+    out: list[tuple[str, float, float, float]] = []
+
+    slide_r = SLIDE_BORE_D / 2
+    slide_xs = [
+        SLIDE_FRONT_INSET + p
+        for p in screw_positions(SLIDE_LEN, pitch=SCREW_PITCH, inset=SCREW_END_INSET)
+    ]
+
+    if spec.side_of("lungs") is not None:
+        for x in slide_xs:
+            out.append(("lungs slide mount", x, TONGUE_D + EXTRACTOR_SLIDE_Z, slide_r))
+
+    if spec.side_of("hands") is not None:
+        for k, (floor, _h) in enumerate(drawer_openings(d)):
+            y = TONGUE_D + floor + SLIDE_MEMBER_H / 2
+            for x in slide_xs:
+                out.append((f"drawer {k} slide mount", x, y, slide_r))
+
+    if spec.side_of("stock") is not None:
+        # A comb-rail housing is a groove, not a hole; a circle on its centreline
+        # at half the dado width is the right keep-out for a bolt beside it.
+        for x in rack_rail_y(d):
+            y0, y1 = TONGUE_D, TONGUE_D + RACK_RAIL_H
+            out.append(("stock rack rail housing", x, (y0 + y1) / 2, DADO_W / 2))
+
+    if spec.is_end:
+        x = d.y_spine + T / 2
+        for p in screw_positions(d.bay_h):
+            out.append(("spine screw", x, TONGUE_D + p, SCREW_CLEAR_D / 2))
+
+    if spec.index == 0:
+        _x, y_station, z_station = d.hose_port
+        out.append(
+            (
+                "hose port",
+                y_station,
+                _y(z_station, d),
+                (d.s.hose_id + 2 * HOSE_PORT_CLEAR) / 2,
+            )
+        )
+
+    return out
 
 
 # ================================================================ checks
@@ -684,6 +786,42 @@ def check_bay_walls(d: Datums = D) -> list[str]:
             f"{LOUVRE_RIB_MIN:.2f}mm floor. Over the brain band these ribs carry "
             "the top cap, and the field has opened until they stopped being a "
             "load path."
+        )
+
+    # -- leg-bolt inserts against everything already cut in the same panel
+    # This is the question the leg ties never had to answer: they bolted to the
+    # OUTSIDE of the birch and shared nothing with it but a pad. An insert is
+    # 15mm into an 18mm panel, so it meets a blind slide bore coming the other
+    # way even though neither goes through.
+    insert_r = leg_joint.WALL_CBORE_D / 2
+    for spec in WALLS:
+        feats = _wall_features(spec, d)
+        for (kx0, kx1), (ky0, ky1) in _insert_keepouts_local(spec, d):
+            cx, cy = (kx0 + kx1) / 2, (ky0 + ky1) / 2
+            for label, fx, fy, fr in feats:
+                gap = hypot(cx - fx, cy - fy) - insert_r - fr
+                if gap < FEATURE_WEB:
+                    notes.append(
+                        f"a leg-bolt insert in the {spec.name} at local "
+                        f"({cx:.0f}, {cy:.0f}) lands {gap:.1f}mm from a {label} "
+                        f"at ({fx:.0f}, {fy:.0f}), against a {FEATURE_WEB:.2f}mm "
+                        "web. Both are blind and they are cut from opposite "
+                        "faces of the same 18mm panel, so they meet inside it."
+                    )
+
+    # -- what the louvre gave up to the bolts, which is a design fact and not a
+    # defect. Reported so the field's slot count is never read as a full field.
+    x0 = d.y_spine + d.t + LOUVRE_LAND
+    x_limit = d.end_wall_y[1] - LOUVRE_LAND
+    nominal = max(int((x_limit - x0 + LOUVRE_RIB_W) // LOUVRE_PITCH), 0)
+    dropped = nominal - louvre_field(d).count
+    if dropped:
+        notes.append(
+            f"the brain-band louvre gives up {dropped} of {nominal} columns to "
+            "the rear leg's bolt inserts, keeping solid birch where the bolt is "
+            "rather than running a slot through it. The field still pays the "
+            "traded clearance on the columns that remain. Expected, and worth "
+            "knowing before the field is read as short."
         )
 
     # -- the two blank widths are the ones the geometry demands, not a choice

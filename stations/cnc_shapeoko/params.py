@@ -35,11 +35,16 @@ SOURCES = {
     "table_h_no_feet": "https://shop.carbide3d.com/products/shapeoko51pro-leg44",
     "table_h_with_feet": "https://shop.carbide3d.com/products/shapeoko51pro-leg44",
     "leg_wall_t": "https://shop.carbide3d.com/products/shapeoko51pro-leg44",
-    "leg_mount_pitch": "https://community.carbide3d.com/t/leg-kit-center-to-center-spacing-and-hole-diameter/105167",
-    "leg_mount_hole_d": "https://community.carbide3d.com/t/leg-kit-center-to-center-spacing-and-hole-diameter/105167",
+    "leg_holes": "https://community.carbide3d.com/t/leg-kit-center-to-center-spacing-and-hole-diameter/105167"
+                  " -- a Carbide staff reply on the forum, not a spec sheet, and it "
+                  "covers the pitch and the hole diameter ONLY. The row heights, the "
+                  "edge offset, which faces carry holes and whether a bolt crosses one "
+                  "leg wall or two are this repo's placeholders. Jared calipers the "
+                  "legs 2026-09-03.",
     "leg_x_inner": "MEASURED 2026-09-02, tape. Was 1100 scaled off a photograph.",
     "leg_y_inner": "MEASURED 2026-09-02, tape. Was 1150 scaled off a photograph.",
-    "leg_splay": "UNSOURCED. Carbide publishes no leg geometry at all.",
+    "leg_splay": "Jared, 2026-09-02: the legs are square. The 6 deg was an "
+                 "eyeball off a render, never measured.",
     "clear_h_min": "MEASURED 2026-09-02, tape, floor to the lowest obstruction.",
     "gusset_x": "MEASURED 2026-09-02, tape plus a hand-dimensioned elevation.",
     "gusset_y": "MEASURED 2026-09-02, tape plus a hand-dimensioned elevation.",
@@ -123,7 +128,9 @@ CONFIDENCE = {
                              # leg, eight total. See check() and SOURCES.
     "leg_x_inner": "measured",   # 2026-09-02 tape, was 1100 off a photograph
     "leg_y_inner": "measured",   # same tape
-    "leg_splay": "low",      # visible in the leg-kit render
+    "leg_splay": "ruling",   # RULED by Jared 2026-09-02: the legs are square.
+                             # The field survives so a measured non-zero can drop
+                             # in, but nothing in the model reads it any more.
     "vfd_box": "measured",   # 2026-09-02 calipers
     "vfd_fan": "measured",   # 2026-09-02 calipers, two square fans, left face
     "extractor_env": "high",     # festoolusa spec table for whichever row is
@@ -142,8 +149,10 @@ CONFIDENCE = {
     "table_h_no_feet": "high",   # carbide leg kit page
     "table_h_with_feet": "high", # carbide leg kit page
     "leg_wall_t": "high",        # 10-gauge powder-coated steel, carbide leg kit page
-    "leg_mount_pitch": "medium", # Carbide staff reply on the forum, not a spec sheet
-    "leg_mount_hole_d": "medium",# same reply
+    # ONE tag for the whole LegHoles block, because the block is one measurement
+    # session and not seven independent numbers. check() reports it as unmeasured
+    # until this reads "measured".
+    "leg_holes": "forum, calipers 2026-09-03",
     "hose_id": "high",           # carbide sweepy pro doc, 35/36mm
     "hose_bend_mult": "assumption",  # nobody publishes one. Flagged, not sourced.
     "vfd_vent_clear": "high",    # carbide 65mm spindle doc, 30cm
@@ -276,6 +285,116 @@ class Gusset:
         return self.cross_lo <= cross <= self.cross_hi
 
 
+# ---------------------------------------------------------------- leg bolt pattern
+#
+# THE LEGS ARE SQUARE. Ruled by Jared 2026-09-02, verbatim: "There is no way
+# Shapeoko manufactured table legs with splay. It's square. We have no reason to
+# believe otherwise." ``leg_splay`` is 0.0 below and nothing in the model reads
+# it any more.
+#
+# What replaced the leg-tie bracket is the leg's OWN bolt pattern. The carcass
+# footprint is flush to the leg inner faces, so an end wall's outer face is
+# already against a leg's inner face: a bolt through the leg's existing hole
+# lands in a threaded insert in the birch with nothing in between and nothing
+# outside the leg but a head and a washer.
+#
+# THIS WHOLE BLOCK IS UNMEASURED. Carbide staff gave the pitch and the hole
+# diameter on forum thread 105167 and nothing else; every other field here is a
+# plausible placeholder this repo invented so the geometry could be drawn.
+# Jared calipers the legs 2026-09-03. It is ONE block with ONE confidence tag
+# because it is one measurement session, and ``check()`` reports it as unmeasured
+# until CONFIDENCE["leg_holes"] says otherwise. Tomorrow's numbers are an edit to
+# the defaults below and to nothing else in the repo.
+
+
+@dataclass(frozen=True)
+class LegHoles:
+    """The Shapeoko leg's own bolt pattern, as the carcass uses it.
+
+    IN-FACE COORDINATES. The pattern is read on the leg face it is cut in, not
+    in station coordinates, so it survives whichever face turns out to carry it:
+
+        h   horizontal, in the plane of the face, measured from the leg's INNER
+            edge INTO the leg opening -- +Y on a front leg, -Y on a rear leg
+        v   vertical, measured from the FLOOR
+
+    ``rows_z`` is the subset of rows the carcass actually bolts to, not every
+    hole the leg has. ``pitch_v`` records the pattern's own vertical spacing so
+    tomorrow's calipers can be checked against the rows rather than replacing
+    them silently.
+    """
+
+    pitch_h: float = 40.0
+    """Horizontal centre-to-centre, in the face. FORUM: Carbide staff, 105167."""
+
+    pitch_v: float = 65.0
+    """Vertical centre-to-centre, in the face. FORUM: same reply. Off the 20mm
+    bench grid, which is why nothing bolted to a leg can be grid-indexed on both
+    axes."""
+
+    hole_d: float = 7.0
+    """The leg's own through hole. FORUM: same reply. 7mm thru is an M6 clearance
+    hole, which is what sets the bolt size for the whole joint."""
+
+    rows_z: tuple[float, ...] = (150.0, 650.0)
+    """PLACEHOLDER. Height above the FLOOR of each hole row the carcass uses.
+
+    Nobody has measured where on the leg the holes actually are. These two are
+    chosen to be plausible and to land in birch: one low, near the deck, and one
+    high, near the top cap, which is where a brace wants to be. Replace them with
+    the calipers' rows and the geometry follows."""
+
+    cols_per_leg: int = 2
+    """PLACEHOLDER. Hole columns per leg, at ``pitch_h``, starting ``edge_off``
+    in from the leg's inner edge."""
+
+    edge_off: float = 30.0
+    """PLACEHOLDER. First column, measured from the leg's INNER edge INTO the
+    opening.
+
+    From that edge and not from the leg's outer face, for two reasons. The inner
+    edge is the datum: the station origin sits on the intersection of the left
+    and front leg inner faces. And it is the edge the two materials share -- the
+    end wall's birch runs from it inward and the leg's steel runs from it
+    outward, so the only place a bolt can have steel in front of it AND birch
+    behind it is where the leg's face reaches back across that edge into the
+    opening. 30mm clears the wall's own edge land by 5mm and asserts the leg
+    reaches at least ``span_h`` in. ``leg_joint.check_leg_joint`` states that
+    assumption; the calipers settle it."""
+
+    faces: tuple[str, ...] = ("x_inner",)
+    """PLACEHOLDER. Which leg faces carry the pattern.
+
+    ``x_inner`` is the face whose normal runs in X: the one a left leg presents
+    to the left end wall and a right leg to the right end wall. Those are the
+    only faces the carcass has birch against, because the front of the station
+    is open and the rear is a door. If the calipers find the Y-facing faces
+    carry the same pattern, nothing in the carcass can use it."""
+
+    walls_in_path: int = 1
+    """PLACEHOLDER, and the one field that can change the hardware order.
+
+    How many thicknesses of leg wall a bolt crosses on its way to the insert. 1
+    is an open section -- channel or angle -- where the head bears on the single
+    wall the hole is in. If the leg is a CLOSED tube this is 2, the bolt grows by
+    the tube's depth, and the tube needs a crush sleeve or it dents when the bolt
+    is pulled up. ``check_leg_joint`` carries that warning."""
+
+    def columns_h(self) -> tuple[float, ...]:
+        """Column offsets in from the leg's inner edge, at ``pitch_h``."""
+        return tuple(self.edge_off + i * self.pitch_h for i in range(self.cols_per_leg))
+
+    @property
+    def count_per_leg(self) -> int:
+        return len(self.rows_z) * self.cols_per_leg
+
+    @property
+    def span_h(self) -> float:
+        """How far into the opening the last column reaches."""
+        cols = self.columns_h()
+        return cols[-1] if cols else 0.0
+
+
 @dataclass(frozen=True)
 class Station:
     # ---- machine envelope -------------------------------------------------
@@ -294,7 +413,13 @@ class Station:
                                     # leg-kit photo, so the model gained 154mm here.
     leg_y_inner: float = 1089.025   # MEASURED 2026-09-02, 42-7/8 in, inside faces,
                                     # front to back. Was 1150, so it lost 61mm.
-    leg_splay: float = 6.0          # degrees
+    leg_splay: float = 0.0          # degrees
+    """RULED by Jared 2026-09-02: the legs are square.
+
+    The 6.0 that stood here was an eyeball off a leg-kit render by an earlier
+    session, tagged UNSOURCED / low, and it was wrong. The field is kept so a
+    measured non-zero can drop in without a schema change; nothing in the model
+    reads it any more."""
 
     # ---- the four gussets, measured -------------------------------------
     # Heights are down from the beam underside. Clear spans are between the two
@@ -336,10 +461,8 @@ class Station:
     table_h_with_feet: float = 945.0    # carbide leg kit page, 36 in
     leg_wall_t: float = 3.4         # 10-gauge steel, carbide leg kit page.
                                     # Anything bolted to a leg gets a backing washer.
-    leg_mount_pitch: tuple[float, float] = (40.0, 65.0)   # carbide staff, forum 105167.
-                                    # 65 is off the 20mm grid: a bolt-through plate
-                                    # cannot be grid-indexed on both axes.
-    leg_mount_hole_d: float = 7.0   # thru for M6, same source
+    leg_holes: LegHoles = LegHoles()
+    """The leg's own bolt pattern, in one block. See LegHoles and check()."""
 
     # ---- extractor selection ----------------------------------------------
     extractor: str = "CT15"
@@ -708,6 +831,21 @@ def check(s: Station = STATION) -> list[str]:
             f"({s.table_h_no_feet:.0f} without leveling feet, "
             f"{s.table_h_with_feet:.0f} with). Which feet are on the machine "
             f"moves the clearance by {s.table_h_with_feet - s.table_h_no_feet:.0f}mm."
+        )
+
+    if CONFIDENCE.get("leg_holes") != "measured":
+        h = s.leg_holes
+        problems.append(
+            f"the leg bolt pattern is not measured. Carbide staff gave the "
+            f"{h.pitch_h:.0f} x {h.pitch_v:.0f}mm pitch and the {h.hole_d:.0f}mm "
+            "hole on forum thread 105167 and nothing else. The row heights "
+            f"({', '.join(f'{z:.0f}' for z in h.rows_z)}mm off the floor), the "
+            f"{h.edge_off:.0f}mm edge offset, the {h.cols_per_leg} columns per "
+            f"leg, the {h.faces} face list and walls_in_path={h.walls_in_path} "
+            "are all this repo's placeholders. Jared calipers the legs "
+            "2026-09-03; every insert in the end walls moves with them. The "
+            "whole block clears at once when CONFIDENCE[\"leg_holes\"] says "
+            "measured, because it is one measurement session."
         )
 
     problems.append(

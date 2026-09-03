@@ -157,7 +157,6 @@ __all__ = [
     "ISOLATOR_H",
     "SERVICE_GAP",
     "TOP_GAP_MIN",
-    "LEG_SLOT_V",
     "STOCK_HEADROOM",
     "GROWTH_SLIDE_MEMBER_H",
     "Datums",
@@ -257,16 +256,6 @@ spare. The growth unit does not: at 45mm its stack wants 676mm into a bay that
 the machine's own clearance caps near 664. A 25mm low-profile member is the
 third and last step of the conversion, and it is named here so the promise is
 costed rather than assumed.
-"""
-
-LEG_SLOT_V = 60.0
-"""Vertical travel in the leg-tie slots.
-
-The levelling feet swing the frame by 52mm, and 2026-09-02 settled which way:
-they are fitted, so table_h is Carbide's 945 config. The slot stays anyway,
-because a levelling foot is a thing that gets wound. The carcass is built
-from the floor up, the leg ties are slotted, and the swing lands in the slot and
-in top_gap. 60 > 52 with room either side.
 """
 
 
@@ -398,11 +387,13 @@ class Datums:
         the spine's end faces land on them, the brain band has to have two side
         walls, and the rear door has to land on something. That makes this span
         the birch the carcass presents on its outer faces, which is what the leg
-        ties bolt to and what the brain-band louvre is cut out of.
+        bolts drive their inserts into and what the brain-band louvre is cut out
+        of.
 
-        Here rather than in a part because two parts read it and they disagreed:
-        ``bay_walls`` cut the end walls to this and ``leg_tie`` assumed they
-        stopped at ``front_bay_d``, which invented a missing part.
+        Here rather than in a part because more than one part reads it and two of
+        them once disagreed: ``bay_walls`` cut the end walls to this while the
+        old leg-tie module assumed they stopped at ``front_bay_d``, and invented
+        a missing part out of the difference. ``leg_joint`` reads this property.
         """
         return (self.y_front, self.y_rear)
 
@@ -1347,12 +1338,6 @@ def check_carcass(d: Datums = DATUMS) -> list[str]:
             "FULL blank, so the carcass's own biggest panels come off the 5x5 "
             "sheet directly and never touch the 600 stock module. Expected, and "
             "worth knowing before ordering."
-        )
-
-    if LEG_SLOT_V <= s.table_h_with_feet - s.table_h_no_feet:
-        notes.append(
-            f"leg-tie slot travel {LEG_SLOT_V:.0f}mm does not cover the "
-            f"{s.table_h_with_feet - s.table_h_no_feet:.0f}mm levelling-feet swing"
         )
 
     return notes

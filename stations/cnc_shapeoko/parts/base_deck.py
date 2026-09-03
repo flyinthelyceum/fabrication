@@ -35,15 +35,6 @@ plinth screws   one counterbored fastener line per plinth rail. The counterbore
                 finishes below the housing floor, which is the one place these
                 two feature sets collide.
 
-leg-tie pads    four pairs of counterbored M6 through-bolts, one pair per corner,
-                sitting in the toe-kick void under the deck overhang. The tie
-                bracket bolts UP into the deck there and reaches outboard to the
-                leg. It cannot bolt to the deck's top face: the end walls are
-                flush with the leg inner faces and occupy exactly the corner a
-                top-mounted bracket would want. The 40mm setback is what buys the
-                bracket its room, which is why the toe kick is 2 grid modules and
-                not 1.
-
 leveller bores  four bores through the deck at the plinth's inside corners. The
                 leveller is a stud in a socket screwed to the deck's UNDERSIDE
                 (hardware, not geometry, and it is in the brief's BOM); the bore
@@ -95,7 +86,6 @@ __all__ = [
 ]
 
 D = DATUMS
-S = D.s
 
 
 # ---------------------------------------------------------------- parameters
@@ -103,9 +93,15 @@ S = D.s
 # params.py or house.py. No dimension below is a literal.
 
 PLINTH_SETBACK = GRID * 2
-"""Toe kick, all four sides. Two grid modules rather than one, because this is
-also the depth of the void the leg-tie bracket bolts into under the deck
-overhang, and one module leaves a 7mm bolt too close to the deck edge."""
+"""Toe kick, all four sides. Two grid modules rather than one, because a toe kick
+is for a foot and one module is not.
+
+It used to be justified by the leg-tie bracket, which bolted up into the void
+under the deck overhang. That bracket is gone -- the carcass bolts straight to
+the legs now, through the end walls, see ``parts/leg_joint.py`` -- and the value
+is unchanged because the toe kick was always the other half of the reason. The
+plinth also stays set back from the leg faces, which is why no leg bolt can land
+in it: below ``deck_z[0]`` there is no birch at the leg face at all."""
 
 OVERSHOOT = T
 """How far a cutter runs past a blank edge, so an edge-breaking feature makes a
@@ -139,17 +135,6 @@ INTAKE_SLOT_W = GRID / 2
 INTAKE_PITCH = GRID
 """Intake grille: half-open at the bench grid pitch, in the deck and in the rear
 plinth rail alike, so the two read as one aperture seen from two sides."""
-
-LEG_PAD_HOLE_D = S.leg_mount_hole_d
-LEG_PAD_CBORE_D = LEG_PAD_HOLE_D * 2
-LEG_PAD_CBORE_DEPTH = T / 2
-LEG_PAD_EDGE_OFF = PLINTH_SETBACK / 2
-LEG_PAD_X_INSET = DADO_W + GRID
-LEG_PAD_PITCH = GRID * 3
-"""Leg-tie pad: two M6 bolts per corner. The bolts run in X along the front and
-rear edges, inset far enough in X to clear the end-wall housing and offset in Y
-to sit on the centreline of the toe-kick void. Counterbored from the top so
-nothing stands above deck_top, which is the datum the rest of the carcass uses."""
 
 EPS = DADO_W / 100
 """Tolerance for deciding whether a corner falls inside the blank or on its edge."""
@@ -337,22 +322,6 @@ def build_deck() -> Part:
             cbore_depth=DECK_SCREW_CBORE_DEPTH,
         )
 
-    # Leg-tie pads, four corners, in the toe-kick void under the overhang.
-    for y in (LEG_PAD_EDGE_OFF, DECK_H - LEG_PAD_EDGE_OFF):
-        for x0 in (
-            LEG_PAD_X_INSET,
-            DECK_W - LEG_PAD_X_INSET - LEG_PAD_PITCH,
-        ):
-            p -= screw_line(
-                (x0, y),
-                (x0 + LEG_PAD_PITCH, y),
-                d=LEG_PAD_HOLE_D,
-                cbore_d=LEG_PAD_CBORE_D,
-                cbore_depth=LEG_PAD_CBORE_DEPTH,
-                pitch=LEG_PAD_PITCH,
-                inset=0.0,
-            )
-
     # Leveller driver access, one per foot.
     for x, y in LEVELLER_XY:
         p -= bore(x, y, LEVELLER_BORE_D)
@@ -512,27 +481,6 @@ def check_base_deck() -> list[str]:
     """
     notes: list[str] = []
 
-    # Leg-tie pad against the end-wall housing and against the deck edge.
-    if LEG_PAD_X_INSET - LEG_PAD_CBORE_D / 2 < DADO_W:
-        notes.append(
-            f"leg-tie pad counterbore reaches x="
-            f"{LEG_PAD_X_INSET - LEG_PAD_CBORE_D / 2:.1f} and the end-wall "
-            f"housing ends at x={DADO_W:.1f}. The pad breaks into the housing."
-        )
-    if LEG_PAD_EDGE_OFF - LEG_PAD_CBORE_D / 2 < T / 2:
-        notes.append(
-            f"leg-tie pad leaves only "
-            f"{LEG_PAD_EDGE_OFF - LEG_PAD_CBORE_D / 2:.1f}mm of birch to the deck "
-            f"edge. Grow PLINTH_SETBACK; the pad rides at half of it."
-        )
-    if LEG_PAD_EDGE_OFF + LEG_PAD_CBORE_D / 2 > PLINTH_SETBACK:
-        notes.append(
-            f"leg-tie pad reaches {LEG_PAD_EDGE_OFF + LEG_PAD_CBORE_D / 2:.1f}mm "
-            f"in from the deck edge and the toe-kick void ends at "
-            f"{PLINTH_SETBACK:.0f}. The bracket would have to bolt through the "
-            "plinth rail instead of into the void beside it."
-        )
-
     # The screw head under a wall housing.
     if DECK_SCREW_CBORE_DEPTH <= DADO_D:
         notes.append(
@@ -583,8 +531,9 @@ def check_base_deck() -> list[str]:
 
     if PLINTH_SETBACK <= T:
         notes.append(
-            "toe kick is no deeper than the panel, so the leg-tie bracket has "
-            "nowhere under the deck overhang to bolt to"
+            f"toe kick is {PLINTH_SETBACK:.0f}mm against a {T:.0f}mm panel, so "
+            "the deck no longer overhangs its own plinth rails and there is no "
+            "kick left to stand at"
         )
 
     return notes

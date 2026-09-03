@@ -45,8 +45,9 @@ the two end walls, which run the full depth to ``y_rear``, and by nothing in
 between.  The mast pads are placed on that basis: the front bolt row sits
 ``MAST_PAD_SETBACK`` behind the spine centreline, near enough that the pad bears
 on the spine rather than on 18mm of ply in bending.  A steel backing plate under
-each pad spreads the bolt load, the same move the leg-tie bracket makes against
-the 3.4mm leg wall.  That plate is not a birch part and is not modelled here.
+each pad spreads the bolt load, the same move the leg bolts make with a flat
+washer against the 3.4mm leg wall.  That plate is not a birch part and is not
+modelled here.
 
 
 WHAT THIS PART CUTS, FOR THE PARTS IT MATES WITH

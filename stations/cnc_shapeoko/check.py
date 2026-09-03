@@ -42,7 +42,7 @@ from stations.cnc_shapeoko.assembly import (
 )
 from stations.cnc_shapeoko.carcass import DATUMS, check_carcass
 from stations.cnc_shapeoko.machine import check_machine
-from stations.cnc_shapeoko.parts import base_deck, bay_walls, leg_tie, spine_panel, top_cap
+from stations.cnc_shapeoko.parts import base_deck, bay_walls, leg_joint, spine_panel, top_cap
 
 # A note is STANDING when it says so itself. These phrases are written into the
 # check messages deliberately; grep for them there before editing this list.
@@ -51,7 +51,7 @@ STANDING_MARKS = (
     "Not fixable",
     "TRADED CLEARANCE",
     "standing note",
-    "backing washer is not optional",   # a build instruction, not a defect
+    "washer is not optional",           # a build instruction, not a defect
     "not the 220mm params estimates",   # params keeps a dead estimate on purpose
     "EARTH BONDING",                    # the star point. Never clears.
     "PE IS NEVER SWITCHED",             # earth survives the interlock
@@ -102,7 +102,7 @@ def collect() -> list[tuple[str, str, str]]:
         ("bay_walls", bay_walls.check_bay_walls(d)),
         ("spine_panel", spine_panel.check_spine(d)),
         ("top_cap", top_cap.check_top_cap(d)),
-        ("leg_tie", leg_tie.check_leg_tie(d)),
+        ("leg_joint", leg_joint.check_leg_joint(d)),
         ("assembly", check_assembly(comps, d)),
         ("machine", check_machine(comps, d)),
     ]
@@ -116,7 +116,7 @@ def collect() -> list[tuple[str, str, str]]:
     for o in interference(comps, d):
         out.append(("BLOCKING", "assembly", f"interference: {o}"))
     for f in envelope(comps, d):
-        if f.slack < 0 and "leg ties" not in f.label:
+        if f.slack < 0:
             out.append(("BLOCKING", "assembly", f"does not fit: {f.line()}"))
 
     return out
