@@ -53,6 +53,9 @@ STANDING_MARKS = (
     "standing note",
     "backing washer is not optional",   # a build instruction, not a defect
     "not the 220mm params estimates",   # params keeps a dead estimate on purpose
+    "EARTH BONDING",                    # the star point. Never clears.
+    "PE IS NEVER SWITCHED",             # earth survives the interlock
+    "ANODIZE IS AN INSULATOR",          # bonding lug build instruction
 )
 
 TODO_MARKS = (
@@ -89,6 +92,7 @@ def collect() -> list[tuple[str, str, str]]:
 
     sources: list[tuple[str, list[str]]] = [
         ("params", params.check()),
+        ("earthing", params.check_earthing()),
         (
             "growth path",
             params.check_growth_path(bay_x=growth_lungs_x, bay_y=growth_lungs_y),

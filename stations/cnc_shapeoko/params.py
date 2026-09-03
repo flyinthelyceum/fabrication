@@ -433,6 +433,46 @@ class Station:
     overrun_s: int = 12             # hose clear time after the spindle drops
     cyclone: bool = False           # struck 2026-09-01. All internal, no external port.
 
+    # ---- earthing and bonding ---------------------------------------------
+    # Ruled by Jared 2026-09-02: antistatic hose, and the grounding has to be
+    # real rather than a word on a BOM line. Sourced research disagreed about
+    # WHERE the charge goes, and the disagreement is the interesting part.
+    #
+    # Festool's own path: the AS hose is conductive along its length and earths
+    # through the CT's chassis to the CT's mains plug. That works and needs
+    # nothing from us EXCEPT that the socket the CT sits in is genuinely earthed.
+    # The Carbide 3D community's warning runs the other way: do NOT drive a
+    # separate earth rod for the dust system, because a second earth reference is
+    # a ground loop and code wants one ground per system.
+    #
+    # Both are right, and they reconcile as a STAR POINT. Everything metal bonds
+    # to one PE bar. Nothing bonds to earth by a second route. The thing that
+    # must stay OFF the bar is the motion controller's logic 0V, because that is
+    # the path that turns a hose discharge into a false limit switch.
+    hose_antistatic: bool = True    # not optional. The 36mm run is the AS/CTR hose.
+    bond_star_point: str = "PE bar, sealed mains compartment"
+    bond_lead_mm2: float = 4.0      # green/yellow. Sized for a boot in a shop, not
+                                    # for fault current: it gets stood on.
+    bond_clip_pitch: float = 300.0  # clip the lead to the OUTSIDE of the hose.
+                                    # Inside, it collects chips and blocks the line.
+    bond_max_ohm: float = 1.0       # convention for a bonding conductor, not a
+                                    # Festool figure. Record the real reading.
+
+    # Everything that lands on the bar. If this list grows a controller, stop.
+    bond_targets: tuple[str, ...] = (
+        "CT 15 chassis, via its own earthed plug on a station socket",
+        "hose cuff at the dust boot, by a lead run outside the hose",
+        "machine frame and spindle body, via the VFD's PE",
+        "mast extrusion, which carries the hose over the centroid",
+        "carcass hardware that touches any of the above",
+    )
+
+    # Named so that adding one is a deliberate act rather than a slip.
+    bond_excluded: tuple[str, ...] = (
+        "the motion controller's logic 0V",
+        "any second earth rod or building steel tap",
+    )
+
     def front_bays(self) -> float:
         """Sum of the three front bay widths."""
         return self.bay_lungs_w + self.bay_stock_w + self.bay_hands_w
@@ -795,6 +835,70 @@ def check(s: Station = STATION) -> list[str]:
             "a HALF blank will not stand on edge under the table. "
             "The station rack holds ready-use stock only."
         )
+
+    return problems
+
+
+def check_earthing(s: Station = STATION) -> list[str]:
+    """Whether the static path is specified well enough to wire.
+
+    None of this is geometry, so none of it can be caught by an interference
+    check. It is here because the failure it prevents does not look electrical
+    when it arrives: it looks like a false limit switch, a lost step, or a job
+    that dies two hours in for no reason anybody can reproduce.
+    """
+    problems: list[str] = []
+
+    if not s.hose_antistatic:
+        problems.append(
+            "the extraction hose is not antistatic. Dry MDF dust through smooth "
+            "plastic at the velocities this station runs is the biggest charge "
+            "generator in the room, and the discharge lands beside the motion "
+            "controller. There is no version of this build where that is a "
+            "saving."
+        )
+
+    if s.bond_clip_pitch <= 0 or s.bond_clip_pitch > 500:
+        problems.append(
+            f"bond lead clip pitch {s.bond_clip_pitch:.0f}mm. A lead that is only "
+            "held at its ends is a lead that gets caught by the gantry."
+        )
+
+    # The build instructions the geometry cannot enforce. STANDING by design:
+    # they never clear, they just have to stay visible until commissioning.
+    problems.append(
+        "EARTH BONDING, standing note. One star point: "
+        f"{s.bond_star_point}. Everything metal lands there and nowhere else. "
+        "On the bar: " + "; ".join(s.bond_targets) + ". Never on the bar: "
+        + "; ".join(s.bond_excluded) + ". A second earth reference is a ground "
+        "loop, and the loop's return path is the thing that upsets the "
+        "controller. This note never clears."
+    )
+
+    problems.append(
+        "PE IS NEVER SWITCHED, standing note. The contactor drops line and "
+        "neutral on the VFD, the extractor and the mast. It must not break "
+        "protective earth on any of them, or opening the rear panel removes the "
+        "static path at the same moment it exposes the machine. Earth continuity "
+        "survives the interlock by construction."
+    )
+
+    problems.append(
+        "ANODIZE IS AN INSULATOR, standing note. The mast extrusion and the "
+        "machine's own frame are anodized aluminium, so a bonding screw driven "
+        "into a clean-looking face may read open. Use a serrated star washer "
+        "under every bonding lug and bite through the coating; the backing "
+        "washer is not optional. Verify with a meter, not by looking at it."
+    )
+
+    problems.append(
+        f"BOND CONTINUITY, MEASURE THIS at commissioning. Hose cuff at the dust "
+        f"boot to {s.bond_star_point}, target under {s.bond_max_ohm:.1f} ohm, and "
+        "write the reading down rather than recording a pass. That figure is a "
+        "bonding convention, not a Festool specification. Re-check it after any "
+        "hose or boot change, because a swapped hose is the commonest way a "
+        "working station quietly stops being earthed."
+    )
 
     return problems
 
