@@ -119,13 +119,15 @@ from build123d import (
     Location,
     Part,
     Plane,
+    Polygon,
     Shape,
     Unit,
     export_step,
+    extrude,
 )
 
 from lib.house import CARCASS_T, GRID, PANEL_T, SHEET_5X5_BALTIC, fits, on_grid
-from stations.cnc_shapeoko.params import STATION, Station
+from stations.cnc_shapeoko.params import STATION, Gusset, Station
 
 __all__ = [
     "T",
@@ -173,6 +175,11 @@ __all__ = [
     "screw_line",
     "bore",
     "relief",
+    "gusset_prism",
+    "to_local",
+    "gusset_domain",
+    "gussets_over",
+    "clear_over_relieved",
     "flat_pattern",
     "export_part",
     "EXPORT_DIR",
@@ -963,6 +970,127 @@ def relief(
     return bore(x, y, 2 * r, thickness=thickness, depth=depth, side=side)
 
 
+def gusset_prism(g: Gusset) -> Part:
+    """One gusset plate, as the trapezoidal prism of steel it is, in STATION
+    coordinates.
+
+    The single source of the machine's shape: ``machine.py`` intersects this
+    against a placed carcass to find a clash, and a part that needs a relief
+    cut subtracts it directly, so the notch and the check that verifies the
+    notch are built from the same solid and cannot drift apart.
+
+    The profile is drawn in the plane the gusset constrains: the sketch's
+    first coordinate is the axis it eats into, its second is Z, and the
+    extrusion runs ``g.plate_t`` along the other axis -- the plate's own
+    measured thickness, not the full leg opening. Four points, because the
+    shape is four points: it hangs off the beam at full intrusion for its top
+    band, then tapers back to the leg's inner face. The extrusion is drawn at
+    cross = 0 and then moved out to ``g.cross_lo``, the leg end this plate
+    actually sits against.
+    """
+    profile = [
+        (0.0, g.z_bot),
+        (g.intrude, g.z_bot + g.taper_h),
+        (g.intrude, g.z_beam),
+        (0.0, g.z_beam),
+    ]
+    pts = [(g.coord_at(u), z) for u, z in profile]
+    if g.side == "far":
+        # coord_at ran the profile backwards along the axis, which reverses the
+        # face normal and would extrude the prism out of the opening.
+        pts.reverse()
+
+    plane, amount = (Plane.XZ, -g.plate_t) if g.axis == "x" else (Plane.YZ, g.plate_t)
+    body = extrude(plane * Polygon(*pts), amount)
+    shift = (0.0, g.cross_lo, 0.0) if g.axis == "x" else (g.cross_lo, 0.0, 0.0)
+    return body.moved(Location(shift))
+
+
+def to_local(plane: Plane, shape: Shape) -> Shape:
+    """A shape in STATION coordinates, moved into ``plane``'s local frame --
+    the inverse of ``plane * shape``.
+
+    THE PANEL CONVENTION above requires every cut to happen flat, before a
+    part is stood up, so the DXF flat pattern is the part as drawn rather than
+    a projection that has to be trusted. A station-coordinate reference --
+    ``gusset_prism``, most often -- has to cross into the panel's own frame to
+    be subtracted from it there.
+    """
+    return shape.moved(plane.location.inverse())
+
+
+def gusset_domain(g: Gusset) -> tuple[tuple[float, float], tuple[float, float]]:
+    """(x range, y range) of one gusset's domain, in station coordinates: the
+    footprint where it is capable of pulling the ceiling below ``z_beam``.
+
+    A part with no material anywhere in this rectangle, at any Z, cannot clash
+    with ``g`` -- and a part that does have material there is exactly what
+    needs relieving, over ``g``'s own ``z_bot``..``z_beam``.
+    """
+    lo_u, hi_u = g.coord_at(0.0), g.coord_at(g.intrude)
+    u_range = (min(lo_u, hi_u), max(lo_u, hi_u))
+    cross_range = (g.cross_lo, g.cross_hi)
+    return (u_range, cross_range) if g.axis == "x" else (cross_range, u_range)
+
+
+def _overlaps_1d(a: tuple[float, float], b: tuple[float, float]) -> bool:
+    return a[0] < b[1] and b[0] < a[1]
+
+
+def gussets_over(
+    footprint_x: tuple[float, float],
+    footprint_y: tuple[float, float],
+    gussets: tuple[Gusset, ...],
+) -> list[Gusset]:
+    """Which of ``gussets`` have a domain overlapping this XY footprint.
+
+    The one place that decides which corners a part needs relieved, so a
+    relief list is never typed out by hand and cannot go stale: a part is
+    relieved for exactly the gussets whose domain its OWN nominal (unrelieved)
+    footprint would otherwise reach into.
+    """
+    out = []
+    for g in gussets:
+        gx, gy = gusset_domain(g)
+        if _overlaps_1d(footprint_x, gx) and _overlaps_1d(footprint_y, gy):
+            out.append(g)
+    return out
+
+
+def clear_over_relieved(
+    footprint_x: tuple[float, float],
+    footprint_y: tuple[float, float],
+    s: Station = STATION,
+) -> float:
+    """Worst ceiling over a footprint, ASSUMING every gusset whose domain the
+    footprint overlaps has actually been cut away there.
+
+    ``gussets_over`` is the exact test ``bay_walls._gusset_relief`` and
+    ``top_cap._gusset_relief`` use to decide what to subtract, so calling it
+    again here with the same footprint asks for exactly the set of gussets a
+    part built from that footprint has already been relieved for -- no
+    separate list to keep in sync. A gusset that does NOT overlap the
+    footprint is not excused and still pulls the ceiling down at full
+    strength; only [machine], with the real solid, verifies the cut was
+    actually made. The four corners remain enough to sample: each gusset's
+    ceiling is still monotonic in one coordinate and flat in the other, and
+    excluding some of them does not change where the worst of the rest sits.
+    """
+    cleared = {g.label for g in gussets_over(footprint_x, footprint_y, s.gussets)}
+    worst = s.z_beam
+    for x in footprint_x:
+        for y in footprint_y:
+            z = s.z_beam
+            for g in s.gussets:
+                if g.label in cleared:
+                    continue
+                coord, cross = (x, y) if g.axis == "x" else (y, x)
+                if g.applies_at(cross):
+                    z = min(z, g.ceiling_at(g.u_at(coord)))
+            worst = min(worst, z)
+    return worst
+
+
 # ---------------------------------------------------------------- export
 
 EXPORT_DIR = Path(__file__).resolve().parents[2] / "export" / "cnc_shapeoko"
@@ -1064,12 +1192,15 @@ def check_carcass(d: Datums = DATUMS) -> list[str]:
     s = d.s
     notes: list[str] = []
 
-    if d.top_gap < TOP_GAP_MIN:
+    ceiling = clear_over_relieved((d.x_left, d.x_right), (d.y_front, d.y_rear), s)
+    reveal = ceiling - d.carcass_h
+    if reveal < TOP_GAP_MIN:
         notes.append(
-            f"carcass is {d.carcass_h:.0f}mm tall into {d.clear_over_carcass:.0f}mm "
-            f"of clearance, leaving {d.top_gap:.0f}mm. Below the {TOP_GAP_MIN:.0f}mm "
-            "reveal the carcass starts touching the machine frame, which is the "
-            "one thing it must not do."
+            f"carcass is {d.carcass_h:.0f}mm tall into {ceiling:.0f}mm of "
+            "clearance over its own (relieved) footprint, leaving "
+            f"{reveal:.0f}mm. Below the {TOP_GAP_MIN:.0f}mm reveal the carcass "
+            "starts touching the machine frame, which is the one thing it "
+            "must not do."
         )
 
     if abs(d.stock_clear_w - s.bay_stock_w) > 1e-6:
@@ -1152,8 +1283,10 @@ def check_carcass(d: Datums = DATUMS) -> list[str]:
         if max(size) > travel:
             notes.append(
                 f"{label} blank {size[0]:.0f} x {size[1]:.0f} exceeds the "
-                f"machine's own {travel:.0f}mm travel. The station cannot cut "
-                "its own part."
+                f"machine's own {travel:.0f}mm travel: it cannot be cut on the "
+                "Shapeoko itself. Cut on the track saw or Shaper Origin "
+                "instead, by ruling, 2026-09-02. Expected, and worth knowing "
+                "before it goes to either tool."
             )
         if not fits(size, SHEET_5X5_BALTIC):
             notes.append(

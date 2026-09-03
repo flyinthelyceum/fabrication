@@ -70,6 +70,7 @@ from stations.cnc_shapeoko.carcass import (
     TOP_GAP_MIN,
     Datums,
     check_carcass,
+    clear_over_relieved,
 )
 from stations.cnc_shapeoko.parts import (
     base_deck,
@@ -461,11 +462,18 @@ def envelope(comps: list[Component] | None = None, d: Datums = DATUMS) -> list[F
     z0, z1 = span(body, "Z")
     tx0, tx1 = span(comps, "X")
 
+    # The carcass footprint is the leg opening -- flush to the leg inner
+    # faces by the 2026-09-02 ruling -- and every corner is where a gusset
+    # comes down to meet a leg, cut back by the relief in bay_walls.py and
+    # top_cap.py. clear_over_relieved assumes exactly that cut, the same
+    # assumption those two modules' own build() functions make.
+    ceiling = clear_over_relieved((d.x_left, d.x_right), (d.y_front, d.y_rear), s)
+
     return [
         Fit("carcass + plinth", x1 - x0, s.leg_x_inner, "X"),
         Fit("with leg ties", tx1 - tx0, s.leg_x_inner, "X"),
         Fit("carcass + plinth", y1 - y0, s.leg_y_inner, "Y"),
-        Fit("carcass + plinth", z1 - z0, d.clear_over_carcass, "Z"),
+        Fit("carcass + plinth", z1 - z0, ceiling, "Z"),
     ]
 
 
@@ -486,7 +494,8 @@ def check_assembly(comps: list[Component] | None = None, d: Datums = DATUMS) -> 
 
     body = [c for c in comps if c.group != "tie"]
     top = max(c.bbox.max.Z for c in body)
-    reveal = d.clear_over_carcass - top
+    ceiling = clear_over_relieved((d.x_left, d.x_right), (d.y_front, d.y_rear), d.s)
+    reveal = ceiling - top
     if reveal < TOP_GAP_MIN:
         notes.append(
             f"assembled reveal is {reveal:.1f}mm against a {TOP_GAP_MIN:.0f}mm "

@@ -82,9 +82,17 @@ def collect() -> list[tuple[str, str, str]]:
     d = DATUMS
     comps = components(d)
 
+    # The growth extractor's own bay footprint, GROWTH config: params.py owns
+    # no placement geometry, so this is computed here and handed in.
+    growth_lungs_x = (d.wall_x_growth[0] + d.t, d.wall_x_growth[1])
+    growth_lungs_y = (0.0, d.front_bay_d)
+
     sources: list[tuple[str, list[str]]] = [
         ("params", params.check()),
-        ("growth path", params.check_growth_path()),
+        (
+            "growth path",
+            params.check_growth_path(bay_x=growth_lungs_x, bay_y=growth_lungs_y),
+        ),
         ("carcass", check_carcass(d)),
         ("base_deck", base_deck.check_base_deck()),
         ("bay_walls", bay_walls.check_bay_walls(d)),

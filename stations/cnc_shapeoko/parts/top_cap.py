@@ -105,13 +105,17 @@ from stations.cnc_shapeoko.carcass import (
     TOP_GAP_MIN,
     Datums,
     bore,
+    clear_over_relieved,
     export_part,
     groove,
+    gusset_prism,
+    gussets_over,
     panel,
     relief,
     screw_line,
     snap_up,
     through_slot,
+    to_local,
 )
 
 NAME = "top_cap"
@@ -383,6 +387,28 @@ def spine_screw_span(d: Datums = DATUMS) -> tuple[float, float]:
     return (d.wall_x[0] + d.t, d.wall_x[3])
 
 
+# ---------------------------------------------------------------- machine relief
+#
+# The cap runs flush to all four leg faces, and every gusset hangs in exactly
+# the space that flush footprint wants at its own corner. ``check_machine``
+# finds the clash; this cuts it away, over the SAME solid, so the notch and
+# the check that verifies it cannot drift apart.
+
+
+def _gusset_relief(d: Datums = DATUMS) -> Part | None:
+    """The gusset plates the cap's own nominal (unrelieved) footprint would
+    otherwise clash with, cut out of it, following each one's taper rather
+    than a square notch to full depth -- the relief IS the gusset's own
+    trapezoidal solid. ``top_plane`` has no offset from station X/Y, so a
+    station-coordinate gusset needs no adjustment beyond ``to_local``."""
+    w, h = d.top_size
+    cutters = None
+    for g in gussets_over((0.0, w), (0.0, h), d.s.gussets):
+        c = to_local(d.top_plane, gusset_prism(g))
+        cutters = c if cutters is None else cutters + c
+    return cutters
+
+
 # ---------------------------------------------------------------- build
 
 
@@ -432,6 +458,11 @@ def build(d: Datums = DATUMS) -> Part:
         for bx, by in pad.bolts:
             p -= bore(bx, by, MAST_BOLT_CLEAR_D, thickness=t)
 
+    # -- the machine's own steel ---------------------------------------------
+    relief_cut = _gusset_relief(d)
+    if relief_cut is not None:
+        p -= relief_cut
+
     return p
 
 
@@ -445,11 +476,14 @@ def check_top_cap(d: Datums = DATUMS) -> list[str]:
     w, h = d.top_size
     t = d.t
 
-    if d.top_gap < TOP_GAP_MIN:
+    ceiling = clear_over_relieved((0.0, w), (0.0, h), d.s)
+    reveal = ceiling - d.top_z[1]
+    if reveal < TOP_GAP_MIN:
         notes.append(
-            f"reveal is {d.top_gap:.0f}mm against a {TOP_GAP_MIN:.0f}mm minimum. "
-            "The cap is touching the machine frame, which is the one thing it "
-            "must not do."
+            f"reveal is {reveal:.0f}mm against a {TOP_GAP_MIN:.0f}mm minimum, "
+            f"over the cap's own (relieved) footprint at a {ceiling:.0f}mm "
+            "ceiling. The cap is touching the machine frame, which is the one "
+            "thing it must not do."
         )
 
     v = vent_field(d)

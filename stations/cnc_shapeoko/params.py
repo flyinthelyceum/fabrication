@@ -46,6 +46,10 @@ SOURCES = {
     "gusset_plate_t": "MEASURED 2026-09-02. Photographs and calipers: the "
                        "gussets are flat plates, not solids, no thicker than "
                        "1/4in (6.35mm).",
+    "gusset_count": "RULED by Jared 2026-09-02, verbatim: \"Each side has two "
+                     "gussets so eight total mirrored across the centerline "
+                     "of each axis.\" Confirms the eight-plate model in "
+                     "Station.gussets.",
     "z_beam": "DERIVED from clear_h_min + gusset_y_h. See check(); confirm it.",
     "extractor_env": "See EXTRACTORS. Each entry carries its own festoolusa URL.",
     "hose_id": "https://carbide3d.com/hub/docs/sweepy-pro-s5-pro/",
@@ -114,8 +118,9 @@ CONFIDENCE = {
     "gusset_x": "measured",  # both X gussets, height, top band and clear span
     "gusset_y": "measured",  # both Y gussets, plus the inner block
     "gusset_plate_t": "measured",   # 2026-09-02 photographs and calipers:
-                             # flat plate, <= 1/4in. Which LEG each plate sits
-                             # at is still an assumption; see check().
+                             # flat plate, <= 1/4in.
+    "gusset_count": "measured",   # RULED by Jared 2026-09-02: two plates per
+                             # leg, eight total. See check() and SOURCES.
     "leg_x_inner": "measured",   # 2026-09-02 tape, was 1100 off a photograph
     "leg_y_inner": "measured",   # same tape
     "leg_splay": "low",      # visible in the leg-kit render
@@ -172,13 +177,13 @@ CONFIDENCE = {
 # NOT brace, each gusset is now the plate thickness, positioned at the leg it
 # sits against, not a solid run to the far wall.
 #
-# What is still NOT measured: how many plates there are. The hand elevations
-# are one gusset per side per axis -- four drawings. The table has four legs.
-# ``Station.gussets`` ASSUMES each leg carries two plates, one bracing X and
-# one bracing Y, which is EIGHT plates, not four. ``check()`` carries the note
-# asking Jared to confirm it on the machine; see the docstring on
-# ``Station.gussets`` for the arrangement this model commits to in the
-# meantime.
+# How many plates there are was open until Jared ruled it 2026-09-02,
+# verbatim: "Each side has two gussets so eight total mirrored across the
+# centerline of each axis." The hand elevations are one gusset per side per
+# axis -- four drawings -- but they are elevations, not plans; the ruling is
+# what settles it. ``Station.gussets`` places each measured profile twice,
+# once per leg on the axis it does not brace: EIGHT plates, not four. See
+# CONFIDENCE["gusset_count"] and the docstring on ``Station.gussets``.
 #
 # One constraint rides on top of all of it, ruled the same day: "We should be
 # building the carcass to fit between the legs flush to the edges of the CNC
@@ -535,13 +540,11 @@ class Station:
 
         Each of the four measured profiles (X left, X right, Y front, Y rear)
         is now a plate, ``gusset_plate_t`` thick, at ONE end of the axis it does
-        not brace -- not a solid run to the far wall. Which leg was not
-        measured directly: Jared's elevations are one gusset per side per axis,
-        four drawings, and the table has four legs. This ASSUMES each leg
-        carries two plates, one bracing X and one bracing Y, so every measured
-        profile is placed twice, once per leg on the axis it does not
-        constrain -- eight plates, not four. ``check()`` carries the note
-        asking Jared to confirm it on the machine.
+        not brace -- not a solid run to the far wall. RULED by Jared
+        2026-09-02: "Each side has two gussets so eight total mirrored across
+        the centerline of each axis." So every measured profile is placed
+        twice, once per leg on the axis it does not constrain -- eight plates,
+        not four. See CONFIDENCE["gusset_count"].
         """
         z = self.z_beam
         profiles = (
@@ -677,20 +680,30 @@ def check(s: Station = STATION) -> list[str]:
         "z_beam. Everything above the gussets moves with it."
     )
 
+    if CONFIDENCE.get("gusset_count") == "low":
+        problems.append(
+            "each gusset's extent along the axis it does NOT constrain is now "
+            f"measured: it is a flat plate, {s.gusset_plate_t:.2f}mm thick "
+            "(photographs and calipers, 2026-09-02), at the leg it braces, not "
+            "the wall-to-wall solid the first pass modelled for want of that "
+            "measurement. Which leg was not measured directly: the hand "
+            "elevations are one gusset per side per axis, four drawings, and "
+            "the table has four legs, so this model ASSUMES each leg carries "
+            "two plates, one bracing X and one bracing Y -- eight plates, not "
+            "four. Confirm on the machine whether every leg really carries "
+            "its own pair before this clears. This note does not clear until "
+            "CONFIDENCE says the count was settled."
+        )
+
     problems.append(
-        "each gusset's extent along the axis it does NOT constrain is now "
-        f"measured: it is a flat plate, {s.gusset_plate_t:.2f}mm thick "
-        "(photographs and calipers, 2026-09-02), at the leg it braces, not the "
-        "wall-to-wall solid the first pass modelled for want of that "
-        "measurement. Which leg was not measured directly: the hand elevations "
-        "are one gusset per side per axis, four drawings, and the table has "
-        "four legs, so this model ASSUMES each leg carries two plates, one "
-        "bracing X and one bracing Y -- eight plates, not four. Confirm on the "
-        "machine whether every leg really carries its own pair before this "
-        "clears. Unrelated and still open: the intrusion depth stays solid "
-        f"from the leg face rather than only the {s.gusset_y_block[0]:.1f} x "
-        f"{s.gusset_y_block[1]:.1f}mm block at a Y gusset's inner end, which if "
-        "true opens the envelope further than this model says."
+        "a gusset's intrusion depth is still modelled solid the whole way "
+        "from the leg face to the top band, rather than only the measured "
+        f"{s.gusset_y_block[0]:.1f} x {s.gusset_y_block[1]:.1f}mm block at a Y "
+        "gusset's inner end. The block's own footprint was measured off the "
+        "hand-dimensioned elevation; whether the gusset is really solid there "
+        "or is only that block was not measured. If it is only the block, the "
+        "envelope opens further than this model says. That is still the "
+        "conservative direction, same as before fdeaee5, and it stays open."
     )
 
     if s.extractor_env[2] > s.clear_h_min:
@@ -786,7 +799,11 @@ def check(s: Station = STATION) -> list[str]:
     return problems
 
 
-def check_growth_path(s: Station = STATION) -> list[str]:
+def check_growth_path(
+    s: Station = STATION,
+    bay_x: tuple[float, float] | None = None,
+    bay_y: tuple[float, float] | None = None,
+) -> list[str]:
     """Can the station still take the growth extractor without a redesign.
 
     The promise made on 2026-09-02 is that swapping a CT 15 for a CT 36 costs a
@@ -796,10 +813,18 @@ def check_growth_path(s: Station = STATION) -> list[str]:
 
     Anything this reports is a dimension where the growth path has quietly been
     lost and the model is still claiming it.
+
+    ``bay_x``/``bay_y`` are the growth lungs bay's own footprint, in station
+    coordinates -- carcass.py owns that geometry, not this module, so a caller
+    with a ``Datums`` passes it in. Without it this falls back to
+    ``clear_h_min``, the worst ceiling anywhere, which is what this function
+    used before the gussets became an envelope rather than a scalar and is
+    still correct, just pessimistic off-corner.
     """
     g = s.growth_spec
     env = g["env"]
     problems: list[str] = []
+    ceiling = s.clear_z_over(bay_x, bay_y) if bay_x and bay_y else s.clear_h_min
 
     if env[0] > s.front_bay_d():
         problems.append(
@@ -808,16 +833,16 @@ def check_growth_path(s: Station = STATION) -> list[str]:
             "so this has to be sized for the growth unit from the start."
         )
 
-    if env[2] > s.clear_h_min:
+    if env[2] > ceiling:
         problems.append(
             f"GROWTH LOST: {g['name']} is {env[2]:.0f}mm tall into "
-            f"{s.clear_h_min:.0f}mm of clearance under the frame. No divider move "
+            f"{ceiling:.0f}mm of clearance over its own bay. No divider move "
             "recovers this."
         )
 
-    if s.clear_h_min - env[2] < s.hose_bend_r():
+    if ceiling - env[2] < s.hose_bend_r():
         problems.append(
-            f"GROWTH LOST: {s.clear_h_min - env[2]:.0f}mm of headroom over "
+            f"GROWTH LOST: {ceiling - env[2]:.0f}mm of headroom over "
             f"{g['name']} against a {s.hose_bend_r():.0f}mm hose bend radius"
         )
 

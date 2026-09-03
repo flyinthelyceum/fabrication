@@ -112,11 +112,14 @@ from stations.cnc_shapeoko.carcass import (
     bore,
     export_part,
     groove,
+    gusset_prism,
+    gussets_over,
     panel,
     relief,
     screw_line,
     screw_positions,
     through_slot,
+    to_local,
 )
 from stations.cnc_shapeoko.parts import leg_tie
 
@@ -465,6 +468,37 @@ def _louvre(d: Datums = D) -> Part | None:
     return cutters
 
 
+# ================================================================ machine relief
+#
+# Below the machine's frame, this panel's blank runs flush to the leg faces,
+# and at each corner a gusset hangs in exactly the space that flush footprint
+# wants. ``check_machine`` finds the clash; this cuts it away, over the SAME
+# solid, so the notch and the check that verifies it cannot drift apart.
+
+
+def _wall_local(shape: Part, i: int, d: Datums = D) -> Part:
+    """A station-coordinate shape, moved into wall ``i``'s BUILD-local frame --
+    ``wall_plane``'s local frame, plus the ``TONGUE_D`` that ``place`` shifts
+    the finished panel by afterward. Matches ``_y``: the same station Z ends
+    up at the same local Y either way."""
+    return to_local(d.wall_plane(i), shape).moved(Location((0, TONGUE_D, 0)))
+
+
+def _gusset_relief(spec: WallSpec, d: Datums = D) -> Part | None:
+    """The gusset plates this wall's OWN nominal (unrelieved) footprint would
+    otherwise clash with, cut out of it, following each one's taper rather
+    than a square notch to full depth -- the relief IS the gusset's own
+    trapezoidal solid, so its shape is the machine's, not a drawn approximation
+    of it."""
+    x_range = (d.wall_x[spec.index], d.wall_x[spec.index] + d.t)
+    y_range = (0.0, blank_size(spec, d)[0])
+    cutters = None
+    for g in gussets_over(x_range, y_range, d.s.gussets):
+        c = _wall_local(gusset_prism(g), spec.index, d)
+        cutters = c if cutters is None else cutters + c
+    return cutters
+
+
 # ================================================================ build
 
 
@@ -490,6 +524,10 @@ def build(i: int = 0, d: Datums = D) -> Part:
         louvre = _louvre(d)
         if louvre is not None:
             p -= louvre
+
+    relief_cut = _gusset_relief(spec, d)
+    if relief_cut is not None:
+        p -= relief_cut
 
     return p
 

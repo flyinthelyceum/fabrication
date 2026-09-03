@@ -42,18 +42,21 @@ Neither is a recommendation. Which one to spend is a design decision and it is
 Jared's.
 
 
-THE ONE ASSUMPTION NO TAPE HAS CONFIRMED
-=========================================
+WHAT IS SETTLED AND WHAT IS STILL OPEN
+=======================================
 
 Jared's photographs and calipers make the gussets flat plates,
 ``gusset_plate_t`` thick (6.35mm, 1/4in), at the leg they brace, not the
-wall-to-wall solids the first pass modelled for want of that measurement.
-What the calipers cannot answer is how many of them there are: the hand
-elevations are one gusset per side per axis, four drawings, and the table has
-four legs. ``Station.gussets`` therefore ASSUMES each leg carries two plates,
-one bracing X and one bracing Y -- eight plates, not four. ``params.check``
-carries the note asking Jared to confirm it on the machine. If the real count
-is four, half of what this module reports as a clash disappears with it.
+wall-to-wall solids the first pass modelled for want of that measurement. How
+many of them there are was open until Jared RULED it 2026-09-02, verbatim:
+"Each side has two gussets so eight total mirrored across the centerline of
+each axis." ``Station.gussets`` places eight, not four, and that is settled.
+
+Still open: every solid this module builds runs intrusion-depth solid from the
+leg face to the top band. The measured ``gusset_y_block`` says a Y gusset's
+inner end may really be only a ~95 x 86mm block, not solid the whole way. If
+so, every clash this module reports is smaller than the real one, in the more
+room direction. ``params.check`` carries the note.
 """
 
 from __future__ import annotations
@@ -61,19 +64,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from build123d import (
-    Compound,
-    Location,
-    Part,
-    Plane,
-    Polygon,
-    Unit,
-    export_step,
-    extrude,
-)
+from build123d import Compound, Part, Unit, export_step
 
 from stations.cnc_shapeoko.assembly import NOISE_VOL, Component, components
-from stations.cnc_shapeoko.carcass import DATUMS, EXPORT_DIR, Datums
+from stations.cnc_shapeoko.carcass import DATUMS, EXPORT_DIR, Datums, gusset_prism
 from stations.cnc_shapeoko.params import Gusset
 
 __all__ = [
@@ -95,30 +89,11 @@ MACHINE_NAME = "machine_gussets"
 def solid(g: Gusset) -> Part:
     """One gusset plate as a trapezoidal prism in station coordinates.
 
-    The profile is drawn in the plane the gusset constrains: the sketch's first
-    coordinate is the axis it eats into, its second is Z, and the extrusion runs
-    ``plate_t`` along the other axis -- the plate's own measured thickness, not
-    the full opening. Four points, because the shape is four points: it hangs
-    off the beam at full intrusion for its top band, then tapers back to the
-    leg's inner face. The extrusion is drawn at cross = 0 and then moved out to
-    ``cross_lo``, the leg end this plate actually sits against.
+    ``carcass.gusset_prism`` is the single source of this shape now: a part
+    that needs a relief cut subtracts the same solid this module intersects
+    against, so the notch and the check that verifies it cannot drift apart.
     """
-    profile = [
-        (0.0, g.z_bot),
-        (g.intrude, g.z_bot + g.taper_h),
-        (g.intrude, g.z_beam),
-        (0.0, g.z_beam),
-    ]
-    pts = [(g.coord_at(u), z) for u, z in profile]
-    if g.side == "far":
-        # coord_at ran the profile backwards along the axis, which reverses the
-        # face normal and would extrude the prism out of the opening.
-        pts.reverse()
-
-    plane, amount = (Plane.XZ, -g.plate_t) if g.axis == "x" else (Plane.YZ, g.plate_t)
-    body = extrude(plane * Polygon(*pts), amount)
-    shift = (0.0, g.cross_lo, 0.0) if g.axis == "x" else (g.cross_lo, 0.0, 0.0)
-    return body.moved(Location(shift))
+    return gusset_prism(g)
 
 
 def gussets(d: Datums = DATUMS) -> list[tuple[Gusset, Part]]:
