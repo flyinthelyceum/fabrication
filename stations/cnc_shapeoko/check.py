@@ -141,7 +141,7 @@ def main() -> int:
         f"CNC station  ·  {d.s.spec['name']}  ·  "
         f"lungs {d.s.bay_lungs_w:.0f} | stock {d.stock_clear_w:.0f} clear "
         f"({d.stock_capacity} blanks) | hands {d.s.bay_hands_w:.0f}  ·  "
-        f"bay {d.bay_h:.0f}, reveal {d.top_gap:.0f} (unrelieved; relieved {d.clear_over_relieved:.0f})"
+        f"bay {d.bay_h:.0f}, reveal {d.top_gap:.0f} (UNRELIEVED ceiling; the relieved reveal check_carcass uses is in the notes below)"
     )
 
     for bucket in order:
