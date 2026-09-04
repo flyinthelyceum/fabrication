@@ -89,6 +89,7 @@ from stations.cnc_shapeoko.parts import (
     mains_backplate,
     mast_base,
     rear_door,
+    signal_mounts,
     spine_panel,
     stock_rails,
     top_cap,
@@ -257,6 +258,15 @@ def components(d: Datums = DATUMS) -> list[Component]:
     # front plane by design and ``lungs_door`` checks it against the leg
     # itself. The open door is ``lungs_door.door_open``.
     for label, group, part in lungs_door.placed_all(d):
+        out.append(Component(label, group, part))
+
+    # 17. the signal side (C13): the subplate on the spine's rear face right
+    # of the partition, the PC's cradle (shelf, two cheeks, clear lip) and
+    # the PC as a reference solid, the short DIN rail as a top-hat profile
+    # with the ONE printed part hooked on it, the board and the hub as
+    # references. The motion controller appears only once params carries its
+    # envelope; until then its seat is reserved and the check says so.
+    for label, group, part in signal_mounts.placed_all(d):
         out.append(Component(label, group, part))
 
     return out
@@ -443,6 +453,11 @@ def joints(d: Datums = DATUMS) -> dict[frozenset[str], Joint]:
     # bears on the divider; its edges meet nothing but the knuckle gap and
     # the reveals.
     for a, b, kind, axis, lo, hi, note in lungs_door.joint_table(d):
+        js.append(Joint(a, b, kind, axis, lo, hi, note))
+
+    # -- the signal side: the subplate on the spine, the cradle on the
+    # subplate, the carrier on its rail; every joint a face.
+    for a, b, kind, axis, lo, hi, note in signal_mounts.joint_table(d):
         js.append(Joint(a, b, kind, axis, lo, hi, note))
 
     # The leg joint declares nothing here. It is not a joint between two CARCASS
@@ -1001,6 +1016,25 @@ def main() -> None:
         f"{lungs_door.lining_t(d):.0f} on the inside face, y {d.t:.0f}..{d.t + lungs_door.lining_t(d):.0f}; "
         f"the tray closes at y {lungs_carriage.carriage_origin(d)[1]:.0f}; "
         f"{lungs_door.CATCH_NAME} x {kx0:.0f}..{kx1:.0f} y {ky0:.0f}..{ky1:.0f} z {kz0:.0f}..{kz1:.0f} on the divider"
+    )
+
+    print("\nsignal side: the subplate, the cradle, the rail and the one printed part")
+    sw, sh = signal_mounts.plate_size(d)
+    (qx0, qx1), (qy0, qy1), (qz0, qz1) = signal_mounts.pc_station(d)
+    (kx0, kx1), (ky0, ky1), (kz0, kz1) = signal_mounts.controller_seat(d)
+    cs = signal_mounts.carrier_print_size()
+    print(
+        f"  {signal_mounts.PART_NAME}: {sw:.0f} x {sh:.0f} x {signal_mounts.PLATE_T:.0f} on the spine's rear "
+        f"face at x {signal_mounts.plate_x(d)[0]:.1f}, between the crossing rows; cradle at plate-local x "
+        f"{signal_mounts.cradle_x_local(d):.0f} (derived from the reveal), {signal_mounts.LIP_MATERIAL} lip"
+    )
+    print(
+        f"  {signal_mounts.PC_NAME}: {signal_mounts.PC_ENV[0]:.0f} x {signal_mounts.PC_ENV[1]:.0f} x "
+        f"{signal_mounts.PC_ENV[2]:.0f} at x {qx0:.1f}..{qx1:.1f} y {qy0:.1f}..{qy1:.1f} z {qz0:.1f}..{qz1:.1f}; "
+        f"in the reveal window: {signal_mounts.pc_in_window(d)}; "
+        f"{signal_mounts.CARRIER_NAME} prints {cs[0]:.0f} x {cs[1]:.0f} x {cs[2]:.1f}; "
+        f"controller seat {kx1 - kx0:.0f} x {kz1 - kz0:.0f} x {ky1 - ky0:.0f}, env = {signal_mounts.CONTROLLER_ENV}; "
+        f"exhaust slots over the signal side: {len(signal_mounts.vent_slots_over_signal(d))}"
     )
 
     print("\nleg joint: bolt axes, station coordinates")

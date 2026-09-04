@@ -67,6 +67,42 @@ def bed_fill(blank: tuple[float, float], bed: tuple[float, float]) -> float:
     return (blank[0] * blank[1]) / (bed[0] * bed[1])
 
 
+def printable(size: tuple[float, float, float], bed=PRINT_BED_MIN, margin: float = PRINT_BED_MARGIN) -> bool:
+    """True when a printed part, as it stands on the bed (x, y, z), fits the
+    smallest bed in the room with ``margin`` kept clear at every edge."""
+    return fits((size[0], size[1]), (bed[0] - 2 * margin, bed[1] - 2 * margin)) and size[2] <= bed[2]
+
+
+def export_stl(
+    part,
+    path,
+    *,
+    bed=PRINT_BED_MIN,
+    margin: float = PRINT_BED_MARGIN,
+    tolerance: float = 0.01,
+    angular_tolerance: float = 0.2,
+):
+    """Write a printed part's mesh, refusing one that will not fit the bed.
+
+    ``part`` is the solid in its PRINT orientation, standing on Z = 0. The bed
+    check runs on its bounding box before any file is written, so a carrier
+    that outgrows the AD5M fails here and not at the slicer. build123d is
+    imported lazily: this module is the standards sheet and has no CAD
+    dependency of its own.
+    """
+    from build123d import export_stl as _export_stl
+
+    bb = part.bounding_box()
+    size = (bb.size.X, bb.size.Y, bb.size.Z)
+    if not printable(size, bed, margin):
+        raise ValueError(
+            f"{size[0]:.1f} x {size[1]:.1f} x {size[2]:.1f} does not fit a "
+            f"{bed[0]:.0f} x {bed[1]:.0f} x {bed[2]:.0f} bed with {margin:.0f}mm clear at every edge"
+        )
+    _export_stl(part, path, tolerance=tolerance, angular_tolerance=angular_tolerance)
+    return path
+
+
 # ---------------------------------------------------------------- materials
 
 CARCASS_T = 18.0        # Baltic birch. Parametric: joinery derives from this.
