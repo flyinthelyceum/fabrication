@@ -82,6 +82,7 @@ from stations.cnc_shapeoko.parts import (
     bay_walls,
     drawers,
     leg_joint,
+    mast_base,
     spine_panel,
     top_cap,
     trays,
@@ -123,7 +124,7 @@ class Component:
     """One placed solid in the assembly."""
 
     label: str
-    group: str          # carcass | plinth
+    group: str          # carcass | plinth | drawer | tray | steel
     part: Part
 
     @property
@@ -182,6 +183,11 @@ def components(d: Datums = DATUMS) -> list[Component]:
 
     # 7. the fitted tray in drawer 1, generated from the tool list
     out.append(Component(trays.TRAY_LABEL, "tray", trays.place(d=d)))
+
+    # 8. the mast's steel backing plate, under the cap at the mast pad. Not
+    # birch, but it lives in the brain band's corner beside two housed panels,
+    # which is exactly the kind of neighbour the interference check exists for.
+    out.append(Component(mast_base.NAME, "steel", mast_base.place(d=d)))
 
     return out
 
@@ -297,6 +303,12 @@ def joints(d: Datums = DATUMS) -> dict[frozenset[str], Joint]:
             None,
             note="the tray stands on the drawer's bottom panel",
         )
+    )
+
+    # -- the mast backing plate bears on the cap's underside ----------------
+    js.append(
+        Joint("top_cap", mast_base.NAME, "bearing", None, note=
+              "steel plate flat against the cap's underside, bolted through")
     )
 
     # The leg joint declares nothing here. It is not a joint between two CARCASS
@@ -690,6 +702,16 @@ def main() -> None:
             f"tip ({tx:8.2f}, {ty:7.1f}, {tz:6.1f})   "
             f"{'+X' if b.inward > 0 else '-X'}"
         )
+
+    mx, my, mz = d.mast_base
+    print("\nmast base, for Fusion (J06)")
+    print(
+        f"  pad centre ({mx:.1f}, {my:.1f}, {mz:.1f}) on the cap's top face, "
+        f"{top_cap.MAST_SIDE} rear, 4 x M{top_cap.MAST_BOLT_D:.0f} on a "
+        f"{top_cap.MAST_BOLT_PITCH:.0f}mm square; "
+        f"{mast_base.MATERIAL} plate {mast_base.PLATE:.0f} x {mast_base.PLATE:.0f} x "
+        f"{mast_base.PLATE_T:.0f} under it"
+    )
 
     print("\ninterference")
     found = interference(comps, d)

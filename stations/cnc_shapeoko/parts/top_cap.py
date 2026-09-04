@@ -26,11 +26,30 @@ It does three jobs beyond closing the box:
     the column cantilevers outboard past the leg and rises outside the machine
     footprint (the frame overhangs the leg opening by roughly 210mm a side, so
     the column clears the frame regardless of where on the cap the pad sits).
-    Which corner the mast actually takes is not settled: ``Datums.hose_port`` is
-    in the LEFT end wall and the hose runs to the mast, which argues left.  Both
-    pads are cut anyway, because the alternative is drilling the second one in
-    situ under an assembled machine.  Set ``MAST_PADS`` to one side and the model
-    regenerates with one.
+    RULED 2026-09-03: the mast rises from the LEFT REAR corner, the hose-port
+    side, so the hose reaches the tip without crossing the brain band.
+    ``MAST_SIDE`` carries the ruling and ``carcass.Datums.mast_base`` publishes
+    the pad centre for the mast Jared authors in Fusion (J06).  Both pads stay
+    cut until the mast is bolted down, because the alternative is drilling the
+    second one in situ under an assembled machine; the right pad is a spare.
+
+    Each pad is placed by its BACKING PLATE, not by an edge inset.  The plate
+    (``parts/mast_base.py``, 6mm mild steel, ``MAST_PLATE`` square) sits under
+    the cap inside the brain band, and the band's corner is the end wall's
+    inner face and the spine's rear face.  The plate registers into that
+    corner and the bolt square sits in the middle of the plate, so the pad
+    centre is one half-plate in from each face.  Anything closer and the plate
+    would have to be notched round two housed panels.
+
+    THE MAST FEED SLOT.  The two runs the mast carries that are not GX16
+    (the USB camera lead and the addressable strip's 3-core, I91) enter the
+    carcass through a capsule slot at the plate's INBOARD edge, into the
+    sealed side of the brain band, and leave it through the spine's MAST FEED
+    gland into the lungs bay, which is where the always-live spur is.  The
+    run never touches the signal side.  The slot sits where the louvre
+    field's first slot would otherwise be and the field starts one rib
+    inboard of it, so the slot reads as the first louvre, wider, at the
+    mast's feet.
 
 3.  IT TIES THE VERTICALS.  A ``DADO_D`` housing registers each panel and a
     ``screw_line`` down each centreline pulls the cap onto it.
@@ -42,12 +61,13 @@ It cuts no housing at the rear edge.  The rear of the brain band is a DOOR (the
 brief's rear panel with the circuit indicators on its inside face), and a door
 carries nothing.  So over the brain band the cap is carried by the spine and by
 the two end walls, which run the full depth to ``y_rear``, and by nothing in
-between.  The mast pads are placed on that basis: the front bolt row sits
-``MAST_PAD_SETBACK`` behind the spine centreline, near enough that the pad bears
-on the spine rather than on 18mm of ply in bending.  A steel backing plate under
-each pad spreads the bolt load, the same move the leg bolts make with a flat
-washer against the 3.4mm leg wall.  That plate is not a birch part and is not
-modelled here.
+between.  The mast pads are placed on that basis: the pad sits in the corner
+those two supports make, as close to both as its backing plate allows, so the
+cap under it is a corner-supported plate and not a beam.  The backing plate
+spreads the bolt load, the same move the leg bolts make with a flat washer
+against the 3.4mm leg wall.  It is steel, not birch, and it is modelled in
+``parts/mast_base.py`` so the assembly checks it against the spine and the
+end wall rather than trusting this paragraph.
 
 
 WHAT THIS PART CUTS, FOR THE PARTS IT MATES WITH
@@ -130,9 +150,15 @@ NAME = "top_cap"
 # -- the mast base pads --------------------------------------------------------
 
 MAST_PADS: tuple[str, ...] = ("left", "right")
-"""Which rear outboard corners get a pad. hose_port says the mast goes LEFT;
-the right pad is cut now because drilling it later means drilling under an
-assembled machine. Set to ("left",) once the handedness is settled."""
+"""Which rear outboard corners get a pad. Both, by ruling: the right pad is cut
+now because drilling it later means drilling under an assembled machine, and
+it stays a spare until the mast is bolted down. Set to ("left",) only then."""
+
+MAST_SIDE = "left"
+"""Which pad the mast actually rises from. RULING 2026-09-03: LEFT REAR, the
+hose-port side, so the hose reaches the tip without crossing the brain band.
+The backing plate, the feed slot and ``carcass.Datums.mast_base`` all follow
+this one name. Must be a member of MAST_PADS."""
 
 MAST_BOLT_D = 8.0
 """M8 through the cap into the mast base plate. Bigger than the carcass's own
@@ -148,23 +174,63 @@ MAST_BOLT_PITCH = GRID * 2
 bolt square reads as the mast's own footprint rather than an arbitrary rectangle.
 Also 2 grid modules."""
 
-MAST_PAD_EDGE_INSET = GRID * 2
-"""Outboard bolt row in from the outboard edge of the blank. One extrusion width
-of solid birch outside the bolt, which is well past the 2D minimum edge distance
-the check below enforces."""
+MAST_PLATE = GRID * 6
+"""The backing plate's square, 120mm. SOURCE: C15 ruling 2026-09-03 (mild
+steel, 6mm, 120 x 120, matched to the pad). CONFIDENCE: ruling. Three bolt
+pitches: one for the bolt square and one of steel outside it each way, so an
+M8 washer has a full flat to sit on and the bolt is well past any edge-distance
+rule. It is also the footprint the pad claims in the cap: nothing else is cut
+inside it, which is what keeps the louvre field off the plate."""
 
-MAST_PAD_SETBACK = MAST_BOLT_PITCH / 2
-"""Front bolt row behind the spine centreline. Half a bolt pitch: far enough to
-clear the spine's own screw line, near enough that the pad bears on the spine."""
+MAST_PAD_MARGIN = (MAST_PLATE - MAST_BOLT_PITCH) / 2
+"""Plate outside the bolt square, each way. Derived, not chosen."""
 
-MAST_PAD_MARGIN = GRID
-"""Solid birch claimed around the bolt square for the backing plate. Nothing else
-is cut inside this footprint, which is what keeps the louvre field off the pad."""
+MAST_PAD_EDGE_INSET = MAST_PAD_MARGIN
+"""Outboard bolt row in from the END WALL'S INNER FACE. One plate margin: the
+plate's outboard edge lands on the wall and the bolt sits in the middle of the
+plate. Measured from the wall face and not from the blank edge, because the
+wall is what the plate has to clear."""
+
+MAST_PAD_SETBACK = MAST_PAD_MARGIN
+"""Front bolt row behind the SPINE'S REAR FACE. Same margin, same reason: the
+plate's front edge lands on the spine. Any nearer and the plate would have to
+be notched round a housed panel, or sit on top of the spine's tongue."""
 
 MAST_CANTILEVER_MAX = GRID * 4
 """How far behind the spine's rear face the rearmost mast bolt may sit before the
 cap is being asked to be a beam. 80mm of 18mm birch over a 40mm bolt square with
-a steel backing plate is a bracket; much more than that is a diving board."""
+a steel backing plate is a bracket; much more than that is a diving board.
+With the plate registered against the spine the rear bolt sits at exactly
+MAST_PAD_SETBACK + MAST_BOLT_PITCH = 80 behind it, on the limit, and the cap
+there is also carried by the end wall down its whole length, which this
+one-axis rule does not credit."""
+
+# -- the mast feed slot ----------------------------------------------------
+
+GLAND_M20_CABLE_MAX = 12.0
+"""Largest cable an M20 gland closes on. SOURCE: the M20 gland class carcass
+sizes its sealed crossings for, 6-12mm cable (carcass.GLAND_M20_D).
+CONFIDENCE: high, a catalogue range, not a measurement."""
+
+MAST_FEED_SLOT_W = GLAND_M20_CABLE_MAX
+"""Width of the slot the camera lead and the strip's 3-core drop through.
+Whatever the M20 gland downstream will close on, the slot upstream must pass,
+and neither lead has a SKU yet to be sized smaller than that. Wider than
+ROUTER_D, so it cuts in two passes like the louvre slots."""
+
+MAST_FEED_SLOT_L = MAST_BOLT_PITCH
+"""Length of the slot, along Y like the louvre slots. The extrusion's own 40mm
+section, so the slot reads as the mast's width at the mast's feet. Long enough
+to pass the camera lead's plug on the flat (below)."""
+
+USB_A_PLUG_SHELL = (12.0, 4.5)
+"""Width x thickness of a USB Series-A plug's metal shell. SOURCE: USB 2.0
+specification, Series A plug, nominal. CONFIDENCE: high for the shell, none
+for the overmould round it, which no camera listing states. The slot passes
+the shell with the lead lying flat; an overmould thicker than the slot is wide
+would have to be cut off and the lead re-terminated, which is the honest
+fallback and is written here rather than assumed away."""
+
 
 # -- the chimney exhaust -------------------------------------------------------
 
@@ -230,21 +296,61 @@ class _Pad:
 
 
 def mast_pads(d: Datums = DATUMS) -> list[_Pad]:
-    """The pads, placed off the blank edges and the spine, not off literals."""
+    """The pads, placed off the end walls' inner faces and the spine's rear
+    face, not off literals: each one is where its backing plate lands when
+    the plate is pushed into the brain band's corner."""
     w, _ = d.top_size
     pads: list[_Pad] = []
     for side in MAST_PADS:
         if side == "left":
-            x_out = d.x_left + MAST_PAD_EDGE_INSET
+            x_out = d.x_left + d.t + MAST_PAD_EDGE_INSET
             x_in = x_out + MAST_BOLT_PITCH
         elif side == "right":
-            x_out = w - MAST_PAD_EDGE_INSET
+            x_out = w - d.t - MAST_PAD_EDGE_INSET
             x_in = x_out - MAST_BOLT_PITCH
         else:
             raise ValueError(f"MAST_PADS takes left|right, got {side!r}")
-        y_front = d.y_spine + d.t / 2 + MAST_PAD_SETBACK
+        y_front = d.y_spine + d.t + MAST_PAD_SETBACK
         pads.append(_Pad(side, (x_out, x_in), (y_front, y_front + MAST_BOLT_PITCH)))
     return pads
+
+
+def mast_pad(side: str = MAST_SIDE, d: Datums = DATUMS) -> _Pad:
+    """One pad by name. The mast's own pad by default."""
+    for pad in mast_pads(d):
+        if pad.side == side:
+            return pad
+    raise ValueError(f"{side!r} is not in MAST_PADS {MAST_PADS}")
+
+
+@dataclass(frozen=True)
+class _FeedSlot:
+    """The mast feed slot, resolved in panel-local coordinates. Runs along Y."""
+
+    cx: float
+    cy: float
+
+    @property
+    def span_x(self) -> tuple[float, float]:
+        return (self.cx - MAST_FEED_SLOT_W / 2, self.cx + MAST_FEED_SLOT_W / 2)
+
+    @property
+    def span_y(self) -> tuple[float, float]:
+        return (self.cy - MAST_FEED_SLOT_L / 2, self.cy + MAST_FEED_SLOT_L / 2)
+
+
+def mast_feed_slot(d: Datums = DATUMS) -> _FeedSlot:
+    """The slot at the mast pad's inboard edge: one side rail in from the
+    backing plate's footprint, centred on the pad in Y. Inboard means toward
+    the station's centre, which for the left pad is +X."""
+    pad = mast_pad(MAST_SIDE, d)
+    px0, px1 = pad.span_x
+    if MAST_SIDE == "left":
+        cx = px1 + VENT_RAIL_SIDE + MAST_FEED_SLOT_W / 2
+    else:
+        cx = px0 - VENT_RAIL_SIDE - MAST_FEED_SLOT_W / 2
+    cy = (pad.ys[0] + pad.ys[1]) / 2
+    return _FeedSlot(cx, cy)
 
 
 @dataclass(frozen=True)
@@ -284,8 +390,16 @@ def vent_field(d: Datums = DATUMS) -> _VentField:
         overlaps_y = py0 < y1 and py1 > y0
         if overlaps_y and px1 > left_edge and px0 < cx1:
             left_edge = max(left_edge, px1)
+    x0 = left_edge + VENT_RAIL_SIDE
 
-    x0 = snap_up(left_edge + VENT_RAIL_SIDE)
+    # the feed slot stands where the first louvre would; the field resumes one
+    # rib inboard of it, so it reads as the first slot of the field
+    fs = mast_feed_slot(d)
+    fy0, fy1 = fs.span_y
+    if fy0 < y1 and fy1 > y0 and fs.span_x[1] > cx0 and fs.span_x[0] < cx1:
+        x0 = max(x0, fs.span_x[1] + VENT_RIB_W)
+
+    x0 = snap_up(x0)
     x_limit = cx1 - VENT_RAIL_SIDE
     n = int((x_limit - x0 + VENT_RIB_W) // VENT_PITCH)
     n = max(n, 0)
@@ -446,6 +560,17 @@ def build(d: Datums = DATUMS) -> Part:
         for bx, by in pad.bolts:
             p -= bore(bx, by, MAST_BOLT_CLEAR_D, thickness=t)
 
+    # -- the mast feed slot: an aperture, so a capsule ----------------------
+    fs = mast_feed_slot(d)
+    p -= through_slot(
+        (fs.cx, fs.cy),
+        MAST_FEED_SLOT_L,
+        MAST_FEED_SLOT_W,
+        thickness=t,
+        angle=90.0,
+        corner_r=MAST_FEED_SLOT_W / 2,
+    )
+
     # -- the machine's own steel ---------------------------------------------
     relief_cut = _gusset_relief(d)
     if relief_cut is not None:
@@ -515,7 +640,7 @@ def check_top_cap(d: Datums = DATUMS) -> list[str]:
                 "inboard or the bolt has to get smaller."
             )
         cantilever = max(pad.ys) - (d.y_spine + t)
-        if cantilever > MAST_CANTILEVER_MAX:
+        if cantilever > MAST_CANTILEVER_MAX + 1e-6:
             notes.append(
                 f"{pad.side} mast pad's rear bolt sits {cantilever:.0f}mm behind "
                 f"the spine, past the {MAST_CANTILEVER_MAX:.0f}mm this part will "
@@ -524,6 +649,45 @@ def check_top_cap(d: Datums = DATUMS) -> list[str]:
             )
         if max(pad.ys) > h - MAST_PAD_MARGIN:
             notes.append(f"{pad.side} mast pad runs off the rear edge of the blank")
+
+    if MAST_SIDE not in MAST_PADS:
+        notes.append(
+            f"MAST_SIDE is {MAST_SIDE!r} and MAST_PADS is {MAST_PADS}: the mast "
+            "rises from a pad that is not cut"
+        )
+
+    fs = mast_feed_slot(d)
+    pad = mast_pad(MAST_SIDE, d)
+    if fs.span_x[0] < pad.span_x[1] and fs.span_x[1] > pad.span_x[0]:
+        notes.append(
+            f"mast feed slot at x {fs.span_x[0]:.0f}..{fs.span_x[1]:.0f} lies "
+            f"over the backing plate ({pad.span_x[0]:.0f}..{pad.span_x[1]:.0f}). "
+            "A slot over steel passes nothing."
+        )
+    if MAST_FEED_SLOT_W < ROUTER_D:
+        notes.append(
+            f"mast feed slot is {MAST_FEED_SLOT_W:.1f}mm wide and the carcass "
+            f"cutter is {ROUTER_D:.2f}mm. It needs a smaller tool."
+        )
+    if MAST_FEED_SLOT_W < GLAND_M20_CABLE_MAX:
+        notes.append(
+            f"mast feed slot is {MAST_FEED_SLOT_W:.0f}mm wide, under the "
+            f"{GLAND_M20_CABLE_MAX:.0f}mm the M20 gland downstream closes on. "
+            "The slot would stop a lead the gland would pass."
+        )
+    if MAST_FEED_SLOT_L < USB_A_PLUG_SHELL[0] or MAST_FEED_SLOT_W < USB_A_PLUG_SHELL[1]:
+        notes.append(
+            f"mast feed slot {MAST_FEED_SLOT_L:.0f} x {MAST_FEED_SLOT_W:.0f} "
+            f"will not pass a USB-A plug shell {USB_A_PLUG_SHELL[0]:.0f} x "
+            f"{USB_A_PLUG_SHELL[1]:.1f} on the flat"
+        )
+    if v.count:
+        first = min(v.x_centres) - VENT_SLOT_W / 2
+        if first - fs.span_x[1] < VENT_RIB_W - 1e-9:
+            notes.append(
+                f"louvre field starts {first - fs.span_x[1]:.1f}mm from the mast "
+                f"feed slot, under the {VENT_RIB_W:.0f}mm rib the field keeps"
+            )
 
     for hs in wall_housings(d):
         if hs.x0 < d.x_left - 1e-9 or hs.x1 > w + 1e-9:
@@ -607,10 +771,19 @@ if __name__ == "__main__":
         "corridor)"
     )
     for pad in mast_pads(d):
+        tag = "MAST" if pad.side == MAST_SIDE else "spare"
         print(
             f"  mast {pad.side:5s}: 4 x M{MAST_BOLT_D:.0f} at "
             f"x {pad.xs[0]:.0f}/{pad.xs[1]:.0f}, y {pad.ys[0]:.0f}/{pad.ys[1]:.0f}"
+            f"  plate footprint x {pad.span_x[0]:.0f}..{pad.span_x[1]:.0f} "
+            f"y {pad.span_y[0]:.0f}..{pad.span_y[1]:.0f}  ({tag})"
         )
+    fs = mast_feed_slot(d)
+    print(
+        f"  mast feed slot: {MAST_FEED_SLOT_L:.0f} x {MAST_FEED_SLOT_W:.0f} capsule "
+        f"along Y at x {fs.span_x[0]:.0f}..{fs.span_x[1]:.0f}, "
+        f"y {fs.span_y[0]:.0f}..{fs.span_y[1]:.0f}"
+    )
 
     written = export_part(part, NAME)
     for w_ in written:

@@ -168,6 +168,11 @@ CROSSINGS: tuple[Crossing, ...] = (
     # Sealed side. Mains to the extractor, and the one low-voltage feed that
     # has to reach a bay sitting behind the sealed zone.
     Crossing("EXTRACTOR MAINS", "lungs", "sealed", "gland", "low"),
+    # The mast's two non-GX16 runs (USB camera lead, addressable strip 3-core,
+    # I91) drop through the top cap's feed slot at the mast pad and leave the
+    # band here for the lungs bay's always-live spur, never touching the
+    # signal side. One gland, one bundle: both leads are under the M20 range.
+    Crossing("MAST FEED", "lungs", "sealed", "gland", "high"),
     Crossing("STOCK WASH", "stock", "sealed", "gx16", "high"),
     # Signal side. Everything the operator touches, at the operator's corner.
     Crossing("CONSOLE STOP", "hands", "signal", "gx16", "high"),

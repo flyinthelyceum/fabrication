@@ -554,6 +554,26 @@ class Datums:
             self.top_z[0] - self.s.hose_id * 1.5,
         )
 
+    @property
+    def mast_base(self) -> tuple[float, float, float]:
+        """Centre of the mast base pad, in station coordinates: the middle of
+        the 40x40 M8 bolt square on the top cap's TOP face, on the side
+        ``parts.top_cap.MAST_SIDE`` names. RULED 2026-09-03: left rear.
+
+        This is the datum the mast is authored against in Fusion (J06). The
+        pad itself is the top cap's to place, so this reads it back from
+        there rather than repeating the arithmetic; the import is deferred
+        because top_cap imports this module.
+        """
+        from stations.cnc_shapeoko.parts.top_cap import MAST_SIDE, mast_pad
+
+        pad = mast_pad(MAST_SIDE, self)
+        return (
+            (pad.xs[0] + pad.xs[1]) / 2,
+            (pad.ys[0] + pad.ys[1]) / 2,
+            self.carcass_h,
+        )
+
     # -- placement planes ---------------------------------------------------
     # A part is drawn flat per the panel convention, then placed with one of
     # these: ``plane * flat_part`` or ``flat_part.moved(Location(plane))``.
@@ -1327,6 +1347,8 @@ if __name__ == "__main__":
         f"{STOCK_HEADROOM:.0f}, lungs stack {d.lungs_stack_h:.0f})"
     )
     print(f"  divider station x {d.wall_x[1]:.0f}")
+    mx, my, mz = d.mast_base
+    print(f"  mast base pad centre ({mx:.1f}, {my:.1f}, {mz:.1f}), 40x40 M8 square")
     print(
         f"  blanks: deck {d.deck_size[0]:.0f}x{d.deck_size[1]:.0f}  "
         f"spine {d.spine_size[0]:.0f}x{d.spine_size[1]:.0f}  "

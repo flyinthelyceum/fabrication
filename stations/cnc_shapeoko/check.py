@@ -52,6 +52,7 @@ from stations.cnc_shapeoko.parts import (
     bay_walls,
     drawers,
     leg_joint,
+    mast_base,
     spine_panel,
     top_cap,
     trays,
@@ -92,7 +93,6 @@ UNMODELLED = (
     "vfd_mount",
     "signal_mounts",
     "stock_wash",
-    "mast_base",
 )
 
 MEASURE_MARKS = (
@@ -128,6 +128,7 @@ def collect() -> list[tuple[str, str, str]]:
         ("trays", trays.check_trays(d)),
         ("spine_panel", spine_panel.check_spine(d)),
         ("top_cap", top_cap.check_top_cap(d)),
+        ("mast_base", mast_base.check_mast_base(d)),
         ("leg_joint", leg_joint.check_leg_joint(d)),
         ("assembly", check_assembly(comps, d)),
         ("machine", check_machine(comps, d)),
