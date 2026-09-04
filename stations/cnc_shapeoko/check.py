@@ -47,6 +47,7 @@ from stations.cnc_shapeoko.assembly import (
 )
 from stations.cnc_shapeoko.carcass import DATUMS, check_carcass
 from stations.cnc_shapeoko.machine import check_machine
+from stations.cnc_shapeoko.tools import nest
 from stations.cnc_shapeoko.parts import (
     base_deck,
     bay_walls,
@@ -80,6 +81,7 @@ STANDING_MARKS = (
     "EARTH BONDING",                    # the star point. Never clears.
     "PE IS NEVER SWITCHED",             # earth survives the interlock
     "ANODIZE IS AN INSULATOR",          # bonding lug build instruction
+    "sheets of 5x5",                    # the nest's count (C18): a number, never a defect
 )
 
 TODO_MARKS = (
@@ -142,6 +144,7 @@ def collect() -> list[tuple[str, str, str]]:
         ("stock_wash", stock_wash.check_stock_wash(d)),
         ("assembly", check_assembly(comps, d)),
         ("machine", check_machine(comps, d)),
+        ("nest", nest.check_nest(comps, d)),
         (
             "unmodelled",
             [f"UNMODELLED: {name} is a part this plan builds and the model "

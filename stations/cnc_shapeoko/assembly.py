@@ -106,6 +106,9 @@ __all__ = [
     "Joint",
     "Overlap",
     "components",
+    "BIRCH_GROUPS",
+    "birch_components",
+    "acrylic_components",
     "assembly",
     "joints",
     "interference",
@@ -279,6 +282,25 @@ def components(d: Datums = DATUMS) -> list[Component]:
         out.append(Component(label, group, part))
 
     return out
+
+
+BIRCH_GROUPS = ("carcass", "plinth", "drawer", "carriage")
+"""The groups whose every member is a CARCASS_T birch sheet part. Steel, foam,
+acrylic, printed and reference solids carry their own group names, so the
+birch nest (tools/nest.py, C18) reads its part list off this tuple and never
+off a second list of names."""
+
+
+def birch_components(comps: list[Component] | None = None, d: Datums = DATUMS) -> list[Component]:
+    """Every placed solid the birch nest has to find a sheet for."""
+    comps = components(d) if comps is None else comps
+    return [c for c in comps if c.group in BIRCH_GROUPS]
+
+
+def acrylic_components(comps: list[Component] | None = None, d: Datums = DATUMS) -> list[Component]:
+    """Every placed solid the Universal cuts: the ``acrylic`` group."""
+    comps = components(d) if comps is None else comps
+    return [c for c in comps if c.group == "acrylic"]
 
 
 def assembly(comps: list[Component] | None = None, d: Datums = DATUMS) -> Compound:

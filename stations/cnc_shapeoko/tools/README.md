@@ -30,3 +30,25 @@ Five birch parts carry a V-carved word (finish ruling 2026-09-03: carved through
 Both layers are drawn as the carved face is SEEN on the second fixture. For every part but the rear door that is the CUT frame, and the two layers ride the part's own DXF. The rear door's word is on its outside face, the BACK of its drawing, so its second fixture is a SEPARATE file, `rear_door_carve.dxf`: the door outline flipped about its vertical centreline on `OUTLINE_FLIPPED` (reference, not a toolpath; the door is already cut), and `VCARVE` + `REGISTER` in that same flipped frame, the register circles on the flipped catch bores. `rear_door.dxf` holds the CUT frame only. No file mixes the two frames.
 
 Three registers (drawer fronts, lungs door, stock comb) are capsule ends, not round holes; the gate carries a standing RULING WANTED line for each until Jared accepts them or names holes.
+
+## The nest and the sheet count (C18)
+
+`nest.py` is the first-cut gate: every sheet part the assembly places, laid onto the stock it is cut from, and the count that comes out. Run it with `PYTHONPATH=. .venv/bin/python stations/cnc_shapeoko/tools/nest.py`; `check.py` asserts the same count as a STANDING line (`nest: N sheets of 5x5`) so the order and the model cannot drift apart.
+
+Three nests, three stocks, one output folder `export/cnc_shapeoko/nest/`:
+
+- `sheet_NN.dxf` — 18mm 5x5 Baltic birch, every solid in `assembly.birch_components` (groups carcass, plinth, drawer, carriage). The deck and the top cap are track-saw parts by the 2026-09-02 ruling and take a sheet each, flagged TRACK SAW. Everything else is Shapeoko, and because the travel (1237) is shorter than the sheet (1525) on both axes, every Shapeoko sheet is ripped first: full-width rips between shelves, crosscuts between segments, every blank's parts within the travel less one cutter diameter. The rips are drawn.
+- `laser_NN.dxf` — 3mm clear acrylic on the Universal's large bed (`LASER_BED_LARGE`): the rear door's reveal, the console's reveal and three panes, the cradle's lip.
+- `foam_NN.dxf` — two-tone Kaizen foam, one tray per drawer from `trays.plan`.
+- `manifest.csv` — one row per placement: file, part, x, y, size as placed, grain rule, shelf, segment.
+
+Rectangles only, greedy, biggest first, 10mm kerf/margin between rectangles and to every blank edge. The count is a ceiling the shop can only beat. Grain is along the sheet's X; standing seen panels keep theirs vertical, rails and drawer panels along their length, the rest may turn — shop convention, carried as a RULING WANTED line in the gate until Jared confirms or names exceptions in `nest.GRAIN_OVERRIDES`.
+
+The blanks are read off the placed solids in `assembly.components`, never off the export folder (which is gitignored and only as current as its last run). The drawings on a sheet are the parts' own layers, rebuilt through each module's builders and moved with the part, plus:
+
+- `SHEET` — the stock outline
+- `RIP` — the track-saw lines (Shapeoko sheets only)
+- `PART_<label>` — the placed blank's rectangle, one layer per part, so a part's name is in the layer table exactly once per placement
+- `LABEL` — the part's name as glyph outlines inside its rectangle; reference, not a toolpath
+
+The rear door contributes its CUT frame only; its outside-face carve stays in `rear_door_carve.dxf`. The console plate's `ACRYLIC` layer is dropped from the birch sheet because the panes ride the laser nest as their own parts.
