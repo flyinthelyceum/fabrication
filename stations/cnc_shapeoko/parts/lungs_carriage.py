@@ -91,8 +91,9 @@ FULL EXTENSION, THE DOOR AND THE LEG
 ====================================
 
 The tray is checked in two positions. CLOSED, its front sits behind the lungs
-door's landing (C09 is unmodelled; the landing is one carcass thickness, the
-same figure C03 ruled for the rear door). OPEN, it is translated toward the
+door's landing: the door's thickness plus the lay-up on its inside face (C09,
+which is why the lungs bay's slide row starts at ``bay_walls.LUNGS_SLIDE_INSET``
+and not at the drawers' inset). OPEN, it is translated toward the
 operator by the slide's rated travel -- that is -Y on this datum, where +Y runs
 to the rear -- and the unit has to pass between the two front legs. The leg is
 an angle. Its X-facing flange is measured and bolted; its Y-facing flange is
@@ -147,9 +148,10 @@ from stations.cnc_shapeoko.carcass import (
 from stations.cnc_shapeoko.params import EXTRACTORS
 from stations.cnc_shapeoko.parts import mains_backplate
 from stations.cnc_shapeoko.parts.bay_walls import (
+    LINING_T,
+    LUNGS_SLIDE_INSET,
     SLIDE_BORE_D,
     SLIDE_BORE_DEPTH,
-    SLIDE_FRONT_INSET,
     SLIDE_LEN,
     SLIDE_MEMBER_H,
 )
@@ -243,11 +245,12 @@ LIP_INSET = T
 drawers' ``BACK_INSET``, one thickness, so the cheek wraps the lip and the
 slide's drawer member has full-length birch under it. CONFIDENCE: derived."""
 
-LUNGS_DOOR_LANDING = T
-"""What the bay's front gives up to the lungs door (C09). SOURCE: task C03's
-ruling for the REAR door, "bay_brain_d less the door's carcass_t landing",
-applied to the front of the lungs bay by analogy. CONFIDENCE: assumption until
-C09 lands a door. The closed tray's front has to sit behind it."""
+LUNGS_DOOR_LANDING = T + LINING_T
+"""What the bay's front gives up to the lungs door (C09): the door's own
+thickness, flush in the front, plus the lay-up bonded to its inside face.
+SOURCE: lungs_door, landed 2026-09-04; was ``T`` alone by analogy with the
+rear door's landing while C09 was unmodelled. CONFIDENCE: derived. The closed
+tray's front sits behind it at ``bay_walls.LUNGS_SLIDE_INSET``."""
 
 SCREW_PITCH_TRAY = T * 4
 SCREW_INSET_TRAY = T
@@ -360,11 +363,12 @@ def carriage_width(d: Datums = D) -> float:
 
 def carriage_origin(d: Datums = D) -> tuple[float, float, float]:
     """Station coordinates of the tray's lower, left, front corner: centred
-    across the bay, front flush with the cabinet member's front end, standing
-    on the deck."""
+    across the bay, front flush with the cabinet member's front end (the
+    lungs bay's own inset, behind the door and its lay-up), standing on the
+    deck."""
     s = d.s
     x0 = d.lungs_x[0] + s.lungs_lining_t + s.lungs_slide_t
-    return (x0, SLIDE_FRONT_INSET, d.deck_top)
+    return (x0, LUNGS_SLIDE_INSET, d.deck_top)
 
 
 def inner_width(d: Datums = D) -> float:

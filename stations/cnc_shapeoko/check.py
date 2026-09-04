@@ -55,6 +55,7 @@ from stations.cnc_shapeoko.parts import (
     drawers,
     leg_joint,
     lungs_carriage,
+    lungs_door,
     mains_backplate,
     mast_base,
     rear_door,
@@ -90,7 +91,6 @@ TODO_MARKS = (
 # see and will not count.
 UNMODELLED = (
     "exhaust_plenum",
-    "lungs_door",
     "signal_mounts",
     "stock_wash",
 )
@@ -137,6 +137,7 @@ def collect() -> list[tuple[str, str, str]]:
         ("lungs_carriage", lungs_carriage.check_lungs_carriage(d)),
         ("console_plate", console_plate.check_console_plate(d)),
         ("rear_door", rear_door.check_rear_door(d)),
+        ("lungs_door", lungs_door.check_lungs_door(d)),
         ("assembly", check_assembly(comps, d)),
         ("machine", check_machine(comps, d)),
         (

@@ -85,6 +85,7 @@ from stations.cnc_shapeoko.parts import (
     drawers,
     leg_joint,
     lungs_carriage,
+    lungs_door,
     mains_backplate,
     mast_base,
     rear_door,
@@ -247,6 +248,15 @@ def components(d: Datums = DATUMS) -> list[Component]:
     # door is not a component; ``rear_door.door_open`` answers that question
     # in the part's own check.
     for label, group, part in rear_door.placed_all(d):
+        out.append(Component(label, group, part))
+
+    # 16. the lungs door (C09), CLOSED: the door flush in the bay's front, the
+    # lay-up on its inside face as a reference slab the closed carriage is
+    # measured against, the strike plate on the door and the catch body on
+    # the divider. The knuckle is not a component: it stands proud of the
+    # front plane by design and ``lungs_door`` checks it against the leg
+    # itself. The open door is ``lungs_door.door_open``.
+    for label, group, part in lungs_door.placed_all(d):
         out.append(Component(label, group, part))
 
     return out
@@ -427,6 +437,12 @@ def joints(d: Datums = DATUMS) -> dict[frozenset[str], Joint]:
     # -- the rear door: its ends on the end walls, the partition's edge on
     # its inside face, the pane housed in its rabbet, everything on it bears.
     for a, b, kind, axis, lo, hi, note in rear_door.joint_table(d):
+        js.append(Joint(a, b, kind, axis, lo, hi, note))
+
+    # -- the lungs door: its lay-up and the strike bear on it, the catch
+    # bears on the divider; its edges meet nothing but the knuckle gap and
+    # the reveals.
+    for a, b, kind, axis, lo, hi, note in lungs_door.joint_table(d):
         js.append(Joint(a, b, kind, axis, lo, hi, note))
 
     # The leg joint declares nothing here. It is not a joint between two CARCASS
@@ -968,6 +984,23 @@ def main() -> None:
         f"{rear_door.MATERIAL_REVEAL} over door x {wx0:.0f}..{wx1:.0f} y {wy0:.0f}..{wy1:.0f}; "
         f"{rear_door.SWITCH_ENV_NAME} axis y {rear_door.switch_axis(d)[0]:.1f} "
         f"z {rear_door.switch_axis(d)[1]:.1f} into the left end wall"
+    )
+
+    print("\nlungs door: flush in the bay's front, hinged on the end wall's edge")
+    lw, lh = lungs_door.door_size(d)
+    lax = lungs_door.hinge_axis(d)
+    (kx0, kx1), (ky0, ky1), (kz0, kz1) = lungs_door.catch_station(d)
+    print(
+        f"  {lungs_door.PART_NAME}: {lw:.1f} x {lh:.1f} x {d.t:.0f} in the {d.s.bay_lungs_w:.0f} bay, "
+        f"HINGE_GAP {lungs_door.HINGE_GAP:.0f} + SIDE_REVEAL {lungs_door.SIDE_REVEAL:.0f}; pin at "
+        f"x {lax.position.X:.1f} y {lax.position.Y:.1f}, vertical; pull {lungs_door.PULL_L:.0f} x "
+        f"{lungs_door.PULL_H:.0f} at door ({lungs_door.pull_local(d)[0]:.0f}, {lungs_door.pull_local(d)[1]:.0f})"
+    )
+    print(
+        f"  {lungs_door.LINING_NAME}: {lungs_door.lining_size(d)[0]:.0f} x {lungs_door.lining_size(d)[1]:.0f} x "
+        f"{lungs_door.lining_t(d):.0f} on the inside face, y {d.t:.0f}..{d.t + lungs_door.lining_t(d):.0f}; "
+        f"the tray closes at y {lungs_carriage.carriage_origin(d)[1]:.0f}; "
+        f"{lungs_door.CATCH_NAME} x {kx0:.0f}..{kx1:.0f} y {ky0:.0f}..{ky1:.0f} z {kz0:.0f}..{kz1:.0f} on the divider"
     )
 
     print("\nleg joint: bolt axes, station coordinates")

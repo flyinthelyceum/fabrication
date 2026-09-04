@@ -76,6 +76,7 @@ __all__ = [
     "solid",
     "gussets",
     "front_leg_flanges",
+    "front_left_leg_envelope",
     "clearance",
     "check_machine",
     "main",
@@ -132,6 +133,54 @@ def front_leg_flanges(d: Datums = DATUMS) -> list[tuple[str, Part]]:
             Location((x0, d.y_front - t, z0))
         )
         out.append((label, plate))
+    return out
+
+
+def front_left_leg_envelope(d: Datums = DATUMS) -> list[tuple[str, str, Part]]:
+    """The front-left leg as the steel a door hinged on the left end wall's
+    front edge swings against: (label, case, solid), station coordinates.
+
+    The leg is an angle (MEASURED 2026-09-03). Its X-facing flange is the
+    bolted one: ``leg_wall_t`` thick just outside ``x_left``, running from
+    the corner into the opening by ``flange_w`` -- the width the bolt pattern
+    proves until the flange is measured -- and it is present in both cases,
+    so its case reads "measured". Its Y-facing flange is the open reading:
+    while ``LegHoles.front_flange_inboard`` is None BOTH cases are built and
+    labelled, "inboard" (``front_leg_flanges``, the plate across the bay's
+    front) and "outboard" (the same plate running away from the opening,
+    across the leg's front face at x < x_left); once it is measured only the
+    real one is. The vertex is covered either way: the X flange runs from
+    ``y_front - leg_wall_t`` so the corner is steel in both.
+
+    A caller reports gaps and shared volume per case; the swing that matters
+    is the one the tape settles.
+    """
+    s = d.s
+    h = s.leg_holes
+    w = h.flange_w if h.flange_w is not None else h.span_h + h.hole_d / 2
+    t = s.leg_wall_t
+    out: list[tuple[str, str, Part]] = [
+        (
+            "front left leg, X flange",
+            "measured",
+            Box(t, w + t, s.table_h, align=(Align.MIN, Align.MIN, Align.MIN)).moved(
+                Location((d.x_left - t, d.y_front - t, 0.0))
+            ),
+        )
+    ]
+    for label, plate in front_leg_flanges(d):
+        if label.startswith("front left"):
+            out.append((f"{label} (inboard case)", "inboard", plate))
+    if h.front_flange_inboard is not True:
+        out.append(
+            (
+                "front left leg, Y flange (outboard case)",
+                "outboard",
+                Box(w, t, s.table_h, align=(Align.MIN, Align.MIN, Align.MIN)).moved(
+                    Location((d.x_left - w, d.y_front - t, 0.0))
+                ),
+            )
+        )
     return out
 
 

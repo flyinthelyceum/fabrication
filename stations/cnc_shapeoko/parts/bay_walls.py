@@ -127,6 +127,7 @@ from stations.cnc_shapeoko.carcass import (
     relief,
     screw_line,
     screw_positions,
+    snap_up,
     through_slot,
     to_local,
 )
@@ -185,6 +186,15 @@ LINING_T = 12.0
 """Mass-loaded vinyl plus open-cell foam, bonded to the bay faces. Not modelled
 as geometry, because it is a bonded lay-up rather than a part, but it eats bay
 width and the check has to know."""
+
+LUNGS_SLIDE_INSET = snap_up(T + LINING_T)
+"""Where the LUNGS bay's slide row starts, from the open front. The drawers'
+row starts at ``SLIDE_FRONT_INSET``; this one cannot. The lungs door (C09) is
+``T`` thick, sits flush in the bay's front, and carries ``LINING_T`` of the
+bay's lay-up on its inside face, so the carriage's closed front has to sit
+behind ``T + LINING_T``. Snapped up to the grid; what the snap adds is the
+running gap between the lay-up and the tray. ``lungs_carriage`` closes here
+and ``lungs_door`` measures its lay-up against it."""
 
 # ---- hands bay ------------------------------------------------------------
 DRAWER_SHARES = (4, 3, 2)
@@ -305,9 +315,12 @@ def _outline(spec: WallSpec, d: Datums = D) -> Part:
     return p
 
 
-def _slide_row(y_local: float, side: str, d: Datums = D) -> Part:
-    """Blind pilot bores for one slide's cabinet member, on one face."""
-    x0 = SLIDE_FRONT_INSET
+def _slide_row(
+    y_local: float, side: str, d: Datums = D, *, inset: float = SLIDE_FRONT_INSET
+) -> Part:
+    """Blind pilot bores for one slide's cabinet member, on one face,
+    starting ``inset`` back from the open front."""
+    x0 = inset
     cutters = None
     for p in screw_positions(SLIDE_LEN, pitch=SCREW_PITCH, inset=SCREW_END_INSET):
         c = bore(
@@ -318,8 +331,9 @@ def _slide_row(y_local: float, side: str, d: Datums = D) -> Part:
 
 
 def _lungs_face(side: str, d: Datums = D) -> Part:
-    """Extractor carriage: one slide row, low in the bay."""
-    return _slide_row(TONGUE_D + EXTRACTOR_SLIDE_Z, side, d)
+    """Extractor carriage: one slide row, low in the bay, behind the lungs
+    door and its lay-up."""
+    return _slide_row(TONGUE_D + EXTRACTOR_SLIDE_Z, side, d, inset=LUNGS_SLIDE_INSET)
 
 
 def drawer_openings(d: Datums = D) -> list[tuple[float, float]]:
@@ -630,14 +644,14 @@ def _wall_features(
     out: list[tuple[str, float, float, float]] = []
 
     slide_r = SLIDE_BORE_D / 2
-    slide_xs = [
-        SLIDE_FRONT_INSET + p
-        for p in screw_positions(SLIDE_LEN, pitch=SCREW_PITCH, inset=SCREW_END_INSET)
-    ]
+    slide_ps = screw_positions(SLIDE_LEN, pitch=SCREW_PITCH, inset=SCREW_END_INSET)
+    slide_xs = [SLIDE_FRONT_INSET + p for p in slide_ps]
 
     if spec.side_of("lungs") is not None:
-        for x in slide_xs:
-            out.append(("lungs slide mount", x, TONGUE_D + EXTRACTOR_SLIDE_Z, slide_r))
+        for p in slide_ps:
+            out.append(
+                ("lungs slide mount", LUNGS_SLIDE_INSET + p, TONGUE_D + EXTRACTOR_SLIDE_Z, slide_r)
+            )
 
     if spec.side_of("hands") is not None:
         skip = console_plate.narrowed_openings(d) if spec.index == 3 else ()
@@ -702,10 +716,10 @@ def check_bay_walls(d: Datums = D) -> list[str]:
         )
 
     # -- the extractor still has to lie down in the bay
-    if s.extractor_env[0] + SLIDE_FRONT_INSET > d.front_bay_d:
+    if s.extractor_env[0] + LUNGS_SLIDE_INSET > d.front_bay_d:
         notes.append(
             f"extractor {s.extractor_env[0]:.0f}mm long plus a "
-            f"{SLIDE_FRONT_INSET:.0f}mm slide inset does not lie in a "
+            f"{LUNGS_SLIDE_INSET:.0f}mm slide inset does not lie in a "
             f"{d.front_bay_d:.0f}mm bay"
         )
 
