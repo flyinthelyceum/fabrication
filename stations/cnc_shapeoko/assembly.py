@@ -83,6 +83,7 @@ from stations.cnc_shapeoko.parts import (
     brain_partition,
     drawers,
     leg_joint,
+    mains_backplate,
     mast_base,
     spine_panel,
     stock_rails,
@@ -211,6 +212,14 @@ def components(d: Datums = DATUMS) -> list[Component]:
     # in the assembly for the same reason the mast plate is.
     out.append(Component(vfd_mount.PART_NAME, "carcass", vfd_mount.place(d=d)))
     out.append(Component(vfd_mount.KEEPOUT_NAME, "reference", vfd_mount.build_keepout(d)))
+
+    # 12. the sealed side's electrical: the mains backplate on the spine's
+    # rear face between the crossing rows, its two DIN rails, every device as
+    # a reference envelope on its rail, and the extractor's receptacle box on
+    # the lungs face of the spine. The rails and the box are steel; the
+    # envelopes are air the way the drive's keep-out is.
+    for label, group, part in mains_backplate.placed_all(d):
+        out.append(Component(label, group, part))
 
     return out
 
@@ -370,6 +379,11 @@ def joints(d: Datums = DATUMS) -> dict[frozenset[str], Joint]:
         Joint(vfd_mount.PART_NAME, vfd_mount.KEEPOUT_NAME, "bearing", None, note=
               "the drive's back hangs flat on the plate's rear face")
     )
+
+    # -- the mains backplate is flat on the spine; its rails, devices and the
+    # receptacle box are all faces. Read off the module's own table.
+    for a, b, kind, axis, lo, hi, note in mains_backplate.joint_table(d):
+        js.append(Joint(a, b, kind, axis, lo, hi, note))
 
     # The leg joint declares nothing here. It is not a joint between two CARCASS
     # parts: it is a bolt from the machine into one of them, and the machine is
@@ -803,6 +817,22 @@ def main() -> None:
         f"y {kb.min.Y:.1f}..{kb.max.Y:.1f}  z {kb.min.Z:.1f}..{kb.max.Z:.1f}; vented face "
         f"{vfd_mount.standoff(d):.1f} off the end wall's inner face, "
         f"{len(standoff_intruders(comps, d))} part(s) in the standoff slab"
+    )
+
+    print("\nbrain band: the sealed side's electrical")
+    pw, ph = mains_backplate.plate_size(d)
+    print(
+        f"  {mains_backplate.PART_NAME}: {pw:.1f} x {ph:.1f} x {mains_backplate.PLATE_T:.0f} on the "
+        f"spine's rear face at x {mains_backplate.plate_x(d)[0]:.1f}, between the crossing rows; "
+        f"{len(mains_backplate.RAILS)} rails {mains_backplate.rail_length(d):.0f} long, "
+        f"{len(mains_backplate.envelopes(d))} device envelopes; contactor "
+        f"{mains_backplate.contactor_to_transit(d):.0f}mm from the transit gap "
+        f"(limit {mains_backplate.CONTACTOR_TRANSIT_MAX:.0f}); PE_SWITCHED = {mains_backplate.PE_SWITCHED}"
+    )
+    rx, ry, rz = mains_backplate.receptacle_centre(d)
+    print(
+        f"  {mains_backplate.RECEPTACLE_NAME}: {mains_backplate.RECEPTACLE} at "
+        f"({rx:.1f}, {ry:.1f}, {rz:.1f}) on the lungs face of the spine, on the EXTRACTOR MAINS axis"
     )
 
     print("\nleg joint: bolt axes, station coordinates")
