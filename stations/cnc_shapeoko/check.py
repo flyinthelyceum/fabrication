@@ -54,6 +54,7 @@ from stations.cnc_shapeoko.parts import (
     brain_partition,
     console_plate,
     drawers,
+    exhaust_plenum,
     leg_joint,
     lungs_carriage,
     lungs_door,
@@ -94,9 +95,7 @@ TODO_MARKS = (
 # falls to zero only when final assembly is actually modelled. Never let this
 # list drift from the plan: a part missing from here is a part the gate cannot
 # see and will not count.
-UNMODELLED = (
-    "exhaust_plenum",
-)
+UNMODELLED: tuple[str, ...] = ()
 
 MEASURE_MARKS = (
     "not measured",
@@ -144,6 +143,7 @@ def collect() -> list[tuple[str, str, str]]:
         ("lungs_door", lungs_door.check_lungs_door(d)),
         ("signal_mounts", signal_mounts.check_signal_mounts(d)),
         ("stock_wash", stock_wash.check_stock_wash(d)),
+        ("exhaust_plenum", exhaust_plenum.check_exhaust_plenum(d)),
         ("assembly", check_assembly(comps, d)),
         ("machine", check_machine(comps, d)),
         ("nest", nest.check_nest(comps, d)),

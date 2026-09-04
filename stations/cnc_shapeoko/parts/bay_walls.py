@@ -25,6 +25,9 @@ WHAT THIS PART OWNS
     and ``top_cap`` and ``base_deck`` cut to it
   * the hose port through the left end wall
   * the VFD louvre through the left end wall, over the brain band
+  * the exhaust plenum's exit capsule through the left end wall, low and rear
+    in the lungs bay. ``exhaust_plenum`` owns the number; this panel is the
+    hole that lets the plenum's air out to the room.
   * the clearance holes that fasten the spine's two ends to the end walls
   * the leg-bolt inserts in the two end walls' OUTER faces, which is the joint
     that holds the whole station to the machine. ``leg_joint`` owns where they
@@ -507,6 +510,25 @@ def _hose_port(d: Datums = D) -> Part:
     )
 
 
+def _exhaust_exit(d: Datums = D) -> Part:
+    """The exhaust plenum's exit capsule through the left end wall, low and
+    rear in the lungs bay: the plenum's air leaves the carcass here.
+
+    ``exhaust_plenum`` (C08) owns the number and cuts the same capsule in its
+    own left wall, which stands against this one; this wall carries the hole
+    that lets it out to the room. The import is deferred because that module
+    is built on this one."""
+    from stations.cnc_shapeoko.parts.exhaust_plenum import exit_station
+
+    (y0, y1), (z0, z1) = exit_station(d)
+    return through_slot(
+        ((y0 + y1) / 2, _y((z0 + z1) / 2, d)),
+        y1 - y0,
+        z1 - z0,
+        corner_r=(z1 - z0) / 2,
+    )
+
+
 @dataclass(frozen=True)
 class _Louvre:
     """The VFD louvre, resolved in panel-local coordinates.
@@ -714,6 +736,7 @@ def build(i: int = 0, d: Datums = D) -> Part:
 
     if spec.index == 0:
         p -= _hose_port(d)
+        p -= _exhaust_exit(d)
         louvre = _louvre(d)
         if louvre is not None:
             p -= louvre
@@ -809,6 +832,14 @@ def _wall_features(
                 (d.s.hose_id + 2 * HOSE_PORT_CLEAR) / 2,
             )
         )
+        # the plenum's exit capsule, as the two circles that define it, so a
+        # later feature is asked about the real ends and not about a centre
+        from stations.cnc_shapeoko.parts.exhaust_plenum import exit_station
+
+        (ey0, ey1), (ez0, ez1) = exit_station(d)
+        r = (ez1 - ez0) / 2
+        for end, y in (("front", ey0 + r), ("rear", ey1 - r)):
+            out.append((f"plenum exit {end}", y, _y((ez0 + ez1) / 2, d), r))
 
     return out
 

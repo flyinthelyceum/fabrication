@@ -160,10 +160,32 @@ SOURCES = {
                   " -- CT 15 E / CT 25 E manual (festoolusa serves it empty to "
                   "a script; the Wayback copy at "
                   "http://web.archive.org/web/20240204235125/https://www.festoolusa.com/-/media/tts/fcp/festool-usa/downloads/manuals/10696789_d_ct_15_25_e_us.pdf"
-                  " reads). Fig. 1 item [1-8] Exhaust opening: a grille on the "
-                  "RIGHT side face of the head, beside the rear locking clip "
-                  "[1-7]; section 9.3: open the grille and the D27/32 hose "
-                  "inserts. No dimension or position is given.",
+                  " reads). Fig. 1 item [1-8] Exhaust opening: a grille on a "
+                  "side face of the head, beside the locking clip [1-7] and "
+                  "under the filter drawer [1-6], near the front corner; "
+                  "section 9.3: open the grille and the D27/32 hose inserts. "
+                  "No dimension or position is given. READ 2026-09-04 off the "
+                  "figure itself (page 4 of the PDF, rendered): the drawing "
+                  "shows the control panel's face and that side face together, "
+                  "so the side is the one on the viewer's RIGHT when facing the "
+                  "panel. The value is a DESIGN face-region under Jared's "
+                  "ruling of 2026-09-04 (\"airflow is airflow\"): the head band "
+                  "over the front half of that face, which covers the grille "
+                  "wherever on the face it sits. Airflow is not read here: "
+                  "see SOURCES[\"ct15_airflow\"].",
+    "ct15_airflow": "https://www.festoolusa.com/-/media/tts/fcp/festool-usa/downloads/manuals/10696789_d_ct_15_25_e_us.pdf"
+                  " -- same manual, section 5 Technical data, read 2026-09-04 "
+                  "off the Wayback copy. The row reads \"Max. suction capacity "
+                  "(air), extractor/turbine: 130 m3/h (4591 cu.ft./h) / 222 "
+                  "m3/h (7840 cu.ft./h)\". Two figures, not one: 4591 cu.ft./h "
+                  "is 76.5 CFM at the extractor, 7840 cu.ft./h is 130.7 CFM at "
+                  "the bare turbine. The festoolusa product page's \"130 CFM "
+                  "(3 700 l/min)\" is the TURBINE number -- 3 700 l/min is 222 "
+                  "m3/h -- and the model, and the brief, had been reading it as "
+                  "the extractor's. Corrected 2026-09-04: the extractor moves "
+                  "130 m3/h, and 130 m3/h and 130 CFM are two different numbers "
+                  "that happen to share a digit string. Both now sit on the "
+                  "EXTRACTORS row under their own names.",
     "ct15_inlet": "https://www.festoolusa.com/-/media/tts/fcp/festool-usa/downloads/manuals/10696789_d_ct_15_25_e_us.pdf"
                   " -- same manual, fig. 3 'Connect the suction hose'. Not "
                   "dimensioned. Hose D 27/32 mm x 3.5 m per the data table. "
@@ -226,9 +248,11 @@ SOURCES = {
 # bag part numbers are per size and do not interchange, so both live on the same
 # row as the name and neither can drift away from it again.
 #
-#   CT 15      457 x 308 x 429    15 L    130 CFM   fitted, CALIPERED
+#   CT 15      457 x 308 x 429    15 L    130 m3/h  fitted, CALIPERED
 #              (the spec table's 470 x 320 x 435 also had W and D the wrong way
-#               round, which is why the row below is now the caliper's)
+#               round, which is why the row below is now the caliper's; the
+#               airflow column is the EXTRACTOR figure, not the turbine's, and
+#               it read 130 CFM here until 2026-09-04 -- see the row)
 #   CT 26 EI   630 x 365 x 540    26 L              never fitted
 #   CT 36 EI   630 x 365 x 596    36 L              WITHDRAWN 2026-09-03
 #   CT 48 EI   740 x 406 x 1005   48 L              will not fit, ever
@@ -240,7 +264,18 @@ EXTRACTORS = {
                                         # festoolusa spec table's 470 x 320 x 435,
                                         # which was also transposed in W and D.
         "capacity_l": 15,
-        "airflow_cfm": 130.0,           # festoolusa: "130 CFM (3 700 l/min)"
+        # AIRFLOW, CORRECTED 2026-09-04. The manual's data table row "Max.
+        # suction capacity (air), extractor/turbine" carries TWO figures:
+        #   extractor  130 m3/h (4591 cu.ft./h) =  76.5 CFM  through the
+        #              machine, filter and hose in the path
+        #   turbine    222 m3/h (7840 cu.ft./h) = 130.7 CFM  the fan alone
+        # The festoolusa product page's "130 CFM (3 700 l/min)" is the TURBINE
+        # figure: 3 700 l/min IS 222 m3/h. This row read airflow_cfm 130.0 and
+        # called it the extractor's, which was 1.7x too high. Both figures now
+        # live here under their own names and nothing derives from a bare 130.
+        # See SOURCES["ct15_airflow"].
+        "airflow_extractor_m3h": 130.0,
+        "airflow_turbine_m3h": 222.0,
         "bag": "Festool SC-FIS-CT MINI/MIDI-2/5/CT15, part 204308",
         "main_filter": "Festool HEPA-HF-CT COMP (MINI/MIDI-2/CT15), part 204201",
                                         # festoolusa accessory page; see
@@ -351,8 +386,25 @@ motion_controller_mount = None      # foot / slot pattern. MEASURE. The guide
                                     # says BACK RIGHT leg, leg kit hardware,
                                     # and stops there.
 
-ct15_exhaust = None                 # position and size of grille [1-8] on the
-                                    # RIGHT side face of the head. MEASURE.
+ct15_exhaust = {
+    # A design FACE-REGION, not a grille position. RULED 2026-09-04 (Jared):
+    # "we don't need to overengineer the plenum ct15 grille. airflow is
+    # airflow." The plenum (parts/exhaust_plenum.py) covers the whole region
+    # and sizes its sections to the unit's airflow, so where inside this
+    # face the grille [1-8] actually sits stops mattering. See SOURCES.
+    "side": "right, facing the control panel",   # manual Fig. 1: the side
+                                    # with the locking clip [1-7] and the
+                                    # filter drawer [1-6]. On the tray, the
+                                    # panel faces the lip (+Y), so this is
+                                    # the -X face, toward the LEFT end wall.
+    "along_frac": (0.5, 1.0),       # the half of the unit's length nearest
+                                    # the control panel (the grille is by the
+                                    # front corner, beside the clip)
+    "up_frac": (0.6, 1.0),          # the head band: the top 40% of the
+                                    # unit's height. Fig. 1 puts the grille
+                                    # in the head's lower band, just over the
+                                    # container seam; this covers it.
+}
 ct15_inlet = None                   # hose inlet position on the container.
                                     # MEASURE.
 ct15_plug_lead = {
@@ -414,10 +466,9 @@ CATALOG_MEASURE_HINTS = {
                   "171.5 x 88.9 is not a datasheet.",
     "motion_controller_mount": "Slot/foot pattern on the enclosure back: "
                   "matches or does not match the leg's 40x40.",
-    "ct15_exhaust": "Grille [1-8] on the RIGHT side of the head: centre and "
-                  "W x H, for the lungs bay's exhaust path and lining cut.",
-    "ct15_inlet": "Hose inlet centre on the container: where the D36 hose "
-                  "leaves the bay toward the hose port.",
+    "ct15_inlet": "Hose inlet centre on the head: where the D36 hose "
+                  "leaves the bay toward the hose port. Sets the floor of "
+                  "exhaust_plenum's hose corridor and so the plenum's top.",
     "ct15_plug_lead.exit": "Where the mains lead leaves the head: the "
                   "station socket's side.",
 }
@@ -494,7 +545,9 @@ CONFIDENCE = {
     "45-682-292.clamp_plate_holes": "MEASURE",
     "motion_controller_env": "MEASURE",     # forum lead only, not a datasheet
     "motion_controller_mount": "MEASURE",
-    "ct15_exhaust": "MEASURE",
+    "ct15_exhaust": "design",       # RULED 2026-09-04, Jared: "airflow is
+                                    # airflow". A face region, not a grille.
+    "ct15_airflow": "datasheet",    # the manual's own data table, both figures
     "ct15_inlet": "MEASURE",
     "ct15_plug_lead": "datasheet",
     "ct15_plug_lead.exit": "MEASURE",

@@ -140,6 +140,7 @@ from stations.cnc_shapeoko.parts import (
     callouts,
     console_plate,
     drawers,
+    exhaust_plenum,
     lungs_carriage,
     lungs_door,
     mains_backplate,
@@ -575,6 +576,19 @@ def check_nest(comps: list[Component] | None = None, d: Datums = D) -> list[str]
                 f"sheet {FOAM_SHEET[0]:.0f} x {FOAM_SHEET[1]:.0f}"
             )
 
+    # A blank the nest placed and ``flats`` has no drawing for is a part the
+    # sheet count includes and the DXF export cannot write. ``export`` raises
+    # on it; the gate has to see it first, because the count going up is not
+    # the same as the file existing. (Found 2026-09-04 by the plenum.)
+    reg = flats(d)
+    missing = sorted({p.blank.label for p in n.placements() if p.blank.label not in reg})
+    if missing:
+        notes.append(
+            "nest: no flat drawing for " + ", ".join(missing)
+            + ". The sheet count carries them and the DXF export cannot write them; "
+            "register each in nest.flats."
+        )
+
     birch = n.by_material("birch")
     track = [s for s in birch if s.kind == "TRACK SAW"]
     shap = [s for s in birch if s.kind == "SHAPEOKO"]
@@ -649,6 +663,8 @@ def flats(d: Datums = D) -> dict[str, tuple[Part | None, dict[str, list[Face]]]]
     add(vfd_mount.PART_NAME, vfd_mount.build(d))
     add(mains_backplate.PART_NAME, mains_backplate.build(d))
     for label, part, _plane in lungs_carriage.panels(d):
+        add(label, part)
+    for label, part, _plane in exhaust_plenum.panels(d):
         add(label, part)
     plate_layers = console_plate._plate_layers(d)
     plate_layers.pop("ACRYLIC", None)      # the panes are their own acrylic parts

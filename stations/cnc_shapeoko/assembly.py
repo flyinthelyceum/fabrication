@@ -84,6 +84,7 @@ from stations.cnc_shapeoko.parts import (
     callouts,
     console_plate,
     drawers,
+    exhaust_plenum,
     leg_joint,
     lungs_carriage,
     lungs_door,
@@ -288,6 +289,14 @@ def components(d: Datums = DATUMS) -> list[Component]:
     # between them along the right divider, all reference solids, so the
     # run is compared against the comb, the blanks and the divider here.
     for label, group, part in stock_wash.placed_all(d):
+        out.append(Component(label, group, part))
+
+    # 19. the exhaust plenum (C08): the baffled birch box across the rear of
+    # the lungs bay, its lay-up on the back wall and both baffles as reference
+    # slabs, and the hose corridor as the reference air that sets its top. The
+    # bay is the plenum's first chamber, so the box meets the unit nowhere;
+    # what it has to clear is the carriage, the receptacle box and the hose.
+    for label, group, part in exhaust_plenum.placed_all(d):
         out.append(Component(label, group, part))
 
     return out
@@ -515,6 +524,12 @@ def joints(d: Datums = DATUMS) -> dict[frozenset[str], Joint]:
     # -- the stock wash: the channel bears on the cap; the plug and the lead
     # are meant to touch nothing.
     for a, b, kind, axis, lo, hi, note in stock_wash.joint_table(d):
+        js.append(Joint(a, b, kind, axis, lo, hi, note))
+
+    # -- the exhaust plenum: the floor, the top and both walls housed in the
+    # side walls' rabbets, the baffles housed in the plates' dados, the lay-up
+    # bearing on its faces, and the box screwed to the bay on faces.
+    for a, b, kind, axis, lo, hi, note in exhaust_plenum.joint_table(d):
         js.append(Joint(a, b, kind, axis, lo, hi, note))
 
     # The leg joint declares nothing here. It is not a joint between two CARCASS
@@ -1078,6 +1093,23 @@ def main() -> None:
         f"{lungs_door.lining_t(d):.0f} on the inside face, y {d.t:.0f}..{d.t + lungs_door.lining_t(d):.0f}; "
         f"the tray closes at y {lungs_carriage.carriage_origin(d)[1]:.0f}; "
         f"{lungs_door.CATCH_NAME} x {kx0:.0f}..{kx1:.0f} y {ky0:.0f}..{ky1:.0f} z {kz0:.0f}..{kz1:.0f} on the divider"
+    )
+
+    print("\nexhaust plenum: the bay breathes out through a baffled box on the spine")
+    (px0, px1), (py0, py1), (pz0, pz1) = exhaust_plenum.box_station(d)
+    (ex0, ex1), (ez0, ez1) = exhaust_plenum.exit_station(d)
+    worst = min(a for _n, a in exhaust_plenum.free_areas(d))
+    print(
+        f"  {exhaust_plenum.PART_NAME}: {px1 - px0:.0f} x {py1 - py0:.1f} x {pz1 - pz0:.1f} at "
+        f"x {px0:.0f}..{px1:.0f} y {py0:.1f}..{py1:.1f} z {pz0:.1f}..{pz1:.1f}; "
+        f"{exhaust_plenum.POCKETS} pockets, {exhaust_plenum.POCKETS - 1} baffles, "
+        f"gap {exhaust_plenum.gap(d):.0f} past each end; tightest section {worst / 100:.0f} cm2 "
+        f"against {exhaust_plenum.section_req() / 100:.0f} required"
+    )
+    print(
+        f"  exit: {ex1 - ex0:.0f} x {ez1 - ez0:.0f} capsule through {bay_walls.WALLS[0].name} at "
+        f"y {ex0:.0f}..{ex1:.0f} z {ez0:.0f}..{ez1:.0f}, {(ez0 + ez1) / 2 - d.deck_top:.0f} over the deck; "
+        f"{exhaust_plenum.HOSE_NAME} over the top by {exhaust_plenum.HOSE_CLEAR:.0f}"
     )
 
     print("\ncallouts: V-carved through the paint on a second fixture (C17); each rides in its part")
