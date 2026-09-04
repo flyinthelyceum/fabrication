@@ -84,6 +84,7 @@ from stations.cnc_shapeoko.parts import (
     leg_joint,
     mast_base,
     spine_panel,
+    stock_rails,
     top_cap,
     trays,
 )
@@ -188,6 +189,12 @@ def components(d: Datums = DATUMS) -> list[Component]:
     # birch, but it lives in the brain band's corner beside two housed panels,
     # which is exactly the kind of neighbour the interference check exists for.
     out.append(Component(mast_base.NAME, "steel", mast_base.place(d=d)))
+
+    # 9. the two stock rack comb rails, seated in the housings the dividers
+    # already cut. Front and rear, both on the deck; see the module docstring
+    # for why there is no top rail.
+    for label, part in stock_rails.placed_all(d):
+        out.append(Component(label, "carcass", part))
 
     return out
 
@@ -304,6 +311,10 @@ def joints(d: Datums = DATUMS) -> dict[frozenset[str], Joint]:
             note="the tray stands on the drawer's bottom panel",
         )
     )
+
+    # -- the stock rails are housed in both dividers and stand on the deck --
+    for a, b, kind, axis, lo, hi, note in stock_rails.joint_table(d):
+        js.append(Joint(a, b, kind, axis, lo, hi, note))
 
     # -- the mast backing plate bears on the cap's underside ----------------
     js.append(
@@ -678,6 +689,15 @@ def main() -> None:
         f"{len(plan.sockets)} sockets from the tool list, "
         f"{len(miss)} {trays.TRAY_V1} row(s) still MEASURE, "
         f"{len(trays.tiles(plan))} print tiles"
+    )
+
+    print("\nstock bay: two comb rails on the deck")
+    print(
+        f"  {len(stock_rails.RAILS)} x {stock_rails.rail_length(d):.1f} x "
+        f"{stock_rails.RAIL_H:.0f} x {stock_rails.RAIL_T:.0f}, "
+        f"{stock_rails.slot_count(d)} slots {stock_rails.SLOT_W:.1f} wide at "
+        f"{stock_rails.pitch(d):.1f} pitch, tooth {stock_rails.tooth_w(d):.1f}; "
+        f"a blank stands at z {stock_rails.blank_stand_z(d):.1f}"
     )
 
     print("\nleg joint: bolt axes, station coordinates")
