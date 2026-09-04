@@ -7,3 +7,4 @@ export/*
 
 # CAD build artifacts (STEP/STL regenerate from params)
 out/
+.claude/
