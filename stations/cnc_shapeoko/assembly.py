@@ -890,10 +890,9 @@ def main() -> None:
     plan = trays.plan(trays.TRAY_V1, d)
     miss = trays.skipped(trays.TRAY_V1)
     print(
-        f"  {trays.TRAY_LABEL}: {plan.w:.1f} x {plan.d:.1f} x {plan.h:.1f}, "
-        f"{len(plan.sockets)} sockets from the tool list, "
-        f"{len(miss)} {trays.TRAY_V1} row(s) still MEASURE, "
-        f"{len(trays.tiles(plan))} print tiles"
+        f"  {trays.TRAY_LABEL}: {plan.w:.1f} x {plan.d:.1f} x {plan.h:.1f} foam, "
+        f"{len(plan.pockets)} pockets from the tool list, "
+        f"{len(miss)} {trays.TRAY_V1} row(s) still MEASURE"
     )
 
     print("\nstock bay: one comb under the cap, grooves in the deck")

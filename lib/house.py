@@ -118,6 +118,15 @@ MATERIALS = {
 none pretending to be another."""
 
 
+# ---------------------------------------------------------------- foam pockets
+
+POCKET_TOOL_D = 3.175
+"""Flat endmill every foam pocket is cut with: the #102 1/8in flat, the
+smallest flat cutter the station owns (tool_list.csv T017). A pocket's internal
+corners are this cutter's radius; apertures round INWARD, joinery stays square.
+A 1/4in would refuse the 1/8in cutters' own pockets (5.2mm wide)."""
+
+
 # ---------------------------------------------------------------- connectors
 
 HOUSE_CONNECTOR = "GX16-6"
