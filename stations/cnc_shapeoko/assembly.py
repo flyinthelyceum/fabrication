@@ -87,6 +87,7 @@ from stations.cnc_shapeoko.parts import (
     lungs_carriage,
     mains_backplate,
     mast_base,
+    rear_door,
     spine_panel,
     stock_rails,
     top_cap,
@@ -237,6 +238,15 @@ def components(d: Datums = DATUMS) -> list[Component]:
     # reference solids -- the chase air the drawers are checked against and
     # the E-stop module's allocation inside it.
     for label, group, part in console_plate.placed_all(d):
+        out.append(Component(label, group, part))
+
+    # 15. the rear brain door (C07), CLOSED: the door itself in the band's
+    # last t, the clear pane in its inside-face rabbet, the interlock switch
+    # on the door and its striker on the left end wall, the two lamp bodies
+    # standing out through their pockets, and the two folded stays. The open
+    # door is not a component; ``rear_door.door_open`` answers that question
+    # in the part's own check.
+    for label, group, part in rear_door.placed_all(d):
         out.append(Component(label, group, part))
 
     return out
@@ -412,6 +422,11 @@ def joints(d: Datums = DATUMS) -> dict[frozenset[str], Joint]:
     # meets on faces. The keep-out has NO joint with any drawer on purpose:
     # a drawer in the chase is a collision.
     for a, b, kind, axis, lo, hi, note in console_plate.joint_table(d):
+        js.append(Joint(a, b, kind, axis, lo, hi, note))
+
+    # -- the rear door: its ends on the end walls, the partition's edge on
+    # its inside face, the pane housed in its rabbet, everything on it bears.
+    for a, b, kind, axis, lo, hi, note in rear_door.joint_table(d):
         js.append(Joint(a, b, kind, axis, lo, hi, note))
 
     # The leg joint declares nothing here. It is not a joint between two CARCASS
@@ -933,6 +948,26 @@ def main() -> None:
             f"{sp.name} -> {drawers.box_size(sp, d)[0]:.1f} outside, {drawers.interior(sp, d)[0]:.1f} inside"
             for sp in drawers.DRAWERS if drawers.narrowing(sp, d)
         )
+    )
+
+    print("\nrear door: the drop-down shelf, closed and open")
+    dw, dh = rear_door.door_size(d)
+    ob = rear_door.door_open(d).bounding_box()
+    ax = rear_door.hinge_axis(d)
+    (wx0, wx1), (wy0, wy1) = rear_door.window_local(d)
+    pw, ph = rear_door.pane_size(d)
+    print(
+        f"  {rear_door.PART_NAME}: {dw:.1f} x {dh:.1f} x {d.t:.0f} between the end walls, "
+        f"bay {d.bay_h:.0f} less HINGE_CLEAR {rear_door.HINGE_CLEAR:.0f}; hinge axis y "
+        f"{ax.position.Y:.1f} z {ax.position.Z:.1f}; open it lies y {ob.min.Y:.0f}..{ob.max.Y:.0f} "
+        f"z {ob.min.Z:.0f}..{ob.max.Z:.0f}; {len(rear_door.cuts(d))} cuts, split at door x "
+        f"{rear_door.split_local(d):.1f}"
+    )
+    print(
+        f"  {rear_door.REVEAL_NAME}: {pw:.1f} x {ph:.1f} x {rear_door.PT:.0f} "
+        f"{rear_door.MATERIAL_REVEAL} over door x {wx0:.0f}..{wx1:.0f} y {wy0:.0f}..{wy1:.0f}; "
+        f"{rear_door.SWITCH_ENV_NAME} axis y {rear_door.switch_axis(d)[0]:.1f} "
+        f"z {rear_door.switch_axis(d)[1]:.1f} into the left end wall"
     )
 
     print("\nleg joint: bolt axes, station coordinates")

@@ -57,6 +57,7 @@ from stations.cnc_shapeoko.parts import (
     lungs_carriage,
     mains_backplate,
     mast_base,
+    rear_door,
     spine_panel,
     stock_rails,
     top_cap,
@@ -88,7 +89,6 @@ TODO_MARKS = (
 # list drift from the plan: a part missing from here is a part the gate cannot
 # see and will not count.
 UNMODELLED = (
-    "rear_door",
     "exhaust_plenum",
     "lungs_door",
     "signal_mounts",
@@ -136,6 +136,7 @@ def collect() -> list[tuple[str, str, str]]:
         ("leg_joint", leg_joint.check_leg_joint(d)),
         ("lungs_carriage", lungs_carriage.check_lungs_carriage(d)),
         ("console_plate", console_plate.check_console_plate(d)),
+        ("rear_door", rear_door.check_rear_door(d)),
         ("assembly", check_assembly(comps, d)),
         ("machine", check_machine(comps, d)),
         (
