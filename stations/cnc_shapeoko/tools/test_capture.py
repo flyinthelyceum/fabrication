@@ -11,6 +11,12 @@ back.
        the drawn line's CENTRELINE is the stadium offset by PEN_R (a 64 x 114
        stadium), 1mm wide. Perspective of about 20 degrees plus a small
        rotation. Recovered L, W must be within 0.3mm of 100 x 50.
+    2. Print scale: the rendered sheet raster scaled to 94% (a printer that
+       will not lay the sheet down at 100%), a real, unscaled 50 x 100
+       stadium drawn on it at the density that scaled print actually has.
+       Ingesting with print_scale=0.94 recovers 100 x 50 within 0.3mm; the
+       same image ingested with the default print_scale=1.0 comes back about
+       6% large, proving the failure ``print_scale`` fixes is real.
     3. Reject paths: two tags covered (one covered still rectifies, and the
        test says so), an open arc, two stadiums. Each rejects with its
        reason and writes nothing.
@@ -142,6 +148,45 @@ def test_synthetic_stadium(tmp: Path) -> tuple[Path, ci.Result]:
     return r.dxf_path, r
 
 
+def test_print_scale(tmp: Path) -> None:
+    """A sheet that printed at 94%, not 100%. The tags shrink with the print
+    (they are printed ink); the stadium does not (it is a real tool, traced
+    at its true size), so it is drawn at the ORIGINAL density (``PX``),
+    positioned wherever the field centre landed once the raster shrank."""
+    print_scale = 0.94
+    img = sheet_png()
+    h, w = img.shape[:2]
+    scaled = cv2.resize(img, (int(round(w * print_scale)), int(round(h * print_scale))), interpolation=cv2.INTER_AREA)
+
+    cx, cy = field_centre()
+    centreline = stadium(cx, cy, TOOL_L + 2 * ci.PEN_R, TOOL_W + 2 * ci.PEN_R)
+    centre_px_scaled = np.array([cx, cy]) * PX * print_scale
+    pts_px = (centreline - np.array([cx, cy])) * PX + centre_px_scaled
+    cv2.polylines(scaled, [np.round(pts_px).astype(np.int32)], True, (40, 40, 40), max(int(round(STROKE_MM * PX)), 1), cv2.LINE_AA)
+
+    img_path = tmp / "print_scale_94.png"
+    cv2.imwrite(str(img_path), scaled)
+
+    r_corrected = ci.ingest(img_path, "T999", 20, out_dir=tmp / "captures_scale_corrected", csv_path=None, print_scale=print_scale)
+    assert r_corrected.ok, r_corrected.reason
+    assert abs(r_corrected.L - TOOL_L) <= TOL_MM, f"L {r_corrected.L:.3f} vs {TOOL_L} (tol {TOL_MM})"
+    assert abs(r_corrected.W - TOOL_W) <= TOL_MM, f"W {r_corrected.W:.3f} vs {TOOL_W} (tol {TOL_MM})"
+    print(f"  print_scale={print_scale}: corrected L {r_corrected.L:.3f} W {r_corrected.W:.3f} (target {TOOL_L} x {TOOL_W}, tol {TOL_MM})")
+
+    r_naive = ci.ingest(img_path, "T999", 20, out_dir=tmp / "captures_scale_naive", csv_path=None)
+    assert r_naive.ok, r_naive.reason
+    expect_inflate = 1.0 / print_scale         # ~1.064, "about 6% large"
+    got_inflate_l = r_naive.L / TOOL_L
+    got_inflate_w = r_naive.W / TOOL_W
+    # the uncorrected path also carries the small residual bias print_scale
+    # exists to remove (a fixed real-mm offset applied inside the still-
+    # inflated frame); the point here is that it is unmistakably inflated,
+    # not that it lands on the theoretical 1/print_scale to the millimetre
+    assert abs(got_inflate_l - expect_inflate) < 0.03, f"L inflation {got_inflate_l:.4f} vs expected {expect_inflate:.4f}"
+    assert abs(got_inflate_w - expect_inflate) < 0.03, f"W inflation {got_inflate_w:.4f} vs expected {expect_inflate:.4f}"
+    print(f"  print_scale=1.0 (uncorrected) on the same image: L {r_naive.L:.3f} W {r_naive.W:.3f}, {(got_inflate_l - 1) * 100:.1f}% / {(got_inflate_w - 1) * 100:.1f}% large -- the failure is real")
+
+
 def test_rejects(tmp: Path) -> None:
     cx, cy = field_centre()
     centreline = stadium(cx, cy, TOOL_L + 2 * ci.PEN_R, TOOL_W + 2 * ci.PEN_R)
@@ -223,6 +268,8 @@ def main() -> int:
     print(f"scratch: {tmp}")
     print("1. synthetic stadium, 20 deg perspective + 6 deg roll")
     dxf_path, r = test_synthetic_stadium(tmp)
+    print("2. print scale: a 94% print, corrected vs. uncorrected")
+    test_print_scale(tmp)
     print("3. reject paths")
     test_rejects(tmp)
     print("4. tray with one CAPTURED row")

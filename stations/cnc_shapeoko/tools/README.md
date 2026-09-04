@@ -37,7 +37,9 @@ The tracing tool is a standard wooden hex pencil (7mm across flats) in the print
 - `captures/preview/T0xx.png` — the rectified sheet, the detected line in orange, the pocket in cyan, L / W / H in the corner. Look at this before trusting a capture.
 - the tag's row in `tool_list.csv`: `dims_status=CAPTURED`, `silhouette`, `height_class`, `bbox_l_mm` / `bbox_w_mm` (the tool's L and W, for the record; trays pack by the loop's own box)
 
-It rejects, with one line and nothing written, when: fewer than three tags are found; the trace is not a closed loop; the trace touches the field edge; a second trace in the field is more than a quarter of the largest's area. `test_capture.py` runs the synthetic proof (a 50 x 100 stadium, 20 degrees of perspective, back within 0.3mm) and the three reject paths: `PYTHONPATH=. .venv/bin/python stations/cnc_shapeoko/tools/test_capture.py`.
+It rejects, with one line and nothing written, when: fewer than three tags are found; the trace is not a closed loop; the trace touches the field edge; a second trace in the field is more than a quarter of the largest's area. `test_capture.py` runs the synthetic proof (a 50 x 100 stadium, 20 degrees of perspective, back within 0.3mm), a 94%-print case proving the same tool comes back correct with `--print-scale 0.94` and about 6% too big without it, and the three reject paths: `PYTHONPATH=. .venv/bin/python stations/cnc_shapeoko/tools/test_capture.py`.
+
+If the sheet did not print at 100% (a printer's own margins forced a smaller scale), pass `--print-scale` — measured scale-bar length / 100, read off the line under the bar on the printed sheet — and the ingest corrects for it; every capture from an uncorrected scaled sheet is wrong by that same ratio.
 
 ### The columns
 

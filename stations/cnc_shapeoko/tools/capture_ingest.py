@@ -1,8 +1,8 @@
 """Tool capture ingest: a photo of a traced sheet in, a pocket polyline out.
 
-    PYTHONPATH=. .venv/bin/python stations/cnc_shapeoko/tools/capture_ingest.py <image> <tag> <height>
+    PYTHONPATH=. .venv/bin/python stations/cnc_shapeoko/tools/capture_ingest.py <image> <tag> <height> [--print-scale S]
 
-    ingest(image_path, tag, height_slot, source="trace") -> Result
+    ingest(image_path, tag, height_slot, source="trace", print_scale=1.0) -> Result
 
 The v1 image source is a phone photo of ``trace_sheet.pdf`` with one tool's
 outline drawn on it by a pencil riding in the TRACE collar. Because the trace
@@ -18,7 +18,9 @@ PIPELINE
     -> homography from the detected corners to sheet mm at PX_PER_MM
        (``trace_sheet.tag_corners`` is the only source of those positions)
     -> warp the photo into the sheet frame, crop the trace field inside its
-       border line, white out the tag squares that sit in the field's corners
+       border line, white out any tag square that overlaps the crop (the
+       14mm-margin sheet keeps the field clear of the tags, so this is
+       normally a no-op)
     -> flatten the lighting (divide by a wide blur), invert, Otsu, close 2px
     -> contours with holes (RETR_CCOMP): the top-level contours are the
        candidate traces; the largest is the tool
@@ -29,7 +31,8 @@ PIPELINE
        (outer area - hole area) / mean perimeter, so the stroke's centreline
        is the outer contour inset by half of that. The centreline is where
        the collar's axis went: the tool's outline is that, inset by PEN_R
-    -> Douglas-Peucker at DP_TOL on the outer contour, then the two insets
+    -> Douglas-Peucker at DP_TOL on the outer contour, rescale into TRUE mm
+       by ``print_scale`` (see DEFAULT_PRINT_SCALE), then the two insets
        (half stroke plus PEN_R) as one build123d offset of the polygon face,
        then the pocket as the tool outline offset by FOAM_CLEAR
     -> the tool outline is turned so its minimum-area rectangle lies along X
@@ -87,6 +90,23 @@ FOAM_CLEAR = 1.0
 """Added around the recovered tool outline to make the pocket. SOURCE:
 choice, Kaizen practice for a friction fit in a foam that compresses.
 CONFIDENCE: choice, settled by the fit test (spec step 5)."""
+
+DEFAULT_PRINT_SCALE = 1.0
+"""``ingest``'s ``print_scale`` default: an unscaled, 100% print. DEFINITION:
+measured scale-bar length / 100 (the bar prints at ``trace_sheet.SCALE_BAR``,
+100mm nominal). If the printer will not lay the sheet down at 100% and Jared
+prints it smaller instead, every mm in the photo is smaller than the sheet's
+tags say by that same factor, and the recovered L/W come back inflated by
+1 / print_scale (a 94% print reads ~6% large). The homography and the crop
+still run against the sheet's NOMINAL (unscaled) tag positions -- that frame
+is what the rectified preview image is drawn in -- so the traced outline is
+rescaled into TRUE mm right after it is read off the contour, before the
+PEN_R and FOAM_CLEAR offsets (both true, physical mm) are applied to it; the
+preview overlay is converted back the other way, so it still lines up with
+the nominal-frame pixels it is drawn over. Equivalent to scaling the tag
+positions before the homography instead. SOURCE: ruling 2026-09-04.
+CONFIDENCE: rule; verify a scaled print returns the correct mm before
+trusting a capture made on one."""
 
 PX_PER_MM = 10.0
 """The rectified sheet's resolution: 0.1mm a pixel, 2159 x 2794 for Letter.
@@ -353,11 +373,13 @@ def ingest(
     height_slot: float | int | str,
     source: str = "trace",
     *,
+    print_scale: float = DEFAULT_PRINT_SCALE,
     out_dir: Path = CAPTURES,
     csv_path: Path | None = TOOL_LIST,
 ) -> Result:
-    """One capture. ``out_dir`` and ``csv_path`` exist so a test can point
-    the writes anywhere; ``csv_path=None`` skips the row."""
+    """One capture. ``print_scale`` corrects a sheet printed at other than
+    100% (see ``DEFAULT_PRINT_SCALE``). ``out_dir`` and ``csv_path`` exist so
+    a test can point the writes anywhere; ``csv_path=None`` skips the row."""
     if source == "camera":
         raise NotImplementedError("v2: machine Z-plate camera")
     if source != "trace":
@@ -413,23 +435,36 @@ def ingest(
     stroke_mm = stroke_px / PX_PER_MM
 
     approx = cv2.approxPolyDP(outer, DP_TOL * PX_PER_MM, True)
-    trace_mm = _mm_poly(approx, origin)                        # outer edge of the pencil line, sheet mm
-    tool_sheet = _offset_polygon(trace_mm, -(stroke_mm / 2 + PEN_R))
+    trace_mm = _mm_poly(approx, origin)                        # outer edge of the pencil line, in the sheet's NOMINAL (unscaled) frame -- this is what the preview is drawn over, so it is never rescaled
+    # print_scale correction: the homography above ran against the sheet's
+    # nominal tag positions regardless of how the sheet actually printed, so
+    # a scaled print leaves every mm in that frame inflated by 1 / print_scale
+    # (see DEFAULT_PRINT_SCALE). PEN_R and FOAM_CLEAR are TRUE, physical mm --
+    # the collar's real radius, a real clearance -- so the trace must be
+    # rescaled into true mm HERE, before either offset is applied, not after:
+    # applying a true-mm offset inside the still-inflated frame and rescaling
+    # afterward does not cancel, it leaves a residual error the size of the
+    # offset times (1/print_scale - 1).
+    trace_mm_true = trace_mm * print_scale
+    stroke_mm_true = stroke_mm * print_scale
+    tool_sheet = _offset_polygon(trace_mm_true, -(stroke_mm_true / 2 + PEN_R))
     if len(tool_sheet) < 3:
         return _reject("trace collapsed under the collar inset: nothing that small is a tool")
-    tool_local, L, W, M = _align_to_min_rect(tool_sheet)
+    tool_local, L, W, M = _align_to_min_rect(tool_sheet)       # true mm from here on
     pocket_local = _offset_polygon(tool_local, FOAM_CLEAR)
     pocket_local -= pocket_local.min(axis=0)
-    # the pocket back in the sheet frame, for the preview only
+    # the pocket back in the sheet's NOMINAL frame, for the preview only -- the
+    # preview is drawn on ``rect``, which is still in that nominal frame
     Minv = cv2.invertAffineTransform(M)
-    pocket_sheet = (Minv[:, :2] @ (pocket_local + (tool_local.min(axis=0) - FOAM_CLEAR)).T).T + Minv[:, 2]
+    pocket_true = (Minv[:, :2] @ (pocket_local + (tool_local.min(axis=0) - FOAM_CLEAR)).T).T + Minv[:, 2]
+    pocket_sheet = pocket_true / print_scale
 
     dxf_path = out_dir / f"{tag}.dxf"
     preview_path = out_dir / "preview" / f"{tag}.png"
     _write_dxf(pocket_local, dxf_path)
     _write_preview(
         rect, trace_mm, pocket_sheet,
-        f"{tag}  L {L:.1f}  W {W:.1f}  H<={height_class:g}  line {stroke_mm:.2f}  {len(tags)} tags",
+        f"{tag}  L {L:.1f}  W {W:.1f}  H<={height_class:g}  line {stroke_mm_true:.2f}  {len(tags)} tags  print_scale {print_scale:.3f}",
         preview_path,
     )
     if csv_path is not None:
@@ -442,9 +477,15 @@ def ingest(
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
-        print("usage: capture_ingest.py <image> <tag> <height>", file=sys.stderr)
-        sys.exit(2)
-    r = ingest(sys.argv[1], sys.argv[2], sys.argv[3])
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Tool capture ingest: a photo of a traced sheet in, a pocket polyline out.")
+    parser.add_argument("image")
+    parser.add_argument("tag")
+    parser.add_argument("height")
+    parser.add_argument("--print-scale", type=float, default=DEFAULT_PRINT_SCALE, dest="print_scale",
+                         help="measured scale-bar length / 100 (default 1.0, a 100%% print)")
+    args = parser.parse_args()
+    r = ingest(args.image, args.tag, args.height, print_scale=args.print_scale)
     print(r.line())
     sys.exit(0 if r.ok else 1)

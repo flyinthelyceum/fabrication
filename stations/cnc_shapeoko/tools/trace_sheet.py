@@ -6,9 +6,10 @@ things a tool capture needs (spec v3, 2026-09-04).
 writes, beside this file:
 
     trace_sheet.pdf     Letter, print at 100%. Four ArUco tags (DICT_4X4_50,
-                        ids 0-3, 30mm) at the page corners, a 200 x 240 trace
-                        field with a 1mm border, the TAG / HEIGHT boxes, the
-                        rule line, a 100mm scale bar for the human check.
+                        ids 0-3, 30mm), a 180 x 180 trace field with a 1mm
+                        border, the TAG / HEIGHT boxes, the rule line, a
+                        100mm scale bar for the human check, all of it inside
+                        a 14mm margin.
     trace_sheet.png     the same page rasterised (pdftoppm at RENDER_DPI when
                         it is on the box, else matplotlib), for a look and
                         for the synthetic test.
@@ -24,16 +25,24 @@ writes, beside this file:
     capture_card.pdf    the laminated card: the procedure in large type, one
                         page, for Drawer 1 beside the sheets.
 
-WHY THE TAGS SIT IN THE FIELD'S CORNERS
-=======================================
+THE 14mm MARGIN
+================
 
-Letter is 215.9 wide. Four 30mm tags with a printable margin need 36mm at
-each corner, and a 200mm field between them would leave 8mm a side, so on
-this paper the tags and the field overlap by design: the field's corners are
-under the tags, ``capture_ingest`` masks the tag squares (plus their quiet
-zone) out of the field before it thresholds, and a tool laid across a tag
-corner loses that tag. Three tags still rectify; two do not, and that is the
-"tag covered" rejection.
+Jared's printer will not lay this sheet down at 100% inside a smaller
+margin: it produced gutters, which forced a scaled print, and a scaled print
+breaks the tag-based mm mapping by exactly the scale factor (fixed on the
+ingest side with ``capture_ingest``'s ``print_scale``, but the sheet should
+not need it). Every element on the page -- tags, field, boxes, rule line,
+scale bar -- sits inside ``MARGIN`` from the page edge, on all four sides.
+
+The four tags sit at the four corners of that printable area (``TAG_MARGIN
+== MARGIN``), and the trace field is sized and placed so it is CLEAR of the
+tags -- no overlap, unlike the v3 sheet this replaces. The tags occupy only
+the top and bottom 30mm bands of the page; the field lives entirely in the
+191.4mm of clear paper between those two bands. The corridor between the
+tags in those top and bottom bands (``CORRIDOR_X0``..``CORRIDOR_X1``) is
+where the hand-filled boxes, the rule line and the scale bar live, clear of
+the tags' quiet zones so no ink ever touches a marker.
 
 SHEET FRAME
 ===========
@@ -66,6 +75,18 @@ PAGE_W, PAGE_H = 215.9, 279.4
 """US Letter. SOURCE: the paper in the Innovation Commons printers.
 CONFIDENCE: fact."""
 
+MARGIN = 14.0
+"""Printable margin, page edge to the nearest ink, on all four sides.
+SOURCE: Jared's printer would not lay the v3 sheet (6mm margin) down at
+100%; it produced gutters, forcing a scaled print, which breaks the
+tag-based mm mapping by the scale factor. 14mm clears that printer's
+unprintable band. CONFIDENCE: fact, from the failed print (ruling
+2026-09-04)."""
+
+PRINTABLE_W = PAGE_W - 2 * MARGIN
+PRINTABLE_H = PAGE_H - 2 * MARGIN
+"""The printable area: 187.9 x 251.4. Nothing is drawn outside it."""
+
 ARUCO_DICT = "DICT_4X4_50"
 TAG_IDS = (0, 1, 2, 3)
 TAG_MM = 30.0
@@ -73,9 +94,9 @@ TAG_MM = 30.0
 is six cells a side including its border, five millimetres a cell, which a
 phone resolves from arm's length. CONFIDENCE: spec."""
 
-TAG_MARGIN = 6.0
-"""Page edge to the marker's black square. Inside every consumer printer's
-unprintable band. CONFIDENCE: rule."""
+TAG_MARGIN = MARGIN
+"""Page edge to the marker's black square: the tags sit at the printable
+area's own four corners. CONFIDENCE: rule."""
 
 TAG_QUIET = 3.0
 """White kept clear around each marker; ArUco wants a quiet zone of at least
@@ -91,30 +112,46 @@ TAG_ORIGIN: dict[int, tuple[float, float]] = {
 """Top-left corner of each marker's black square, sheet mm. Ids run
 clockwise from the page's top-left."""
 
-FIELD_W, FIELD_H = 200.0, 240.0
+CORRIDOR_X0 = TAG_MARGIN + TAG_MM + TAG_QUIET
+CORRIDOR_X1 = PAGE_W - TAG_MARGIN - TAG_MM - TAG_QUIET
+"""The clear paper between the left and right tags' quiet zones (47..168.9),
+in the top and bottom 30mm tag bands. Every hand box, the rule line and the
+scale bar sit inside this corridor so no ink ever touches a marker or its
+quiet zone."""
+
+FIELD_W, FIELD_H = 180.0, 180.0
 FIELD_X0 = (PAGE_W - FIELD_W) / 2
-FIELD_Y0 = 30.0
-"""The trace field: 200 x 240, centred across the page, its top edge 30 down
-so the TAG / HEIGHT boxes have the band between the top tags. Its bottom edge
-lands at 270, leaving the band between the bottom tags for the rule line and
-the scale bar. SOURCE: spec v3 for the size; the placement is this file's."""
+FIELD_Y0 = 48.0
+"""The trace field: 180 x 180, centred across the page, from y 48 to 228.
+The top tags' band ends at 44, the bottom tags' band starts at 235.4: the
+field sits with a clear 4mm gap below the top tags and a clear 7.4mm gap
+above the bottom tags, touching neither. SOURCE: spec v3 for the shape (a
+traced tool, not a printer margin), shrunk and moved 2026-09-04 so the field
+clears the tags outright instead of hiding under them."""
 
 FIELD_BORDER_W = 1.0
 """The field's border line, centred on the field boundary. The ingest crops
 inside it (``capture_ingest.FIELD_INSET``) so the line is never a contour."""
 
 BOX_H = 16.0
-BOX_Y = 8.0
-TAG_BOX = (42.0, BOX_Y, 64.0, BOX_H)        # x, y, w, h
-HEIGHT_BOX = (110.0, BOX_Y, 64.0, BOX_H)
-"""The two hand-filled boxes in the top band, between the top tags' quiet
-zones (x 39..177). Written by hand, read by a human: the Form carries the
-same two values for the machine."""
+BOX_Y = 20.0
+TAG_BOX = (48.0, BOX_Y, 52.0, BOX_H)        # x, y, w, h
+HEIGHT_BOX = (114.0, BOX_Y, 52.0, BOX_H)
+"""The two hand-filled boxes in the top tag band's corridor (x 47..168.9),
+clear of the tags on either side. Written by hand, read by a human: the Form
+carries the same two values for the machine."""
 
-SCALE_BAR = (42.0, 252.0, 100.0)
-"""x, y, length of the scale bar in the bottom band. Print at 100% and this
-measures 100 with a ruler; if it does not, the sheet is scaled and every
-capture from it is wrong by the same ratio."""
+SCALE_BAR = (CORRIDOR_X0 + 3.0, 241.0, 100.0)
+"""x, y, length of the scale bar, in the bottom tag band's corridor. Print
+at 100% and this measures 100 with a ruler; if it does not, the sheet is
+scaled and every capture from it is wrong by the same ratio."""
+
+PRINT_CHECK_LINE = (
+    "Print at 100%.  If this bar is not 100mm, write the measured length "
+    "here: ____ mm"
+)
+"""Printed directly under the scale bar, so a scaled print is caught by eye
+and a ruler before a single tool is traced. SOURCE: ruling 2026-09-04."""
 
 RULE_LINE = (
     "ONE TOOL, lying as it sits in the drawer.  Pencil in the TRACE collar, "
@@ -202,7 +239,9 @@ def draw_sheet(pdf_path: Path, png_path: Path | None = None) -> list[Path]:
         Rectangle((x0, y0), FIELD_W, FIELD_H, fill=False, lw=FIELD_BORDER_W * PT, ec="black", joinstyle="miter")
     )
 
-    # the tags: white quiet zone first (it blanks the border line), then the marker
+    # the tags: white quiet zone first, then the marker, then its id label in
+    # the small gap toward the field (below a top tag, above a bottom tag) so
+    # the label never lands outside the margin
     for tid in TAG_IDS:
         qx0, qy0, qx1, qy1 = tag_masks()[tid]
         ax.add_patch(Rectangle((qx0, qy0), qx1 - qx0, qy1 - qy0, fc="white", ec="none", zorder=5))
@@ -213,7 +252,9 @@ def draw_sheet(pdf_path: Path, png_path: Path | None = None) -> list[Path]:
             extent=(tx, tx + TAG_MM, ty + TAG_MM, ty),   # left, right, bottom, top in a y-down frame
             interpolation="nearest", zorder=6,
         )
-        ax.text(tx + TAG_MM / 2, ty + TAG_MM + 2.2, f"id {tid}", ha="center", va="top", fontsize=5, color="0.4", zorder=7)
+        top_row = ty < PAGE_H / 2
+        label_y = ty + TAG_MM + 2.2 if top_row else ty - 2.2
+        ax.text(tx + TAG_MM / 2, label_y, f"id {tid}", ha="center", va="top" if top_row else "bottom", fontsize=5, color="0.4", zorder=7)
 
     # the two hand boxes
     for (bx, by, bw, bh), label, blank in ((TAG_BOX, "TAG", "T0 _ _"), (HEIGHT_BOX, "HEIGHT", "_ _")):
@@ -221,21 +262,23 @@ def draw_sheet(pdf_path: Path, png_path: Path | None = None) -> list[Path]:
         ax.text(bx + 2, by + bh / 2, label, ha="left", va="center", fontsize=7, fontweight="bold")
         ax.text(bx + bw - 3, by + bh / 2, blank, ha="right", va="center", fontsize=11, family="monospace")
 
-    # the scale bar
+    # the scale bar, in the bottom tag band's corridor
     sx, sy, sl = SCALE_BAR
     ax.plot([sx, sx + sl], [sy, sy], color="black", lw=0.6 * PT, solid_capstyle="butt")
     for x in (sx, sx + sl):
         ax.plot([x, x], [sy - 2, sy + 2], color="black", lw=0.5 * PT)
     for i in range(1, 10):
         ax.plot([sx + 10 * i, sx + 10 * i], [sy - 1, sy + 1], color="black", lw=0.3 * PT)
-    ax.text(sx, sy + 4.5, "100 mm.  Print at 100%: if a ruler does not read 100 here, the sheet is scaled and so is every capture.", ha="left", va="center", fontsize=5)
 
-    # the rule line, two lines of small type in the bottom band
-    ax.text(sx, 261.5, RULE_LINE[: RULE_LINE.index("Pencil")].strip(), ha="left", va="center", fontsize=6.5)
-    ax.text(sx, 267.0, RULE_LINE[RULE_LINE.index("Pencil"):].strip(), ha="left", va="center", fontsize=6.5)
+    # the print-scale check line, directly under the bar
+    ax.text(sx, sy + 7.0, PRINT_CHECK_LINE, ha="left", va="center", fontsize=5.5)
 
-    # provenance, tiny, in the field's top-right inside corner is a contour risk; keep it in the band
-    ax.text(PAGE_W - 42, 273.5, "CNC station tool capture sheet v1, 2026-09-04  |  tools/trace_sheet.py", ha="right", va="center", fontsize=4, color="0.4")
+    # the rule line, two lines of small type below that, still inside the corridor
+    ax.text(sx, sy + 15.5, RULE_LINE[: RULE_LINE.index("Pencil")].strip(), ha="left", va="center", fontsize=6)
+    ax.text(sx, sy + 21.0, RULE_LINE[RULE_LINE.index("Pencil"):].strip(), ha="left", va="center", fontsize=6)
+
+    # provenance, tiny, in the top corridor's spare band under the boxes
+    ax.text(CORRIDOR_X1, BOX_Y + BOX_H + 5.5, "CNC station tool capture sheet v1, 2026-09-04  |  tools/trace_sheet.py", ha="right", va="center", fontsize=4, color="0.4")
 
     written = [pdf_path]
     fig.savefig(pdf_path, format="pdf")
