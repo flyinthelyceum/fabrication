@@ -192,7 +192,7 @@ COMB_INSET = GRID
 keeps a front wall, so a blank dragged out forward cannot drag the header with
 it, and the header sits in the cap's shadow line rather than proud of the
 dividers' raw edges. SOURCE: house grid; the ruling names no inset.
-CONFIDENCE: choice."""
+CONFIDENCE: ruling (Jared, 2026-09-04): the 20mm inset is accepted."""
 
 RULED_PITCH = GRID * 2
 RULED_COUNT = 9

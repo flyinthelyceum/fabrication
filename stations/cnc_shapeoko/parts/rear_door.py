@@ -38,6 +38,9 @@ THE JOINTS. ALL FACES, ONE HOUSING
     top_cap           no contact: TOP_REVEAL, which the swing arc needs
     rear_door_reveal  the ONE housing: the pane sits in a PT-deep rabbet in
                       the door's inside face, flush with it
+    interlock_block   an 18mm birch offcut on the left end wall's inner face,
+                      the seat the interlock switch body screws to; the key
+                      on the door reaches into the switch's head
 
 The door's ends are cut to the end walls' faces with no side reveal: the
 acceptance for this part reads the door's X extent against
@@ -62,40 +65,46 @@ so the arc and the shelf are the same geometry as the closed door.
 THE INTERLOCK
 =============
 
-A roller-plunger safety limit switch on the door's inside face at the sealed
-end, plunger axis along -X, riding a delrin STRIKER pad on the left end
-wall's inner face. Closed, the door presses the roller; the moment the door
-turns, the roller runs off the pad's rear edge (it moves rearward ~40mm in
-the first 5 degrees) and the plunger extends. It feeds the CONTACTOR COIL
-and nothing else, by doctrine: opening the door drops the VFD, the motion
-controller and the extractor, never compute.
+RULED 2026-09-04 (Jared): a TONGUE interlock, positive mode, Omron D4NS
+class. The operation key (D4DS-K1) is screwed to the door's inside face at
+the sealed end, its tongue standing ``KEY_TONGUE[2]`` into the band along
+-Y; the switch body sits on the carcass side, on an 18mm birch offcut block
+screwed to the left end wall's inner face, its mounting face parallel to the
+door and ``SWITCH_STANDOFF`` inside it, head up, key slot facing the door.
+Closed, the tongue is in the head and the cam holds the direct-opening NC
+contact closed; the moment the door turns the tongue withdraws and the NC
+contact is forced open. That NC contact feeds the CONTACTOR COIL and nothing
+else, by doctrine: opening the door drops the VFD, the motion controller and
+the extractor, never compute. Positive mode: the guard's OPENING is what
+breaks the loop, so a stuck mechanism cannot leave the coil fed. The
+roller-plunger striker this file carried until 2026-09-04 is gone.
 
-The contact mode is an open item and the check says so: a plunger pressed by
-a CLOSED guard is negative-mode actuation, so the coil loop rides the switch's
-NO contact and the direct-opening NC contact is not what opens it. A tongue
-interlock would be positive-mode. The BOM line is a $10 panel interlock
-switch, which is a limit switch, and the spec asks for plunger/roller. RULING
-WANTED, not decided here.
+The switch and the key are reference solids drawn off the D4NS datasheet
+(``SWITCH_SOURCE``): the body, the head's key slot, the K1 plate and tongue.
+``check_rear_door`` reads the closed-door engagement (the standoff against
+the datasheet's 44 to 46.5 band, the tongue's reach into the head) and the
+open-door clearance (the key swung with the door against the switch and its
+block, at several angles) off those solids. The block is a real birch part,
+exported as a flat, and is NOT nested: it is a 40 x 120 offcut, and the
+standing note says so.
 
 THE INDICATORS
 ==============
 
-Two 22mm pilot lights on the INSIDE face, sealed side, high, so a person who
-has just opened the door reads which rails are live before reaching in.
-White is ALWAYS-LIVE, amber is CONTACTOR. No red: the E-stop is the red
-budget.
-
-They are NOT cut through the door. A 22mm device clamps at most a 6mm panel
-and its body is 46mm long, so a lamp through 18mm birch stands 28mm proud of
-the door's rear face with its terminals in the service space, outside the
-sealed compartment and outside the leg opening the gate measures the
-carcass against. Instead the two lamps sit in the top leg of a 2mm aluminium
-angle screwed to the door's inside face: bezels UP when the door is closed,
-bodies hanging inside the sealed band. Drop the door and that top leg turns
-to face the person standing behind the machine, which is what "facing the
-operator when the door is down" asks for, more directly than a lamp in the
-door's face would. The angle is the bracket; the lamps are reference solids
-on it.
+Two 22mm pilot lights, sealed side, high, cut THROUGH the door. RULED
+2026-09-04 (Jared): no aluminium bracket. Each lamp gets a ``LAMP_CBORE_D``
+counterbore from the INSIDE face that leaves a ``LAMP_LAND`` (6mm, the XB4
+collar's maximum panel) of birch at the outside face, and a ``LAMP_BORE``
+through-hole in that land. The head and bezel clamp the land from the ROOM
+side and the body hangs inside the sealed band, in and beyond the
+counterbore. A consequence of that geometry, stated so nobody reads the brief's
+older "on its inside face" and expects otherwise: the bezels face the ROOM,
+so a person standing behind the machine reads which rails are live BEFORE the
+door is opened, and once the door is a shelf they face the floor. White is
+ALWAYS-LIVE, amber is CONTACTOR. No red: the E-stop is the red budget. The
+lamp bodies are reference solids; the bezels stand ``LAMP_BEZEL_PROUD`` off
+the door's outside face and, like the hinge knuckle, are not assembly
+components, because they stand proud of the carcass envelope by design.
 
 THE REVEAL (I27)
 ================
@@ -157,7 +166,6 @@ from build123d import (
     Align,
     Axis,
     Box,
-    Cylinder,
     Location,
     Part,
     Plane,
@@ -195,8 +203,10 @@ CARVE_NAME = "rear_door_carve"
 """The second fixture's DXF, the outside-face carve in its own flipped frame
 (C17). No STEP: the solid is PART_NAME's."""
 SWITCH_ENV_NAME = "interlock_switch_env"
-STRIKER_NAME = "interlock_striker"
-BRACKET_NAME = "indicator_bracket"
+KEY_ENV_NAME = "interlock_key_env"
+BLOCK_NAME = "interlock_block"
+"""The switch's seat: a birch offcut, a real part with its own flat (DXF) and
+placed STEP, in the ``offcut`` group so the nest does not look for it."""
 LAMP_ENV_STEM = "indicator_env"
 STAY_STEM = "rear_door_stay"
 
@@ -289,52 +299,58 @@ IEC_POS = (GRID * 15, GRID * 3)
 leaf; inside the sealed zone and clear of the VFD keep-out. SOURCE: layout.
 CONFIDENCE: chosen, checked."""
 
-# ---- the two lamps (sealed side, high, INSIDE face) -------------------------
-LAMP_BORE = 22.3
-"""SOURCE: Schneider XB4 mounting diameter 22.5, cut 22.3 as console_plate
-does. CONFIDENCE: datasheet."""
+# ---- the two lamps (sealed side, high, THROUGH the door) --------------------
+LAMP_SOURCE = "https://www.se.com/us/en/product/XB4BVB1/ (product data sheet, the XB4 Harmony pilot light)"
+LAMP_BORE = 22.5
+"""Through-hole in the land. SOURCE: XB4 product data sheet, "Fixing hole
+diameter 22.5 mm +/- 0.2 conforming to EN/IEC 60947-1"; the panel cut-out
+drawing recommends 22.5 (22.3 +0.4/0). Ruled 22.5 (Jared, 2026-09-04).
+CONFIDENCE: datasheet, ruling."""
 LAMP_BODY = (30.0, 47.0)
 """Body W x H behind the panel. SOURCE: se.com XB4BVB1 / XB4BVB5 product
 sheets, "Width 30 mm, Height 47 mm", the figures console_plate captured for
 the same family. CONFIDENCE: datasheet."""
 LAMP_DEPTH = 54.0
-"""Whole-product depth. SOURCE: se.com XB4BVB5, "Depth 54 mm". CONFIDENCE:
-datasheet."""
-LAMP_HEAD_PROUD = 8.0
-"""How much of LAMP_DEPTH is the head in front of the panel. SOURCE: not on
-the product sheet; assumption from the XB4 pilot-light outline. CONFIDENCE:
-assumption. Moves only the envelope's reach."""
+"""Whole-product depth, bezel face to the back of the block. SOURCE: se.com
+XB4BVB5, "Depth 54 mm". CONFIDENCE: datasheet."""
+LAMP_BEZEL_PROUD = 11.0
+"""The head in front of the panel. SOURCE: the XB4 pilot light dimension
+drawing (XB4BVBM4GEX data sheet p.3, the same ZB4 head: "11" ahead of the
+support, "58" behind it on that deeper block). CONFIDENCE: datasheet, sibling
+sheet. Replaces the 8mm assumption that stood here."""
 LAMP_PANEL_MAX = 6.0
-"""Thickest panel the XB4 fixing collar clamps. SOURCE: Harmony XB4 mounting
-data, panel thickness 1 to 6 mm. CONFIDENCE: datasheet. This is why the lamps
-are not through the door: see BRACKET."""
-BRACKET = "aluminium angle 40 x 40 x 2, black anodized, 160 long, on the door's inside face"
-BRACKET_LEG = 40.0
-BRACKET_T = 2.0
-BRACKET_L = GRID * 8
-"""The lamp bracket. One leg screwed flat to the door's inside face, the
-other standing out into the band, top face up, carrying both lamps. 2mm sits
-inside the XB4 clamp range with room to spare; 160 long puts its two screws
-outboard of the hanging lamp bodies. SOURCE: design; stock angle.
-CONFIDENCE: design. Not on the BOM, which the check says."""
-BRACKET_X = GRID * 16.5
-BRACKET_TOP = GRID * 1.5
-"""Door-local centre X of the bracket and the drop of its top face below the
-door's top edge. High on the sealed side, clear of the VFD keep-out and the
-mast plate. SOURCE: layout. CONFIDENCE: chosen, checked."""
-LAMP_PITCH = GRID * 3
-"""Centre to centre along the bracket: two 47mm bodies side by side with
-room between. SOURCE: LAMP_BODY. CONFIDENCE: derived."""
+"""Thickest panel the XB4 fixing collar clamps. SOURCE: XB4 product data
+sheet, "support panel thickness 1...6 mm". CONFIDENCE: datasheet."""
+LAMP_LAND = LAMP_PANEL_MAX
+"""Birch left at the outside face under each lamp: the collar's maximum, so
+the collar clamps it. RULED 2026-09-04 (Jared): "counterbore from the inside
+face to leave a 6mm land". CONFIDENCE: ruling, datasheet."""
+LAMP_CBORE_D = 56.0
+"""Counterbore diameter from the inside face, down to the land. A round
+pocket has to clear the collar and the electrical block that clips to it,
+whose envelope in the panel plane is LAMP_BODY, 30 x 47: the rectangle's
+diagonal is 55.8, so 56. SOURCE: XB4 body W x H (datasheet), diagonal
+derived. CONFIDENCE: datasheet, derived. The collar alone would sit in a
+smaller bore; measure the first lamp in hand before shrinking it."""
+LAMP_X = GRID * 16.5
+LAMP_TOP = GRID * 3
+"""Door-local centre X of the pair and the drop of their centres below the
+door's top edge. High on the sealed side, clear of the VFD keep-out, above
+the glands and the drive callout. SOURCE: layout. CONFIDENCE: chosen,
+checked."""
+LAMP_PITCH = GRID * 4
+"""Centre to centre: two 56mm counterbores with a web between them wider
+than the cutter. SOURCE: LAMP_CBORE_D. CONFIDENCE: derived, checked."""
 LAMPS = (
     ("always_live", "Schneider Harmony XB4BVB1, pilot light, white, 22mm, LED 24V", +1),
     ("contactor", "Schneider Harmony XB4BVB5, pilot light, orange, 22mm, LED 24V", -1),
 )
-"""(rail, model, side of the bracket's centre). The reading order for a
-person standing behind the machine is +X to -X, so white ALWAYS-LIVE takes
-the +X seat. Amber for CONTACTOR: no red on this door. SOURCE: brief "each
-rail gets its own indicator lamp on the inside of the rear door"; BOM
-"Indicator lamps, panel mount, per rail on the rear door, 2". CONFIDENCE:
-chosen (models), the same family as the console."""
+"""(rail, model, side of LAMP_X). The reading order for a person standing
+behind the machine is +X to -X, so white ALWAYS-LIVE takes the +X seat.
+Amber for CONTACTOR: no red on this door. SOURCE: brief "each rail gets its
+own indicator lamp on the rear door"; BOM "Indicator lamps, panel mount, per
+rail on the rear door, 2". CONFIDENCE: chosen (models), the same family as
+the console."""
 
 # ---- the two GX16 bulkheads (signal side, low) ------------------------------
 GX16_FLANGE_D = 19.0
@@ -458,51 +474,99 @@ PANE_PILOT_DEPTH = PANE_SCREW_LEN - PT
 SOURCE: console_plate's reveal fixing, shortened so the pilot leaves birch
 under it. CONFIDENCE: chosen."""
 
-# ---- the interlock switch ---------------------------------------------------
-SWITCH = "Omron D4N-4132, safety limit switch, roller plunger, 1NC/1NO snap-action, 1 conduit M20"
-"""SOURCE: task C07 ("plunger/roller safety switch, type per BOM, model
-chosen"); BOM "Panel interlock switch, Amazon, 2". CONFIDENCE: chosen. The
-BOM line's price buys a limit switch, not this; the ruling on contact mode
-(see the docstring) decides which."""
-SWITCH_BODY = (31.0, 55.0, 21.5)
-"""W across the door, L along the plunger axis, D proud of the mounting face.
-SOURCE: Omron D4N datasheet C68I-E-02, p.10, 1-conduit roller plunger
-drawing: 31 max, 55, 21.5. CONFIDENCE: datasheet."""
-SWITCH_HEAD = 20.5
-"""Head section, square. SOURCE: same drawing, 20.5 x 20.5. CONFIDENCE:
-datasheet."""
-SWITCH_HEAD_REACH = 2.5 + 9.0 + 25.2
-"""Body top to the roller's tip, plunger free. SOURCE: same drawing, the
-2.5, 9 and 25.2 stacked along the axis. CONFIDENCE: datasheet, read off a
-drawing rather than tabulated."""
-SWITCH_PT = 2.0
-SWITCH_OT = 4.0
-"""Pretravel max and overtravel min. SOURCE: same datasheet p.11, D4N-[]132.
-CONFIDENCE: datasheet."""
-SWITCH_PRESS = SWITCH_PT + 1.0
-"""How far the closed door presses the roller: the pretravel and a
-millimetre of the overtravel. CONFIDENCE: chosen, inside the datasheet's
-band."""
-SWITCH_MOUNT_PITCH = 40.0
-SWITCH_MOUNT_D = 4.0
-"""Two M4 on 40 +-0.1, on the mounting face. SOURCE: same drawing.
+# ---- the interlock: switch, key, block -------------------------------------
+SWITCH = "Omron D4NS-4AF, safety-door switch, tongue operated, 1NC/1NO slow-action, direct-opening NC, 1 conduit M20"
+"""RULED 2026-09-04 (Jared): tongue type, positive mode, D4NS class, body
+on the carcass, actuator on the door. Model: the 1NC/1NO 1-conduit switch
+with the house M20 boss (D4NS-4AF; D4NS-1AF is the same switch in Pg13.5).
+The coil rides the NC contact, which the key holds closed and the key's
+withdrawal opens by direct action. SOURCE: ruling; model table in
+SWITCH_SOURCE p.2. CONFIDENCE: ruling (type), chosen (contact/conduit)."""
+SWITCH_SOURCE = "https://files.omron.eu/downloads/latest/datasheet/en/c128_d4ns_safety-door_switch_datasheet_en.pdf"
+"""Omron D4NS datasheet (C128, Safety-door Switch D4NS). Every switch and key
+figure below is read off its dimension drawings, p.6 (switch), p.7 (keys, and
+the key inserted) and p.8 (mounting holes). CONFIDENCE: datasheet."""
+SWITCH_BODY = (31.0, 96.0, 30.6)
+"""W across (the head is 30.2), L head top to bottom, D proud of the
+mounting face (the body below the head is 30). SOURCE: SWITCH_SOURCE p.6,
+1-conduit drawing: 31 across, 41 head-top-to-screw-row plus 55 screw-row-to-
+bottom, 30.6 head depth. CONFIDENCE: datasheet, the length summed off two
+stacked dimensions on the drawing."""
+SWITCH_SCREW_ROW = 41.0
+SWITCH_SCREW_PITCH = 20.0
+SWITCH_SCREW_D = 4.0
+"""Two M4 mounting screws, 20 +-0.1 apart across the body, 41 below the
+head's top, in 2.15R slotted holes. SOURCE: SWITCH_SOURCE p.6 and p.8.
 CONFIDENCE: datasheet. Into birch they become 4mm wood screws in
 SCREW_PILOT_D pilots."""
-SWITCH_Y = GRID * 22.75
-"""Door-local height of the plunger axis, 455: above the VFD standoff slab's
-top (z 458.7 station) so the body never stands in the drive's air, and below
-the lamps. SOURCE: layout against vfd_mount.standoff_slab. CONFIDENCE:
-chosen, checked by the assembly."""
+SWITCH_STUD_ROW = 47.0
+SWITCH_STUD_PITCH = 22.0
+SWITCH_STUD_D = 4.0
+SWITCH_STUD_H = 4.8
+"""Two locating studs on the back of the body, 4 -0.05/-0.15 dia, 4.8 high,
+22 +-0.1 apart, 47 +-0.1 below the screw row; they go into holes in the
+mounting surface. SOURCE: SWITCH_SOURCE p.8 ("secured more by the studs").
+CONFIDENCE: datasheet."""
+SWITCH_SLOT_DROP = 7.5
+"""Key slot centre below the head's top, on the head's front face. SOURCE:
+SWITCH_SOURCE p.6, the 7.5 on the head-cap view, with the tongue drawn just
+under the head's top on p.7. CONFIDENCE: datasheet, read off the raster."""
+SWITCH_SLOT_DEPTH = 20.0
+"""How deep the reference solid's slot is cut into the head from its front
+face: deeper than the tongue ever reaches, so the solid never claims volume
+the tongue occupies. Modelling clearance, not a datasheet figure. CONFIDENCE:
+chosen."""
+KEY_FACE_BAND = (44.0, 46.5)
+"""Key insertion face to the switch's mounting face, the datasheet's window
+for the K1 key with the head at front-side mounting. SOURCE: SWITCH_SOURCE
+p.7, "44 to 46.5 Key insertion face". CONFIDENCE: datasheet."""
+SWITCH_STANDOFF = 45.0
+"""Where this build puts the switch's mounting face: inside the door's inside
+face by this much, in the middle of KEY_FACE_BAND. CONFIDENCE: chosen inside
+the datasheet's band, checked."""
+KEY_ALIGN_TOL = 1.0
+KEY_R_MIN = 200.0
+"""Permissible centre-line difference between key and key hole, and the
+minimum insertion radius for a hinged door. SOURCE: SWITCH_SOURCE p.7.
+CONFIDENCE: datasheet. The door's radius at the key is checked against
+KEY_R_MIN."""
 
-STRIKER = "black delrin pad, screwed to the left end wall's inner face"
-STRIKER_T = GRID / 2
-STRIKER_FACE = GRID
-"""The pad the roller rides: 10 proud of the wall, 20 x 20 in Y-Z, the
-'actuator on the end wall'. Delrin because it is the house wear material and
-a roller runs off its rear edge every time the door opens. SOURCE: design.
-CONFIDENCE: design. Its rear edge stops short of the door's inside face so
-the pad and the door never touch."""
-STRIKER_DOOR_CLEAR = 1.0
+KEY = "Omron D4DS-K1, operation key, horizontal mounting"
+KEY_PLATE = (30.0, 13.0, 2.0)
+KEY_HOLE_PITCH = 15.0
+KEY_TONGUE = (13.0, 4.3, 28.0)
+"""The K1 key: an L. Plate 30 along by 13 across by 2 thick, two 2.15R
+slotted holes 15 +-0.1 apart along it, screwed flat to the door's inside
+face; tongue 13 wide by 4.3 thick standing 28 off the key insertion face,
+perpendicular to the plate. On this door the plate's 30 runs along X and
+the tongue's 4.3 is its Z thickness, which is the way the slot on the head's
+front face lies with the body vertical. SOURCE: SWITCH_SOURCE p.7 (K1) and
+p.8 (key mounting holes). CONFIDENCE: datasheet, read off the drawing."""
+KEY_Y = GRID * 28.5
+"""Door-local height of the tongue's centreline, 570: high on the sealed
+side, under the door's top edge by more than the switch's head, above the
+VFD standoff slab's top (z 458.7 station) by more than the switch body's
+length, so nothing of the switch stands in the drive's air. SOURCE: layout
+against vfd_mount.standoff_slab. CONFIDENCE: chosen, checked."""
+
+BLOCK = "18mm birch offcut, 40 x 120, screwed to the left end wall's inner face"
+BLOCK_W = GRID * 2
+BLOCK_H = GRID * 6
+BLOCK_TOP_OVER = GRID / 2
+"""The switch's seat: one thickness of birch standing on the wall's inner
+face, its rear face SWITCH_STANDOFF inside the door, 40 wide so the 31 body
+sits on it with a pilot's worth of birch each side, 120 tall so the screw row
+and the stud row both land on it with the block's top BLOCK_TOP_OVER above
+the head. SOURCE: design; the wall is solid birch there, which the check
+proves (the louvre field stops 82mm short of the door). CONFIDENCE: design,
+checked. NOT nested: an offcut, cut from the sheet's waste."""
+BLOCK_SCREW = "5 x 60 pan head, two, through the block's outer (+X) face into the end wall, drilled at the fit"
+"""The block's own fixing runs along X, through 40 of birch into the wall's
+18: an edge-drilled hole the flat pattern cannot carry. Standing note.
+CONFIDENCE: chosen."""
+KEY_X = BLOCK_W / 2
+"""Door-local X of the tongue's centreline: the block's centre, which is the
+switch's centre. CONFIDENCE: derived."""
 
 # ---- the stays --------------------------------------------------------------
 STAY = "folding lid stay, two-arm, 200mm class, one each end"
@@ -647,115 +711,151 @@ def swing_rise(d: Datums = D) -> float:
 # -- the switch and its striker, station coordinates ----------------------
 
 
+def key_axis(d: Datums = D) -> tuple[float, float]:
+    """(station x, station z) of the tongue's centreline, which runs along
+    Y from the door's inside face into the switch's head."""
+    return (d.t + KEY_X, z_bottom(d) + KEY_Y)
+
+
+def switch_mount_y(d: Datums = D) -> float:
+    """Station Y of the switch's mounting face: the block's rear face."""
+    return d.y_rear - d.t - SWITCH_STANDOFF
+
+
+def head_top_z(d: Datums = D) -> float:
+    """Station Z of the head's top: the slot's drop above the tongue."""
+    return key_axis(d)[1] + SWITCH_SLOT_DROP
+
+
 def switch_axis(d: Datums = D) -> tuple[float, float]:
-    """(station y, station z) of the plunger axis. The axis runs along X and
-    meets the left end wall's inner face at x = t through the striker."""
-    return (d.y_rear - d.t - SWITCH_BODY[2] / 2, z_bottom(d) + SWITCH_Y)
+    """(station y of the head's front face, station z of the tongue): where
+    the key enters the switch. Kept under this name for the assembly's
+    report."""
+    return (switch_mount_y(d) + SWITCH_BODY[2], key_axis(d)[1])
 
 
-def switch_body_x(d: Datums = D) -> tuple[float, float]:
-    """Station X span of the switch body: the head end sits where the
-    pressed roller puts it, the conduit end further right."""
-    x0 = d.t + STRIKER_T + (SWITCH_HEAD_REACH - SWITCH_PRESS)
-    return (x0, x0 + SWITCH_BODY[1])
+def block_extent(d: Datums = D) -> tuple[tuple[float, float], tuple[float, float], tuple[float, float]]:
+    """((x0, x1), (y0, y1), (z0, z1)) of the block, station coordinates: on
+    the wall's inner face, one thickness ending at the mounting face."""
+    y1 = switch_mount_y(d)
+    z1 = head_top_z(d) + BLOCK_TOP_OVER
+    return ((d.t, d.t + BLOCK_W), (y1 - d.t, y1), (z1 - BLOCK_H, z1))
 
 
-def switch_mount_local(d: Datums = D) -> list[tuple[float, float]]:
-    """Door-local pilot centres for the switch's two mounting screws: on the
-    plunger axis, 40 apart, centred on the body."""
-    x0, x1 = switch_body_x(d)
-    cx = (x0 + x1) / 2 - d.t
-    return [(cx - SWITCH_MOUNT_PITCH / 2, SWITCH_Y), (cx + SWITCH_MOUNT_PITCH / 2, SWITCH_Y)]
+def block_plane(d: Datums = D) -> Plane:
+    """Block frame: local +X to station -X from the block's outer edge, local
+    +Y up (station +Z), local +Z into +Y so the mounting face is local Z = t,
+    the CUT face in ``flat_pattern`` terms."""
+    (x0, x1), (y0, _y1), (z0, _z1) = block_extent(d)
+    return Plane(origin=(x1, y0, z0), x_dir=(-1, 0, 0), z_dir=(0, 1, 0))
+
+
+def switch_holes_local(d: Datums = D) -> list[tuple[str, float, float, float, float]]:
+    """(label, local x, local y, diameter, depth) of the four holes in the
+    block's mounting face: two screw pilots on the screw row, two stud holes
+    on the stud row, all blind from the mounting face."""
+    (_x0, _x1), (_y0, _y1), (z0, _z1) = block_extent(d)
+    cx = BLOCK_W / 2
+    y_screw = head_top_z(d) - SWITCH_SCREW_ROW - z0
+    y_stud = y_screw - SWITCH_STUD_ROW
+    return [
+        ("switch_screw_l", cx - SWITCH_SCREW_PITCH / 2, y_screw, SCREW_PILOT_D, T / 2),
+        ("switch_screw_r", cx + SWITCH_SCREW_PITCH / 2, y_screw, SCREW_PILOT_D, T / 2),
+        ("switch_stud_l", cx - SWITCH_STUD_PITCH / 2, y_stud, SWITCH_STUD_D, SWITCH_STUD_H + 0.2),
+        ("switch_stud_r", cx + SWITCH_STUD_PITCH / 2, y_stud, SWITCH_STUD_D, SWITCH_STUD_H + 0.2),
+    ]
+
+
+def build_block(d: Datums = D) -> Part:
+    """The block, flat in its own frame: a birch blank with the switch's four
+    holes blind from the mounting face."""
+    part = panel(BLOCK_W, BLOCK_H, d.t)
+    for _label, x, y, dia, depth in switch_holes_local(d):
+        part -= bore(x, y, dia, depth=depth, side="front")
+    return part
+
+
+def place_block(block: Part | None = None, d: Datums = D) -> Part:
+    block = build_block(d) if block is None else block
+    return block_plane(d) * block
 
 
 def build_switch_env(d: Datums = D) -> Part:
-    """The switch as it sits on the door's inside face: body plus head, the
-    head reaching to the striker's face with the roller pressed."""
-    y, z = switch_axis(d)
-    x0, x1 = switch_body_x(d)
+    """The switch on its block, station coordinates: the body from the
+    mounting face toward the door, head up, the key slot cut into the head's
+    front face so the tongue sits in air the solid does not claim."""
+    x, z = key_axis(d)
+    y0 = switch_mount_y(d)
+    z_top = head_top_z(d)
     body = Box(
-        SWITCH_BODY[1], SWITCH_BODY[2], SWITCH_BODY[0],
-        align=(Align.MIN, Align.CENTER, Align.CENTER),
-    ).moved(Location((x0, y, z)))
-    head_x0 = d.t + STRIKER_T
-    head = Box(
-        x0 - head_x0, SWITCH_HEAD, SWITCH_HEAD,
-        align=(Align.MIN, Align.CENTER, Align.CENTER),
-    ).moved(Location((head_x0, y, z)))
-    return body + head
+        SWITCH_BODY[0], SWITCH_BODY[2], SWITCH_BODY[1],
+        align=(Align.CENTER, Align.MIN, Align.MAX),
+    ).moved(Location((x, y0, z_top)))
+    slot = Box(
+        KEY_TONGUE[0] + 2 * KEY_ALIGN_TOL, SWITCH_SLOT_DEPTH, KEY_TONGUE[1] + 2 * KEY_ALIGN_TOL,
+        align=(Align.CENTER, Align.MAX, Align.CENTER),
+    ).moved(Location((x, y0 + SWITCH_BODY[2], z)))
+    return body - slot
 
 
-def build_striker(d: Datums = D) -> Part:
-    """The delrin pad on the left end wall's inner face, centred on the
-    plunger axis, its rear edge a millimetre off the door."""
-    y, z = switch_axis(d)
-    y1 = d.y_rear - d.t - STRIKER_DOOR_CLEAR
-    return Box(
-        STRIKER_T, STRIKER_FACE, STRIKER_FACE,
-        align=(Align.MIN, Align.MAX, Align.CENTER),
-    ).moved(Location((d.t, y1, z)))
-
-
-# -- the lamps and their bracket -------------------------------------------
-
-
-def bracket_top_z(d: Datums = D) -> float:
-    """Station Z of the bracket's top face, the lamps' panel."""
-    _w, h = door_size(d)
-    return z_bottom(d) + h - BRACKET_TOP
-
-
-def bracket_pilots_local(d: Datums = D) -> list[tuple[float, float]]:
-    """Door-local pilots for the bracket's vertical leg: two, on the leg's
-    centreline, a grid in from each end."""
-    _w, h = door_size(d)
-    y = h - BRACKET_TOP - BRACKET_LEG / 2
-    return [(BRACKET_X - BRACKET_L / 2 + GRID, y), (BRACKET_X + BRACKET_L / 2 - GRID, y)]
-
-
-def lamp_centre(side: int, d: Datums = D) -> tuple[float, float]:
-    """(station x, station y) of one lamp's axis in the bracket's top leg:
-    centred on what the leg has left past the vertical leg's thickness."""
-    x = d.t + BRACKET_X + side * LAMP_PITCH / 2
-    y = d.y_rear - d.t - BRACKET_T - (BRACKET_LEG - BRACKET_T) / 2
-    return (x, y)
-
-
-def build_bracket(d: Datums = D) -> Part:
-    """The angle, station coordinates: vertical leg flat on the door's inside
-    face, top leg standing into the band with the two lamp bores through it."""
-    x0 = d.t + BRACKET_X - BRACKET_L / 2
+def build_key_env(d: Datums = D) -> Part:
+    """The K1 key on the door's inside face, station coordinates: the plate
+    flat on the face, the tongue standing into the band to KEY_TONGUE[2]
+    off the face."""
+    x, z = key_axis(d)
     y_in = d.y_rear - d.t
-    z_top = bracket_top_z(d)
-    vert = Box(BRACKET_L, BRACKET_T, BRACKET_LEG, align=(Align.MIN, Align.MAX, Align.MAX)).moved(
-        Location((x0, y_in, z_top))
-    )
-    top = Box(BRACKET_L, BRACKET_LEG, BRACKET_T, align=(Align.MIN, Align.MAX, Align.MAX)).moved(
-        Location((x0, y_in, z_top))
-    )
-    angle = vert + top
-    for _rail, _model, side in LAMPS:
-        x, y = lamp_centre(side, d)
-        angle -= Cylinder(LAMP_BORE / 2, BRACKET_T * 3, align=(Align.CENTER, Align.CENTER, Align.CENTER)).moved(
-            Location((x, y, z_top - BRACKET_T / 2))
-        )
-    return angle
+    plate = Box(
+        KEY_PLATE[0], KEY_PLATE[2], KEY_PLATE[1],
+        align=(Align.CENTER, Align.MAX, Align.CENTER),
+    ).moved(Location((x, y_in, z)))
+    tongue = Box(
+        KEY_TONGUE[0], KEY_TONGUE[2], KEY_TONGUE[1],
+        align=(Align.CENTER, Align.MAX, Align.CENTER),
+    ).moved(Location((x, y_in, z)))
+    return plate + tongue
+
+
+def key_pilots_local(d: Datums = D) -> list[tuple[float, float]]:
+    """Door-local pilots for the key's two M4 screws, on the tongue's line."""
+    return [(KEY_X - KEY_HOLE_PITCH / 2, KEY_Y), (KEY_X + KEY_HOLE_PITCH / 2, KEY_Y)]
+
+
+def key_open(angle: float, d: Datums = D) -> Part:
+    """The key swung with the door: rotated ``angle`` about the pin."""
+    return build_key_env(d).rotate(hinge_axis(d), angle)
+
+
+def key_radius(d: Datums = D) -> float:
+    """The tongue's insertion radius: the pin to the tongue's centre at the
+    door's inside face."""
+    ax = hinge_axis(d)
+    _x, z = key_axis(d)
+    return hypot(d.y_rear - d.t - ax.position.Y, z - ax.position.Z)
+
+
+# -- the lamps, through the door ---------------------------------------------
+
+
+def lamp_local(side: int, d: Datums = D) -> tuple[float, float]:
+    """Door-local centre of one lamp's axis."""
+    _w, h = door_size(d)
+    return (LAMP_X + side * LAMP_PITCH / 2, h - LAMP_TOP)
 
 
 def build_lamp_env(side: int, d: Datums = D) -> Part:
-    """One lamp on the bracket: its body hanging under the top leg and its
-    head standing above it, station coordinates. The collar through the leg's
-    bore is inside the bore and is not drawn. The 47 runs along the door."""
-    x, y = lamp_centre(side, d)
-    z_top = bracket_top_z(d)
-    body_l = LAMP_DEPTH - LAMP_HEAD_PROUD - BRACKET_T
-    body = Box(
-        LAMP_BODY[1], LAMP_BODY[0], body_l, align=(Align.CENTER, Align.CENTER, Align.MAX)
-    ).moved(Location((x, y, z_top - BRACKET_T)))
-    head = Cylinder(
-        LAMP_BODY[0] / 2, LAMP_HEAD_PROUD, align=(Align.CENTER, Align.CENTER, Align.MIN)
-    ).moved(Location((x, y, z_top)))
-    return body + head
+    """One lamp's BODY behind the land, station coordinates: from the land's
+    inside face, through the counterbore and on into the band, LAMP_BODY in
+    the door's plane with the 47 vertical. The bezel ahead of the land and
+    the collar in the counterbore are not drawn: the bezel stands proud of
+    the carcass envelope by design and the collar is inside the bore."""
+    lx, ly = lamp_local(side, d)
+    x, z = d.t + lx, z_bottom(d) + ly
+    y_land = d.y_rear - LAMP_LAND
+    body_l = LAMP_DEPTH - LAMP_BEZEL_PROUD - LAMP_LAND
+    return Box(
+        LAMP_BODY[0], body_l, LAMP_BODY[1],
+        align=(Align.CENTER, Align.MAX, Align.CENTER),
+    ).moved(Location((x, y_land, z)))
 
 
 # -- the stays ----------------------------------------------------------
@@ -822,11 +922,15 @@ def cuts(d: Datums = D) -> list[Cut]:
     out: list[Cut] = []
     _w, h = door_size(d)
 
-    # -- sealed side: the lamp bracket's two pilots; the lamps cut nothing
-    for x, y in bracket_pilots_local(d):
-        out.append(Cut("bracket_pilot", "sealed", "pilot", x, y, (SCREW_PILOT_D, SCREW_PILOT_D),
-                       corner_r=SCREW_PILOT_D / 2, depth=T / 2,
-                       note="blind from the inside face, 4mm wood screw"))
+    # -- sealed side: the two lamps, a counterbore from the inside face down
+    # to the land, then the collar's bore through the land
+    for rail, _model, side in LAMPS:
+        x, y = lamp_local(side, d)
+        out.append(Cut(f"lamp_{rail}_cbore", "sealed", "pocket_front", x, y,
+                       (LAMP_CBORE_D, LAMP_CBORE_D), corner_r=LAMP_CBORE_D / 2,
+                       depth=T - LAMP_LAND, note="counterbore, inside face, to the 6mm land"))
+        out.append(Cut(f"lamp_{rail}", "sealed", "bore", x, y, (LAMP_BORE, LAMP_BORE),
+                       corner_r=LAMP_BORE / 2, note="XB4 collar bore through the land"))
 
     # -- sealed side: IEC inlet, oversized so the body's square corners clear
     iw, ih = IEC_CUTOUT
@@ -880,11 +984,11 @@ def cuts(d: Datums = D) -> list[Cut]:
         out.append(Cut(f"catch_{i}", "split", "bore", x, y, (CATCH_CLEAR_D, CATCH_CLEAR_D),
                        corner_r=CATCH_CLEAR_D / 2, note="Torx screw into the partition's edge"))
 
-    # -- pilots: the switch (sealed, in the keep-out's X but blind) and stays
-    for x, y in switch_mount_local(d):
-        out.append(Cut("switch_pilot", "sealed", "pilot", x, y, (SCREW_PILOT_D, SCREW_PILOT_D),
+    # -- pilots: the key (sealed, in the keep-out's X but blind) and stays
+    for x, y in key_pilots_local(d):
+        out.append(Cut("key_pilot", "sealed", "pilot", x, y, (SCREW_PILOT_D, SCREW_PILOT_D),
                        corner_r=SCREW_PILOT_D / 2, depth=T / 2,
-                       note="blind from the inside face, 4mm wood screw"))
+                       note="blind from the inside face, M4 wood screw, the K1 key"))
     for end in ("l", "r"):
         for x, y in stay_pilots_local(end, d):
             out.append(Cut(f"stay_{end}_pilot", "sealed" if end == "l" else "signal",
@@ -956,15 +1060,16 @@ def door_open(d: Datums = D) -> Part:
 
 def placed_all(d: Datums = D) -> list[tuple[str, str, Part]]:
     """(label, group, placed solid) for everything this module puts in the
-    assembly: the door, the pane, the switch and its striker, the two lamp
-    bodies, the two folded stays."""
+    assembly: the door, the pane, the interlock block on the wall with the
+    switch on it and the key on the door, the two lamp bodies, the two
+    folded stays."""
     out: list[tuple[str, str, Part]] = [
         (PART_NAME, "carcass", place(d=d)),
         (REVEAL_NAME, "acrylic", place_reveal(d=d)),
+        (BLOCK_NAME, "offcut", place_block(d=d)),
         (SWITCH_ENV_NAME, "reference", build_switch_env(d)),
-        (STRIKER_NAME, "wear", build_striker(d)),
+        (KEY_ENV_NAME, "reference", build_key_env(d)),
     ]
-    out.append((BRACKET_NAME, "steel", build_bracket(d)))
     for rail, _model, side in LAMPS:
         out.append((f"{LAMP_ENV_STEM}_{rail}", "reference", build_lamp_env(side, d)))
     for end in ("l", "r"):
@@ -988,18 +1093,19 @@ def joint_table(d: Datums = D) -> list[tuple]:
          "partition's rear edge lands on the door's inside face; two Torx screws through the door into it"),
         (PART_NAME, REVEAL_NAME, "housing", "y", y_in, y_in + REVEAL_DEPTH,
          "pane flush in the inside-face rabbet"),
-        (PART_NAME, SWITCH_ENV_NAME, "bearing", None, 0.0, 0.0,
-         "switch body on the door's inside face, two screws"),
-        (WALLS[0].name, STRIKER_NAME, "bearing", None, 0.0, 0.0,
-         "striker pad on the wall's inner face"),
-        (SWITCH_ENV_NAME, STRIKER_NAME, "bearing", None, 0.0, 0.0,
-         "the roller on the pad's face, pressed"),
+        (WALLS[0].name, BLOCK_NAME, "butt", None, 0.0, 0.0,
+         "block flat on the wall's inner face, two screws through its outer face"),
+        (BLOCK_NAME, SWITCH_ENV_NAME, "bearing", None, 0.0, 0.0,
+         "switch body on the block's rear face, two M4 and two studs"),
+        (PART_NAME, KEY_ENV_NAME, "bearing", None, 0.0, 0.0,
+         "key plate flat on the door's inside face, two M4"),
+        (SWITCH_ENV_NAME, KEY_ENV_NAME, "housing", "y",
+         switch_axis(d)[0] - SWITCH_SLOT_DEPTH, switch_axis(d)[0],
+         "the tongue in the head's slot"),
     ]
-    out.append((PART_NAME, BRACKET_NAME, "butt", None, 0.0, 0.0,
-                "bracket's vertical leg flat on the door's inside face, two screws"))
     for rail, _model, _side in LAMPS:
-        out.append((BRACKET_NAME, f"{LAMP_ENV_STEM}_{rail}", "bearing", None, 0.0, 0.0,
-                    "lamp clamped through the bracket's top leg"))
+        out.append((PART_NAME, f"{LAMP_ENV_STEM}_{rail}", "bearing", None, 0.0, 0.0,
+                    "lamp collar clamps the land; the body hangs in the counterbore"))
     for end in ("l", "r"):
         out.append((PART_NAME, f"{STAY_STEM}_{end}", "bearing", None, 0.0, 0.0,
                     "folded stay flat on the door's inside face"))
@@ -1110,23 +1216,31 @@ def check_rear_door(d: Datums = D) -> list[str]:
             f"the door's top corner rises {rise:.2f}mm on the swing and the top reveal "
             f"is {TOP_REVEAL:.1f}: the door hits the cap before it opens"
         )
-    # the lamp heads on the bracket are the highest thing that swings; their
-    # arc has to clear the cap's underside too
-    z_head = bracket_top_z(d) + LAMP_HEAD_PROUD
-    dy = d.t + HINGE_AXIS_OFF + BRACKET_LEG
-    dz = z_head - hinge_axis(d).position.Z
-    head_rise = hypot(dy, dz) - dz
-    if z_head + head_rise >= d.top_z[0]:
+    # the lamp bodies reach furthest into the band of anything on the door
+    # and sit highest; their top corner's arc has to clear the cap's underside
+    _lx, ly = lamp_local(+1, d)
+    z_body = z_bottom(d) + ly + LAMP_BODY[1] / 2
+    dy = d.t + HINGE_AXIS_OFF + (LAMP_DEPTH - LAMP_BEZEL_PROUD - d.t)
+    dz = z_body - hinge_axis(d).position.Z
+    body_rise = hypot(dy, dz) - dz
+    if z_body + body_rise >= d.top_z[0]:
         notes.append(
-            f"a lamp head tops out at z {z_head:.1f} and rises {head_rise:.1f} on the "
-            f"swing against the cap's underside at {d.top_z[0]:.1f}: the bracket is too high"
+            f"a lamp body tops out at z {z_body:.1f} and rises {body_rise:.1f} on the "
+            f"swing against the cap's underside at {d.top_z[0]:.1f}: the lamps are too high"
         )
-    if BRACKET_T > LAMP_PANEL_MAX:
-        notes.append(f"the bracket's {BRACKET_T:.0f}mm leg is thicker than the lamps clamp")
-    if LAMP_PITCH < LAMP_BODY[1] + 2.0:
-        notes.append("the two lamp bodies overlap on the bracket")
-    if BRACKET_L / 2 - GRID < LAMP_PITCH / 2 + LAMP_BODY[1] / 2 + SCREW_CLEAR_D:
-        notes.append("the bracket's screws sit behind the hanging lamp bodies: it is too short")
+    # the counterbore: a land the collar clamps, a bore the body's diagonal
+    # clears, a web the cutter can leave between the pair
+    if LAMP_LAND > LAMP_PANEL_MAX or LAMP_LAND < 1.0:
+        notes.append(f"the {LAMP_LAND:.1f}mm land is outside the XB4 collar's 1 to {LAMP_PANEL_MAX:.0f}mm")
+    if LAMP_CBORE_D < hypot(*LAMP_BODY):
+        notes.append(
+            f"the {LAMP_CBORE_D:.0f} counterbore does not clear the lamp body's "
+            f"{hypot(*LAMP_BODY):.1f} diagonal"
+        )
+    if LAMP_PITCH - LAMP_CBORE_D < ROUTER_R * 2:
+        notes.append("the web between the two counterbores is thinner than the cutter")
+    if ly + LAMP_CBORE_D / 2 > h:
+        notes.append("a counterbore runs out the door's top edge")
     if HINGE_LEAF_W > d.t:
         notes.append(
             f"the hinge leaf is {HINGE_LEAF_W:.1f} wide and the deck's rear edge is "
@@ -1202,40 +1316,77 @@ def check_rear_door(d: Datums = D) -> list[str]:
         )
 
     # -- the interlock -------------------------------------------------------
-    y_axis, z_axis = switch_axis(d)
-    x0, _x1 = switch_body_x(d)
-    if x0 - (d.t + STRIKER_T) != SWITCH_HEAD_REACH - SWITCH_PRESS:
-        notes.append("the switch head does not reach the striker")
-    if SWITCH_PRESS < SWITCH_PT or SWITCH_PRESS > SWITCH_PT + SWITCH_OT:
+    # closed: the switch's mounting face inside the datasheet's band off the
+    # key face, the tongue inside the head, the key and the slot on one line
+    y_front, z_axis = switch_axis(d)
+    y_in = d.y_rear - d.t
+    reach = KEY_TONGUE[2] - (y_in - y_front)
+    if not (KEY_FACE_BAND[0] - 1e-6 <= SWITCH_STANDOFF <= KEY_FACE_BAND[1] + 1e-6):
         notes.append(
-            f"the door presses the roller {SWITCH_PRESS:.1f}: outside the switch's "
-            f"pretravel {SWITCH_PT:.0f} plus overtravel {SWITCH_OT:.0f}"
+            f"the switch's mounting face is {SWITCH_STANDOFF:.1f} off the key face; the "
+            f"datasheet wants {KEY_FACE_BAND[0]:.1f} to {KEY_FACE_BAND[1]:.1f}"
         )
-    if y_axis + SWITCH_BODY[2] / 2 > d.y_rear - d.t + 1e-6:
-        notes.append("the switch body reaches through the door")
-    # the striker has to land on solid birch, not on a louvre slot
+    if reach <= 0:
+        notes.append(f"the tongue stops {-reach:.1f}mm short of the head: the key never enters the switch")
+    if reach >= SWITCH_SLOT_DEPTH:
+        notes.append("the tongue reaches deeper than the reference solid's slot: the model claims it as overlap")
+    if key_radius(d) < KEY_R_MIN:
+        notes.append(
+            f"the key swings on a {key_radius(d):.0f}mm radius; the datasheet wants "
+            f"{KEY_R_MIN:.0f} or more for a hinged door"
+        )
+    # the block has to land on solid birch, not on the louvre field
     from stations.cnc_shapeoko.parts.bay_walls import placed_all as walls_placed
     wall = walls_placed(d)[0]
-    probe = Box(1.0, STRIKER_FACE, STRIKER_FACE, align=(Align.MAX, Align.MAX, Align.CENTER)).moved(
-        Location((d.t, d.y_rear - d.t - STRIKER_DOOR_CLEAR, z_axis))
+    (_bx0, _bx1), (by0, by1), (bz0, bz1) = block_extent(d)
+    probe = Box(1.0, by1 - by0, bz1 - bz0, align=(Align.MAX, Align.MIN, Align.MIN)).moved(
+        Location((d.t, by0, bz0))
     )
     try:
         solid = (wall & probe).volume
     except Exception:
         solid = 0.0
-    if solid < STRIKER_FACE * STRIKER_FACE * 1.0 - 1.0:
+    footprint = (by1 - by0) * (bz1 - bz0)
+    if solid < footprint - 1.0:
         notes.append(
-            f"the striker pad lands on {solid / (STRIKER_FACE * STRIKER_FACE):.0%} birch at "
-            f"y {y_axis:.0f} z {z_axis:.0f}: the louvre field is under it"
+            f"the interlock block lands on {solid / footprint:.0%} birch at y {by0:.0f}..{by1:.0f} "
+            f"z {bz0:.0f}..{bz1:.0f}: the louvre field is under it"
         )
+    if bz1 >= d.top_z[0]:
+        notes.append(f"the interlock block's top at z {bz1:.1f} is in the cap")
+    for label, x, y, dia, depth in switch_holes_local(d):
+        if x - dia / 2 < 0 or x + dia / 2 > BLOCK_W or y - dia / 2 < 0 or y + dia / 2 > BLOCK_H:
+            notes.append(f"{label} runs off the {BLOCK_W:.0f} x {BLOCK_H:.0f} block")
+        if depth > T - POCKET_FLOOR_MIN:
+            notes.append(f"{label} is {depth:.1f} deep in the block's {T:.0f}")
+    # open: the key swung with the door clears the switch and its block once
+    # the tongue is out, and the door itself clears them at every angle
+    switch_env = build_switch_env(d)
+    block = place_block(d=d)
+    for angle in (-5.0, -10.0, -30.0, -60.0, OPEN_ANGLE):
+        key = key_open(angle, d)
+        door_at = place(d=d).rotate(hinge_axis(d), angle)
+        for what, moving in (("key", key), ("door", door_at)):
+            for name, fixed in ((SWITCH_ENV_NAME, switch_env), (BLOCK_NAME, block)):
+                try:
+                    shared = (moving & fixed).volume
+                except Exception:
+                    shared = 0.0
+                if shared > 1.0:
+                    notes.append(
+                        f"the {what} at {-angle:.0f} degrees open shares {shared / 1000:.1f} cm3 "
+                        f"with {name}: the door does not open past the interlock"
+                    )
     notes.append(
-        f"INTERLOCK CONTACT MODE, standing note. {SWITCH} on the door's inside face, "
-        f"axis at y {y_axis:.1f} z {z_axis:.1f} station meeting the left end wall's inner "
-        f"face through a {STRIKER_T:.0f}mm delrin striker; the coil rides the NO contact, "
-        "closed while the door presses the roller. A plunger pressed by a CLOSED guard is "
-        "negative-mode actuation: the direct-opening NC is not what opens the loop, and a "
-        "stuck plunger leaves the coil fed. A tongue interlock (D4NS class) would be "
-        "positive-mode. RULING WANTED; the BOM's $10 line buys a limit switch."
+        f"INTERLOCK, standing note. RULED 2026-09-04: tongue type, positive mode. {SWITCH} "
+        f"on a {BLOCK} whose rear face is {SWITCH_STANDOFF:.1f} inside the door (datasheet "
+        f"{KEY_FACE_BAND[0]:.1f} to {KEY_FACE_BAND[1]:.1f}); {KEY} on the door at door "
+        f"({KEY_X:.0f}, {KEY_Y:.0f}), tongue {reach:.1f} into the head closed, insertion radius "
+        f"{key_radius(d):.0f}. The coil rides the direct-opening NC contact, closed while the "
+        "key is in. The key stands 28 proud of the door's inside face at its left end, and "
+        "of the open shelf. The block is NOT nested: a 40 x 120 offcut, fixed with two "
+        f"{BLOCK_SCREW}. The M20 conduit exits the body's bottom, downward. Expected, and "
+        "worth knowing before the key is fitted: its slotted holes are the +-1 alignment."
     )
 
     # -- the open door -------------------------------------------------------
@@ -1276,14 +1427,16 @@ def check_rear_door(d: Datums = D) -> list[str]:
 
     # -- standing notes: what the geometry cannot enforce --------------------
     notes.append(
-        f"LAMP BRACKET, standing note. The two rail lamps are not cut through the door: "
-        f"a 22mm lamp clamps {LAMP_PANEL_MAX:.0f}mm and is {LAMP_DEPTH:.0f} deep, so in "
-        f"{T:.0f}mm birch its body would stand {LAMP_DEPTH - LAMP_HEAD_PROUD - LAMP_PANEL_MAX - (T - LAMP_PANEL_MAX):.0f}mm "
-        "out the rear face into the service space and outside the leg opening. They sit "
-        f"in a {BRACKET} instead, bezels up, top face at z {bracket_top_z(d):.0f}, bodies "
-        "inside the sealed band; dropped, the leg faces the person behind the machine. "
-        "The angle is NOT on the BOM. Expected, and worth knowing before the lamps are "
-        "ordered as door-mount."
+        f"LAMPS, standing note. RULED 2026-09-04: no bracket. Each rail lamp is counterbored "
+        f"{LAMP_CBORE_D:.0f} from the inside face to a {LAMP_LAND:.0f}mm land with a "
+        f"{LAMP_BORE:.1f} bore through it, at door x "
+        + ", ".join(f"{lamp_local(s, d)[0]:.0f}" for _r, _m, s in LAMPS)
+        + f" y {lamp_local(+1, d)[1]:.0f}. The collar clamps the land from the ROOM side: the "
+        f"bezels face the room, {LAMP_BEZEL_PROUD:.0f} proud of the door's outside face (not "
+        "assembly components, like the knuckle), and face the floor when the door is a shelf. "
+        "Read the rails before opening the door, not after. The body hangs "
+        f"{LAMP_DEPTH - LAMP_BEZEL_PROUD - T:.0f} into the band past the inside face. Expected, "
+        "and worth knowing before the door is painted: the bezel seats on the painted land."
     )
     notes.append(
         f"GLANDS, standing note. Both glands are M{GLAND_D:.0f} by the C07 spec (I91, D01) "
@@ -1351,6 +1504,8 @@ def export(d: Datums = D) -> list:
     )
     pane = build_reveal(d)
     written += export_part(pane, REVEAL_NAME, layers={"ACRYLIC": flat_pattern(pane)["CUT"]})
+    # the block's flat: DXF only here, its placed STEP comes with the rest
+    written += export_part(build_block(d), BLOCK_NAME, step=False)
     out_dir = EXPORT_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
     for label, group, solid in placed_all(d):

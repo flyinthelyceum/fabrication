@@ -51,7 +51,9 @@ SOURCES = {
                   "https://community.carbide3d.com/t/leg-kit-center-to-center-spacing-and-hole-diameter/105167"
                   " -- a Carbide staff forum reply, not a spec sheet, which had "
                   "covered the pitch and the hole diameter only. Still open: the "
-                  "angle's flange width, LegHoles.flange_w.",
+                  "angle's flange width, LegHoles.flange_w. The Y flange's "
+                  "direction is Jared's reading of 2026-09-04: OUTBOARD "
+                  "(LegHoles.front_flange_inboard = False, ruling/observed).",
     "leg_x_inner": "MEASURED 2026-09-02, tape. Was 1100 scaled off a photograph.",
     "leg_y_inner": "MEASURED 2026-09-02, tape. Was 1150 scaled off a photograph.",
     "leg_splay": "Jared, 2026-09-02: the legs are square. The 6 deg was an "
@@ -700,9 +702,11 @@ class LegHoles:
     keeps ``check_leg_joint`` reporting the gap; a number closes it or fails it
     outright."""
 
-    front_flange_inboard: bool | None = None
-    """UNMEASURED. Which way the angle's OTHER flange runs: the Y-facing one,
-    the one with no holes, on a front or rear leg.
+    front_flange_inboard: bool | None = False
+    """OUTBOARD. Jared, 2026-09-04: the front-left leg's Y flange runs
+    OUTBOARD, away from the leg opening (vertex at the leg's inner corner).
+    CONFIDENCE: ruling/observed. Which way the angle's OTHER flange runs: the
+    Y-facing one, the one with no holes, on a front or rear leg.
 
     True if it runs INTO the leg opening from the corner, across the bay's
     open front (the angle's vertex at the leg's OUTER corner). False if it runs
@@ -712,7 +716,8 @@ class LegHoles:
     all pull out through the front, and a flange running inboard by the width
     the bolt pattern already proves (66.3mm) stands squarely in their path.
     ``machine.front_leg_flanges`` builds that case; ``lungs_carriage`` checks
-    it. ``None`` keeps the check reporting MEASURE."""
+    it. ``None`` keeps the check reporting MEASURE; ``False`` (the reading)
+    closes C06, C07 and C09's inboard cases."""
 
     def columns_h(self) -> tuple[float, ...]:
         """Column offsets in from the leg's inner edge, at ``pitch_h``."""

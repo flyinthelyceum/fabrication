@@ -194,7 +194,9 @@ row starts at ``SLIDE_FRONT_INSET``; this one cannot. The lungs door (C09) is
 bay's lay-up on its inside face, so the carriage's closed front has to sit
 behind ``T + LINING_T``. Snapped up to the grid; what the snap adds is the
 running gap between the lay-up and the tray. ``lungs_carriage`` closes here
-and ``lungs_door`` measures its lay-up against it."""
+and ``lungs_door`` measures its lay-up against it. SOURCE: derived,
+snap_up(T + LINING_T). CONFIDENCE: ruling (Jared, 2026-09-04): the carriage's
+20mm move rearward this sets is accepted."""
 
 # ---- hands bay ------------------------------------------------------------
 DRAWER_SHARES = (4, 3, 2)
