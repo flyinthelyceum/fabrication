@@ -1,0 +1,235 @@
+"""Synthetic verification of the capture pipeline (spec v3, steps 1, 3, 4).
+
+    PYTHONPATH=. .venv/bin/python stations/cnc_shapeoko/tools/test_capture.py
+
+No real photo is involved. The sheet PDF is rasterised at 300dpi, a known
+shape is drawn on it the way the collar would draw it, the page is warped
+as a phone held off-axis would see it, and the ingest has to give the shape
+back.
+
+    1. A 50 x 100 stadium. The collar's axis runs PEN_R outside the tool, so
+       the drawn line's CENTRELINE is the stadium offset by PEN_R (a 64 x 114
+       stadium), 1mm wide. Perspective of about 20 degrees plus a small
+       rotation. Recovered L, W must be within 0.3mm of 100 x 50.
+    3. Reject paths: two tags covered (one covered still rectifies, and the
+       test says so), an open arc, two stadiums. Each rejects with its
+       reason and writes nothing.
+    4. Tray: the stadium's DXF as a CAPTURED row (T999, D2) in a COPY of the
+       tool list, never the real one; trays.plan lays it out and the pocket's
+       box is the pocket loop's box.
+
+Every write goes to a temporary directory; the real captures/ and
+tool_list.csv are untouched.
+"""
+
+from __future__ import annotations
+
+import csv
+import math
+import shutil
+import sys
+import tempfile
+from pathlib import Path
+
+import cv2
+import numpy as np
+
+from stations.cnc_shapeoko.tools import capture_ingest as ci
+from stations.cnc_shapeoko.tools import trace_sheet as sheet
+
+HERE = Path(__file__).resolve().parent
+DPI = sheet.RENDER_DPI
+PX = DPI / 25.4                      # rendered pixels per sheet mm
+
+TOOL_L, TOOL_W = 100.0, 50.0         # the stadium: straight 50, radius 25
+STROKE_MM = 1.0
+TOL_MM = 0.3
+
+
+def sheet_png() -> np.ndarray:
+    png = HERE / "trace_sheet.png"
+    if not png.exists():
+        sheet.draw_sheet(HERE / "trace_sheet.pdf", png)
+    img = cv2.imread(str(png), cv2.IMREAD_COLOR)
+    assert img is not None, png
+    assert abs(img.shape[1] / sheet.PAGE_W - PX) < 0.05, (img.shape, PX)
+    return img
+
+
+def stadium(cx: float, cy: float, l: float, w: float, n: int = 90) -> np.ndarray:
+    """A stadium polyline (mm), long axis along X, dense enough to draw."""
+    r = w / 2
+    s = (l - w) / 2
+    pts = []
+    for i in range(n + 1):                       # right cap, -90 .. +90
+        a = -math.pi / 2 + math.pi * i / n
+        pts.append((cx + s + r * math.cos(a), cy + r * math.sin(a)))
+    for i in range(n + 1):                       # left cap, +90 .. +270
+        a = math.pi / 2 + math.pi * i / n
+        pts.append((cx - s + r * math.cos(a), cy + r * math.sin(a)))
+    return np.array(pts)
+
+
+def draw_stroke(img: np.ndarray, pts_mm: np.ndarray, closed: bool = True) -> None:
+    px = np.round(pts_mm * PX).astype(np.int32)
+    cv2.polylines(img, [px], closed, (40, 40, 40), max(int(round(STROKE_MM * PX)), 1), cv2.LINE_AA)
+
+
+def phone_warp(img: np.ndarray, seed: int = 1) -> np.ndarray:
+    """About 20 degrees of keystone plus a few degrees of roll, on a grey
+    desk, at a size a phone would produce."""
+    h, w = img.shape[:2]
+    tilt = math.radians(20)
+    # a camera looking down at the sheet tilted about X: the far edge shrinks
+    far = 1 - 0.5 * math.sin(tilt)          # ~0.83 of the near width
+    src = np.float32([[0, 0], [w, 0], [w, h], [0, h]])
+    dst = np.float32([
+        [w * (1 - far) / 2, 0], [w * (1 + far) / 2, 0],
+        [w, h * 0.92], [0, h * 0.92],
+    ])
+    H = cv2.getPerspectiveTransform(src, dst)
+    R = cv2.getRotationMatrix2D((w / 2, h / 2), 6.0, 0.9)
+    R = np.vstack([R, [0, 0, 1]])
+    T = np.array([[1, 0, 120], [0, 1, 160], [0, 0, 1]], dtype=np.float64)
+    M = T @ R @ H
+    out = cv2.warpPerspective(img, M, (w + 300, h + 300), flags=cv2.INTER_LINEAR, borderValue=(120, 120, 120))
+    return out
+
+
+def field_centre() -> tuple[float, float]:
+    x0, y0, x1, y1 = sheet.field_rect()
+    return ((x0 + x1) / 2, (y0 + y1) / 2)
+
+
+def make_case(name: str, tmp: Path, draw) -> Path:
+    img = sheet_png()
+    draw(img)
+    p = tmp / f"{name}.png"
+    cv2.imwrite(str(p), phone_warp(img))
+    return p
+
+
+def assert_nothing_written(out: Path) -> None:
+    files = [p for p in out.rglob("*") if p.is_file()]
+    assert not files, f"a rejection wrote files: {files}"
+
+
+def test_synthetic_stadium(tmp: Path) -> tuple[Path, ci.Result]:
+    cx, cy = field_centre()
+    centreline = stadium(cx, cy, TOOL_L + 2 * ci.PEN_R, TOOL_W + 2 * ci.PEN_R)
+    img_path = make_case("stadium", tmp, lambda im: draw_stroke(im, centreline))
+    out = tmp / "captures_ok"
+    csv_copy = tmp / "tool_list.csv"
+    shutil.copy(HERE / "tool_list.csv", csv_copy)
+    r = ci.ingest(img_path, "T999", 20, out_dir=out, csv_path=csv_copy)
+    assert r.ok, r.reason
+    assert abs(r.L - TOOL_L) <= TOL_MM, f"L {r.L:.3f} vs {TOOL_L} (tol {TOL_MM})"
+    assert abs(r.W - TOOL_W) <= TOL_MM, f"W {r.W:.3f} vs {TOOL_W} (tol {TOL_MM})"
+    assert r.dxf_path.exists() and r.preview_path.exists()
+    # the pocket loop is the tool plus FOAM_CLEAR a side
+    from build123d import Wire, import_dxf
+    wire = Wire.combine(import_dxf(str(r.dxf_path)))[0]
+    assert wire.is_closed, "the pocket loop is not closed"
+    bb = wire.bounding_box().size
+    assert abs(bb.X - (TOOL_L + 2 * ci.FOAM_CLEAR)) <= TOL_MM, bb
+    assert abs(bb.Y - (TOOL_W + 2 * ci.FOAM_CLEAR)) <= TOL_MM, bb
+    # the row went into the COPY and nowhere else
+    with csv_copy.open(newline="") as fh:
+        rows = {r_["id"]: r_ for r_ in csv.DictReader(fh)}
+    assert rows["T999"]["dims_status"] == "CAPTURED" and rows["T999"]["height_class"] == "20", rows["T999"]
+    assert "T999" not in (HERE / "tool_list.csv").read_text()
+    print(f"  stadium: L {r.L:.3f} W {r.W:.3f} (target {TOOL_L} x {TOOL_W}, tol {TOL_MM}); pocket box {bb.X:.3f} x {bb.Y:.3f}")
+    return r.dxf_path, r
+
+
+def test_rejects(tmp: Path) -> None:
+    cx, cy = field_centre()
+    centreline = stadium(cx, cy, TOOL_L + 2 * ci.PEN_R, TOOL_W + 2 * ci.PEN_R)
+
+    def cover(im, ids):
+        for tid in ids:
+            x0, y0, x1, y1 = sheet.tag_masks()[tid]
+            cv2.rectangle(im, (int(x0 * PX), int(y0 * PX)), (int(x1 * PX), int(y1 * PX)), (200, 190, 180), -1)
+
+    cases = [
+        ("two_tags_covered", lambda im: (draw_stroke(im, centreline), cover(im, (1, 2))), "tags found"),
+        ("open_arc", lambda im: draw_stroke(im, centreline[: int(len(centreline) * 0.7)], closed=False), "not a closed loop"),
+        ("two_stadiums", lambda im: (draw_stroke(im, stadium(cx - 50, cy, 60, 40)), draw_stroke(im, stadium(cx + 50, cy, 60, 40))), "two traces"),
+    ]
+    for name, draw, expect in cases:
+        img_path = make_case(name, tmp, draw)
+        out = tmp / f"captures_{name}"
+        csv_copy = tmp / f"tool_list_{name}.csv"
+        shutil.copy(HERE / "tool_list.csv", csv_copy)
+        before = csv_copy.read_bytes()
+        r = ci.ingest(img_path, "T999", 20, out_dir=out, csv_path=csv_copy)
+        assert not r.ok, f"{name}: accepted, L {r.L} W {r.W}"
+        assert expect in r.reason, f"{name}: wrong reason: {r.reason}"
+        assert_nothing_written(out)
+        assert csv_copy.read_bytes() == before, f"{name}: the CSV changed"
+        print(f"  {name}: rejected, '{r.reason}'")
+
+    # one tag covered still rectifies: three is the floor
+    img_path = make_case("one_tag_covered", tmp, lambda im: (draw_stroke(im, centreline), cover(im, (2,))))
+    r = ci.ingest(img_path, "T999", 20, out_dir=tmp / "captures_one", csv_path=None)
+    assert r.ok and abs(r.L - TOOL_L) <= TOL_MM and abs(r.W - TOOL_W) <= TOL_MM, r
+    print(f"  one_tag_covered: accepted on three tags, L {r.L:.3f} W {r.W:.3f}")
+
+    # the v2 plug
+    try:
+        ci.ingest(img_path, "T999", 20, source="camera")
+    except NotImplementedError as e:
+        assert "v2" in str(e)
+        print(f"  source='camera': NotImplementedError('{e}')")
+    else:
+        raise AssertionError("source='camera' did not raise")
+
+
+def test_tray(tmp: Path, dxf_path: Path) -> None:
+    from stations.cnc_shapeoko.parts import trays
+
+    csv_copy = tmp / "tool_list_tray.csv"
+    shutil.copy(HERE / "tool_list.csv", csv_copy)
+    rows = trays.read_tools(csv_copy)
+    rows.append(
+        trays.ToolRow(
+            id="T999", name="TEST STADIUM", drawer="D2", kind="block",
+            shank_d=None, cut_d=None, oal=None, qty=1,
+            dims_status="CAPTURED", height_class=20.0, silhouette=str(dxf_path),
+        )
+    )
+    p = trays.plan("D2", rows=rows)
+    pk = [k for k in p.pockets if k.tool_id == "T999"]
+    assert len(pk) == 1, [k.tool_id for k in p.pockets]
+    pk = pk[0]
+    assert pk.rule == "captured", pk.rule
+    exp_l, exp_w = TOOL_L + 2 * ci.FOAM_CLEAR, TOOL_W + 2 * ci.FOAM_CLEAR
+    got = (pk.pd, pk.pw) if pk.rotated else (pk.pw, pk.pd)
+    assert abs(got[0] - exp_l) <= TOL_MM and abs(got[1] - exp_w) <= TOL_MM, (got, exp_l, exp_w)
+    assert abs(pk.depth - min(20.0 + trays.FOAM_DEPTH_ALLOW, trays.FOAM_T - trays.FOAM_FLOOR_MIN)) < 1e-6, pk.depth
+    faces = pk.outline().faces()
+    assert len(faces) == 1, len(faces)
+    # the loop plus its finger scoop, opened by the endmill radius, is one face bigger than the pocket alone
+    assert faces[0].area > exp_l * exp_w * 0.9
+    layers = trays.layers(p)
+    assert any(k.startswith("POCKET_D") for k in layers), list(layers)
+    notes = [n for n in trays.check_trays(rows=rows) if "T999" in n]
+    assert not notes, notes
+    print(f"  tray D2: T999 pocket {got[0]:.2f} x {got[1]:.2f} x {pk.depth:g} deep at ({pk.x:.1f}, {pk.y:.1f}), {len(p.pockets)} pocket(s), no T999 notes")
+
+
+def main() -> int:
+    tmp = Path(tempfile.mkdtemp(prefix="capture_test_"))
+    print(f"scratch: {tmp}")
+    print("1. synthetic stadium, 20 deg perspective + 6 deg roll")
+    dxf_path, r = test_synthetic_stadium(tmp)
+    print("3. reject paths")
+    test_rejects(tmp)
+    print("4. tray with one CAPTURED row")
+    test_tray(tmp, dxf_path)
+    print(f"ALL PASSED   (example preview: {r.preview_path})")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

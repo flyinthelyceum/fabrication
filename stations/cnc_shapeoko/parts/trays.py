@@ -22,41 +22,52 @@ empty pocket shows a bright floor and a missing tool reads from across the
 room. The STL pipeline, the print tiles and the seam finder are gone from this
 file; brackets may still print, trays do not.
 
-ONE RULE FOR EVERY KIND
-=======================
+THREE SOCKET RULES (spec v3, 2026-09-04)
+========================================
 
-A printed socket had to be shaped per kind (a bore for a cutter, a keyed bore
-for a collet, nothing at all for a block or a wrench). A milled pocket is the
-tool's BOUNDING BOX plus ``POCKET_CLEAR`` per side, whatever the kind, with its
-internal corners at the flat endmill's radius (``POCKET_TOOL_D / 2``, the house
-constant; apertures round inward), a capsule finger scoop on the long side, and
-a depth of ``max(T, TOP_LAYER_T) + FOAM_REVEAL``: the tool sits a reveal below
-the top face and the floor sits a reveal into the bright core, whichever of the
-two governs. Foam forgives the rest.
+``SOCKET_RULES = ("cutter", "collet", "captured")``. A pocket comes from one
+of three places and nowhere else:
 
-``hex`` is the one kind with a layout habit rather than a socket rule: the keys
-stand long arm along the drawer's depth in a size-ordered row, and the SIZE is
-the label milled through the black layer beside each, so a missing 2.5 reads
-as a bright hole with "2.5" over it.
+    cutter    a catalog row: ``oal_mm`` long by its largest diameter, a box.
+    collet    a catalog row: ``oal_mm`` by the DIN 6499 ER-16 body, a box.
+    captured  any row with ``dims_status=CAPTURED`` and a ``silhouette``:
+              the tool was traced on the fiducial sheet with the TRACE
+              collar, ``tools/capture_ingest.py`` recovered its outline and
+              wrote ``tools/captures/T0xx.dxf``, one closed loop in mm that
+              is the outline inset by the collar's radius and offset by
+              ``capture_ingest.FOAM_CLEAR``. The pocket IS that loop; its
+              depth is ``height_class`` (the go/no-go gauge slot the tool
+              passed, 10..50) plus ``FOAM_DEPTH_ALLOW``.
+
+The bounding-box-plus-clearance rule that took three caliper numbers is
+gone: a wrench is not a box, and the trace costs a student ninety seconds.
+Every pocket, whichever rule made it, gets its internal corners at the flat
+endmill's radius (``POCKET_TOOL_D / 2``, the house constant; apertures round
+inward) and a capsule finger scoop on its long side. Packing is by each
+pocket's box: the derived box for the catalog rules, the loop's bounding box
+for a capture. Foam forgives the rest.
+
+``hex`` is a layout habit rather than a socket rule: once captured, the keys
+stand long arm along the drawer's depth in a size-ordered row, and the SIZE
+is the label milled through the black layer beside each, so a missing 2.5
+reads as a bright hole with "2.5" over it.
 
 WHAT A ROW NEEDS
 ================
 
-Three caliper numbers: ``bbox_l_mm``, ``bbox_w_mm``, ``bbox_h_mm`` (L, W, T).
-Catalog cutters and collets carry ``oal_mm`` and diameters instead, and their
-box derives from those -- a cutter is ``oal`` long by its largest diameter, an
-ER-16 collet is ``oal`` by the DIN 6499 body -- which is a derivation of a box,
-not a per-kind pocket. A row that is not ``dims_status=ok``, or that is ``ok``
-but still lacks one of L/W/T, is SKIPPED, COUNTED and PRINTED by id and name,
-because a tool that quietly fails to appear in its own tray is a tool nobody
-notices is homeless. ``check_trays`` carries the same count so the station's
-one check command reports it too.
+``dims_status`` is one of CATALOG, CAPTURED, MEASURE. A CATALOG cutter or
+collet needs ``oal_mm`` and a diameter; a CAPTURED row needs ``silhouette``
+and ``height_class``; a MEASURE row needs tracing. A row that does not
+resolve to a rule is SKIPPED, COUNTED and PRINTED by id and name, because a
+tool that quietly fails to appear in its own tray is a tool nobody notices is
+homeless. ``check_trays`` carries the same count so the station's one check
+command reports it too.
 
-D1 generates in full from its eleven dimensioned rows (twelve pockets; the
-#201 is stocked twice). D2 (instruments, boots, the pendant cradle as a box
-pocket for T033, the hex rack) and D3 (workholding) run through the same
-``plan()`` today and cut nothing until J03 lands their rows: every row in both
-is MEASURE. The moment a row carries its three numbers it has a pocket.
+D1 generates in full from its eleven CATALOG rows (twelve pockets; the #201
+is stocked twice). Its wrenches, the collet nut and the inserts, and every
+row of D2 (instruments, the pendant, the hex rack) and D3 (workholding), run
+through the same ``plan()`` today and cut nothing until they are traced. The
+moment a row carries a silhouette and a height class it has a pocket.
 
 OUTPUT
 ======
@@ -76,6 +87,7 @@ plus a STEP of the tray for the assembly. No STL.
 from __future__ import annotations
 
 import csv
+import math
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -90,10 +102,12 @@ from build123d import (
     Location,
     Part,
     Plane,
+    Polyline,
     Rectangle,
     Sketch,
     Text,
     extrude,
+    make_face,
     offset,
 )
 
@@ -117,12 +131,18 @@ __all__ = [
     "TOOL_LIST",
     "TRAY_V1",
     "TRAY_LABEL",
+    "SOCKET_RULES",
+    "DIMS_STATUS",
     "ToolRow",
+    "Socket",
     "Pocket",
     "TrayPlan",
     "read_tools",
+    "read_loop",
+    "silhouette_path",
     "rows_for",
     "bbox",
+    "socket",
     "pocket_depth",
     "label_text",
     "skipped",
@@ -169,10 +189,19 @@ FOAM_SHEET = (609.6, 1219.2)
 CONFIDENCE: catalog. ``check_trays`` refuses a blank that does not come off
 one sheet."""
 
-POCKET_CLEAR = 1.0
-"""Added per side to every box dimension. SOURCE: ruling 2026-09-03, "pocket =
-bounding box + clearance"; the value is Kaizen practice for a friction fit in
-a foam that compresses. CONFIDENCE: rule, medium; tune on the first tray."""
+SOCKET_RULES = ("cutter", "collet", "captured")
+"""The only three ways a row gets a pocket. SOURCE: spec v3. A row that fits
+none of them is reported, never guessed at."""
+
+DIMS_STATUS = ("CATALOG", "CAPTURED", "MEASURE")
+"""The ``dims_status`` vocabulary. CATALOG: the datasheet's numbers (cutters,
+collets). CAPTURED: traced, silhouette on disk. MEASURE: nothing yet."""
+
+FOAM_DEPTH_ALLOW = 2.0
+"""Added to a captured tool's ``height_class`` for its pocket depth. The
+class is a ceiling (a 20 is at most 20 thick), so the tool sits at least
+this far below the top face. SOURCE: spec v3; the value is ``FOAM_REVEAL``'s
+reasoning applied to a class instead of a caliper. CONFIDENCE: rule."""
 
 FOAM_REVEAL = 2.0
 """The tool sits this far below the top face, and the floor sits at least this
@@ -230,6 +259,11 @@ HEX_SIZE = re.compile(r"(\d+(?:\.\d+)?|\d+/\d+)\s*(mm|in|\")", re.IGNORECASE)
 A row whose name carries no size labels with its box thickness, which for a
 hex key is its across-flats."""
 
+ARC_CHORD_TOL = 0.05
+"""Chord error when a captured loop's DXF is read back and any arc in it is
+sampled to points. The ingest writes lines only; this covers a hand-edited
+DXF. CONFIDENCE: choice."""
+
 
 # ================================================================ the list
 
@@ -246,15 +280,23 @@ class ToolRow:
     shank_d: float | None
     cut_d: float | None
     oal: float | None
-    bbox_l: float | None
-    bbox_w: float | None
-    bbox_h: float | None
     qty: int
     dims_status: str
+    height_class: float | None = None
+    silhouette: str = ""
 
     @property
-    def measured(self) -> bool:
-        return self.dims_status.strip().lower() == "ok"
+    def status(self) -> str:
+        return self.dims_status.strip().upper()
+
+    @property
+    def rule(self) -> str | None:
+        """Which of ``SOCKET_RULES`` makes this row's pocket, or None."""
+        if self.status == "CAPTURED" and self.silhouette and self.height_class:
+            return "captured"
+        if self.status == "CATALOG" and self.kind in ("cutter", "collet"):
+            return self.kind
+        return None
 
 
 def _num(raw: str) -> float | None:
@@ -268,8 +310,9 @@ def _num(raw: str) -> float | None:
 
 
 def read_tools(path: Path = TOOL_LIST) -> list[ToolRow]:
-    """Every row of the snapshot, in file order. ``socket_note`` is no longer
-    read: there are no per-kind socket rules for it to qualify."""
+    """Every row of the snapshot, in file order. ``bbox_*_mm`` are the
+    ingest's record of a capture's L and W and ``socket_note`` is a free
+    note; neither is read here, because neither makes a pocket."""
     out: list[ToolRow] = []
     with path.open(newline="", encoding="utf-8") as fh:
         for r in csv.DictReader(fh):
@@ -283,14 +326,48 @@ def read_tools(path: Path = TOOL_LIST) -> list[ToolRow]:
                     shank_d=_num(r.get("shank_d_mm", "")),
                     cut_d=_num(r.get("cut_d_mm", "")),
                     oal=_num(r.get("oal_mm", "")),
-                    bbox_l=_num(r.get("bbox_l_mm", "")),
-                    bbox_w=_num(r.get("bbox_w_mm", "")),
-                    bbox_h=_num(r.get("bbox_h_mm", "")),
                     qty=int(qty),
                     dims_status=(r.get("dims_status") or "").strip(),
+                    height_class=_num(r.get("height_class", "")),
+                    silhouette=(r.get("silhouette") or "").strip(),
                 )
             )
     return out
+
+
+def silhouette_path(row: ToolRow) -> Path:
+    """Where a captured row's loop lives: ``silhouette`` relative to the tool
+    list's directory (``captures/T0xx.dxf``), or absolute as given."""
+    p = Path(row.silhouette)
+    return p if p.is_absolute() else TOOL_LIST.parent / p
+
+
+def read_loop(path: Path) -> tuple[tuple[float, float], ...]:
+    """The closed loop in a capture's DXF as points, mm, its bounding box's
+    corner at the origin. One loop per file; the largest wins if a hand
+    edit left more."""
+    from build123d import GeomType, Wire, import_dxf
+
+    wires = Wire.combine(import_dxf(str(path)))
+    if not wires:
+        raise ValueError(f"{path}: no loop")
+    wire = max(wires, key=lambda w: w.length)
+    if not wire.is_closed:
+        raise ValueError(f"{path}: the loop is not closed")
+    pts: list[tuple[float, float]] = []
+    for e in wire.edges():
+        if e.geom_type == GeomType.LINE:
+            n = 1
+        else:
+            r = max(getattr(e, "radius", 1.0), 1e-6)
+            step = 2 * math.acos(max(1 - ARC_CHORD_TOL / r, -1.0))
+            n = max(int(math.ceil(e.length / (r * step))), 2)
+        for i in range(n):
+            p = e.position_at(i / n)
+            pts.append((p.X, p.Y))
+    x0 = min(p[0] for p in pts)
+    y0 = min(p[1] for p in pts)
+    return tuple((x - x0, y - y0) for x, y in pts)
 
 
 def rows_for(key: str, rows: list[ToolRow] | None = None) -> list[ToolRow]:
@@ -300,32 +377,67 @@ def rows_for(key: str, rows: list[ToolRow] | None = None) -> list[ToolRow]:
     return [r for r in rows if r.drawer == key]
 
 
-def bbox(row: ToolRow) -> tuple[float, float, float] | None:
-    """(L, W, T) for one row, L the longer footprint side, or None when a
-    number is missing.
+@dataclass(frozen=True)
+class Socket:
+    """What one row's rule resolved to: the box the pocket packs by (L the
+    longer side, W, T the tool's thickness or height class), the pocket's
+    size as laid before rotation, and the loop when there is one."""
 
-    The three ``bbox_*`` columns win. When they are blank, a catalog cutter's
-    box is its overall length by its largest diameter, and an ER-16 collet's is
-    its length by the standard body: the same box the calipers would read,
-    from the numbers the catalog already gives.
-    """
-    l, w, t = row.bbox_l, row.bbox_w, row.bbox_h
-    if l is None or w is None or t is None:
-        if row.kind == "cutter" and row.oal and (row.shank_d or row.cut_d):
-            d = max(row.shank_d or 0.0, row.cut_d or 0.0)
-            l, w, t = row.oal, d, d
-        elif row.kind == "collet" and row.oal:
-            l, w, t = row.oal, ER16_COLLET_OD, ER16_COLLET_OD
-        else:
+    rule: str
+    l: float
+    w: float
+    t: float
+    pw: float
+    pd: float
+    loop: tuple[tuple[float, float], ...] | None = None
+
+
+def bbox(row: ToolRow) -> tuple[float, float, float] | None:
+    """(L, W, T) for one row, or None when it has no pocket. Kept for the
+    hex sort and the report; ``socket`` is what the plan uses."""
+    s = socket(row)
+    return None if s is None else (s.l, s.w, s.t)
+
+
+_loops: dict[Path, tuple[tuple[float, float], ...]] = {}
+
+
+def socket(row: ToolRow) -> Socket | None:
+    """Resolve one row through ``SOCKET_RULES``. None when no rule fits or
+    the rule's inputs are missing; the reason is ``skipped``'s to tell."""
+    rule = row.rule
+    if rule == "cutter":
+        if not (row.oal and (row.shank_d or row.cut_d)):
             return None
+        d = max(row.shank_d or 0.0, row.cut_d or 0.0)
+        l, w, t = row.oal, d, d
+    elif rule == "collet":
+        if not row.oal:
+            return None
+        l, w, t = row.oal, ER16_COLLET_OD, ER16_COLLET_OD
+    elif rule == "captured":
+        path = silhouette_path(row)
+        if not path.exists():
+            return None
+        if path not in _loops:
+            _loops[path] = read_loop(path)
+        loop = _loops[path]
+        pw = max(p[0] for p in loop)
+        pd = max(p[1] for p in loop)
+        return Socket("captured", max(pw, pd), min(pw, pd), float(row.height_class), pw, pd, loop)
+    else:
+        return None
     if l <= 0 or w <= 0 or t <= 0:
         return None
-    return (max(l, w), min(l, w), t)
+    l, w = max(l, w), min(l, w)
+    return Socket(rule, l, w, t, l, w)
 
 
-def pocket_depth(t: float) -> float:
-    """``max(T, TOP_LAYER_T) + FOAM_REVEAL``, capped to leave the floor."""
-    return min(max(t, TOP_LAYER_T) + FOAM_REVEAL, FOAM_T - FOAM_FLOOR_MIN)
+def pocket_depth(t: float, allow: float = FOAM_REVEAL) -> float:
+    """``max(T, TOP_LAYER_T) + allow``, capped to leave the floor. The allow
+    is ``FOAM_REVEAL`` over a caliper thickness and ``FOAM_DEPTH_ALLOW`` over
+    a height class."""
+    return min(max(t, TOP_LAYER_T) + allow, FOAM_T - FOAM_FLOOR_MIN)
 
 
 def label_text(row: ToolRow) -> str:
@@ -342,14 +454,22 @@ def label_text(row: ToolRow) -> str:
 
 
 def skipped(key: str, rows: list[ToolRow] | None = None) -> list[tuple[ToolRow, str]]:
-    """(row, why) for every row of this drawer that gets no pocket. Both
-    reasons are the same reason: nobody has put calipers on it."""
+    """(row, why) for every row of this drawer that gets no pocket. Every
+    reason ends the same way: trace it."""
     out: list[tuple[ToolRow, str]] = []
     for r in rows_for(key, rows):
-        if not r.measured:
-            out.append((r, "no pocket yet: MEASURE"))
-        elif bbox(r) is None:
-            out.append((r, "no pocket yet: dims_status says ok but L/W/T is missing, MEASURE"))
+        if r.rule is None:
+            if r.status == "CATALOG":
+                out.append((r, f"no pocket yet: CATALOG but no catalog rule for kind {r.kind!r}, trace it (MEASURE)"))
+            elif r.status == "CAPTURED":
+                out.append((r, "no pocket yet: CAPTURED but silhouette or height_class is blank, re-run the ingest (MEASURE)"))
+            else:
+                out.append((r, "no pocket yet: MEASURE, trace it"))
+        elif socket(r) is None:
+            if r.rule == "captured":
+                out.append((r, f"no pocket yet: silhouette {r.silhouette} is not on disk, re-run the ingest (MEASURE)"))
+            else:
+                out.append((r, f"no pocket yet: CATALOG {r.kind} without oal/diameter, fill the catalog columns (MEASURE)"))
     return out
 
 
@@ -365,18 +485,22 @@ class Pocket:
     name: str
     label: str
     kind: str
+    rule: str           # which of SOCKET_RULES made it
     l: float            # the tool's box
     w: float
     t: float
-    x: float            # pocket rectangle, min corner
+    x: float            # pocket box, min corner
     y: float
-    pw: float           # pocket rectangle, size (box + clearance, as laid)
+    pw: float           # pocket box, size as laid
     pd: float
     depth: float
     rotated: bool       # L along Y; scoop on the +X long side
     label_x: float      # label anchor, centred, baseline
     label_y: float
     label_h: float
+    loop: tuple[tuple[float, float], ...] | None = None
+    """A captured pocket's loop, pocket-local (its box's corner at 0, 0),
+    before rotation. None for a box pocket."""
 
     @property
     def proud(self) -> float:
@@ -396,12 +520,26 @@ class Pocket:
             return (self.x, self.y, self.x + self.pw + SCOOP_REACH, self.y + self.pd)
         return (self.x, self.y - SCOOP_REACH, self.x + self.pw, self.y + self.pd)
 
+    def body(self) -> Sketch:
+        """The pocket without its scoop, in tray XY: the box, or the captured
+        loop turned to lie as the box was laid."""
+        if self.loop is None:
+            return Rectangle(self.pw, self.pd, align=(Align.MIN, Align.MIN)).moved(
+                Location((self.x, self.y))
+            )
+        face = make_face(Polyline(*self.loop, close=True))
+        if self.rotated:
+            # the loop's long side ran along X; the pocket was laid with L along Y
+            face = face.moved(Location((0, 0, 0), (0, 0, 90)))
+            bb = face.bounding_box()
+            face = face.moved(Location((-bb.min.X, -bb.min.Y)))
+        return face.moved(Location((self.x, self.y)))
+
     def outline(self) -> Sketch:
-        """The milled loop: rectangle plus half-capsule scoop, opened by the
-        endmill's radius so every internal corner is what the cutter leaves."""
-        rect = Rectangle(self.pw, self.pd, align=(Align.MIN, Align.MIN)).moved(
-            Location((self.x, self.y))
-        )
+        """The milled loop: pocket body plus half-capsule scoop, opened by
+        the endmill's radius so every internal corner is what the cutter
+        leaves."""
+        rect = self.body()
         sw = self.scoop_w
         stem = max(SCOOP_REACH - sw / 2, 0.0)
         if self.rotated:
@@ -459,14 +597,14 @@ def _fit_label(txt: str, room: float) -> tuple[str, float]:
     return txt, h
 
 
-def _units(key: str) -> list[ToolRow]:
+def _units(key: str, rows: list[ToolRow] | None = None) -> list[ToolRow]:
     """One entry per unit of stock, file order, the hex keys gathered into a
     size-ordered run where the first of them appeared."""
-    no_pocket = {r.id for r, _why in skipped(key)}
+    no_pocket = {r.id for r, _why in skipped(key, rows)}
     units: list[ToolRow] = []
     hexes: list[ToolRow] = []
     hex_at: int | None = None
-    for r in rows_for(key):
+    for r in rows_for(key, rows):
         if r.id in no_pocket:
             continue
         if r.kind == "hex":
@@ -481,11 +619,12 @@ def _units(key: str) -> list[ToolRow]:
     return units
 
 
-def plan(key: str = TRAY_V1, d: Datums = D) -> TrayPlan:
+def plan(key: str = TRAY_V1, d: Datums = D, rows: list[ToolRow] | None = None) -> TrayPlan:
     """Lay one drawer's tray out: shelf rows, front to back, left to right.
 
     Works for any drawer key and raises for none of them. A drawer whose rows
     are all MEASURE plans an empty blank, which is the honest tray for it.
+    ``rows`` replaces the snapshot, for a test or a what-if.
     """
     key = key.upper()
     spec = spec_for(key)
@@ -496,14 +635,19 @@ def plan(key: str = TRAY_V1, d: Datums = D) -> TrayPlan:
     x = MARGIN
     row_y = MARGIN
     row_h = 0.0
-    for r in _units(key):
-        l, w, t = bbox(r)
-        pw, pd = l + 2 * POCKET_CLEAR, w + 2 * POCKET_CLEAR
+    for r in _units(key, rows):
+        s = socket(r)
+        l, w, t = s.l, s.w, s.t
+        pw, pd = s.pw, s.pd
+        loop = s.loop
+        if loop is None and pw < pd:
+            pw, pd = pd, pw                 # a box is laid long side along X first
         rotated = r.kind == "hex" or MARGIN + pw + MARGIN > tray_w
         if rotated:
             pw, pd = pd, pw
-        pw = max(pw, POCKET_TOOL_D)        # a pocket is never narrower than its cutter
-        pd = max(pd, POCKET_TOOL_D)
+        if loop is None:
+            pw = max(pw, POCKET_TOOL_D)        # a pocket is never narrower than its cutter
+            pd = max(pd, POCKET_TOOL_D)
 
         label, lh = _fit_label(label_text(r), pw)
         cell_w = pw + (SCOOP_REACH if rotated else 0.0)
@@ -520,13 +664,15 @@ def plan(key: str = TRAY_V1, d: Datums = D) -> TrayPlan:
                 name=r.name,
                 label=label,
                 kind=r.kind,
+                rule=s.rule,
                 l=l, w=w, t=t,
                 x=x, y=py, pw=pw, pd=pd,
-                depth=pocket_depth(t),
+                depth=pocket_depth(t, FOAM_DEPTH_ALLOW if loop is not None else FOAM_REVEAL),
                 rotated=rotated,
                 label_x=x + pw / 2,
                 label_y=py + pd + LABEL_GAP,
                 label_h=lh,
+                loop=loop,
             )
         )
         x += cell_w + WALL
@@ -605,13 +751,13 @@ def place(part: Part | None = None, key: str = TRAY_V1, d: Datums = D) -> Part:
 # ================================================================ checks
 
 
-def check_trays(d: Datums = D) -> list[str]:
+def check_trays(d: Datums = D, rows: list[ToolRow] | None = None) -> list[str]:
     """What the D1 tray has to be true for, plus what every tray is still
     waiting on."""
     notes: list[str] = []
     key = TRAY_V1
     spec = spec_for(key)
-    p = plan(key, d)
+    p = plan(key, d, rows)
     iw, idep, ih = drawers.interior(spec, d)
 
     if not p.pockets:
@@ -682,20 +828,21 @@ def check_trays(d: Datums = D) -> list[str]:
                     f"{max(gap_x, gap_y):.1f}mm of foam and need {WALL:.0f}"
                 )
 
-    # what is still waiting on calipers, in this drawer and in the others
-    miss = skipped(key)
+    # what is still waiting on a trace, in this drawer and in the others
+    miss = skipped(key, rows)
     if miss:
         notes.append(
-            f"{len(miss)} of {len(rows_for(key))} {key} rows have no pocket: "
+            f"{len(miss)} of {len(rows_for(key, rows))} {key} rows have no pocket: "
             + ", ".join(r.id for r, _w in miss)
-            + ". MEASURE THIS -- calipers (L, W, T), then re-export the Sheet."
+            + ". MEASURE THIS -- trace it on the sheet with the collar, gauge its height, "
+            "submit the Form (tools/README.md), then re-export the Sheet."
         )
     for other in (s.key for s in DRAWERS if s.key != key):
-        om = skipped(other)
+        om = skipped(other, rows)
         if om:
             notes.append(
-                f"{len(om)} of {len(rows_for(other))} {other} rows have no pocket; "
-                f"the {other} tray cuts the day they are measured. MEASURE THIS."
+                f"{len(om)} of {len(rows_for(other, rows))} {other} rows have no pocket; "
+                f"the {other} tray cuts the day they are traced. MEASURE THIS."
             )
 
     return notes
@@ -732,13 +879,13 @@ if __name__ == "__main__":
         )
         for pk in p.pockets:
             print(
-                f"    {pk.tool_id:<5} {pk.kind:<7} box {pk.l:5.1f} x {pk.w:5.1f} x {pk.t:5.1f}"
+                f"    {pk.tool_id:<5} {pk.rule:<8} box {pk.l:5.1f} x {pk.w:5.1f} x {pk.t:5.1f}"
                 f"   pocket {pk.pw:5.1f} x {pk.pd:5.1f} x {pk.depth:4.1f} deep"
                 f"   at ({pk.x:6.1f}, {pk.y:6.1f}){'  rotated' if pk.rotated else ''}"
                 f"   {pk.label}"
             )
         miss = skipped(key)
-        print(f"  {len(miss)} {key} row(s) with no pocket (MEASURE):")
+        print(f"  {len(miss)} {key} row(s) with no pocket (trace them):")
         for r, why in miss:
             print(f"    {r.id:<5} {r.name:<55} {why}")
         print()
