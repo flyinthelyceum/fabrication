@@ -2,11 +2,80 @@
 
 Canonical, editable list lives in the Google Sheet "CNC Station – Tool List v1" — Drive folder IC / CNC Station 2026. Sheet URL: https://docs.google.com/spreadsheets/d/1AtX_waFmqeCopwA0GV06VFfvzlMztYqAFsnEd0OT-00
 `tool_list.csv` and `tool_list_add.csv` here are point-in-time snapshots of the Sheet's TRAY and ADD tabs, committed for the build123d tray generator to read.
-Regenerate by exporting the Sheet's TRAY tab (File > Download > CSV) over `tool_list.csv`, and the ADD tab over `tool_list_add.csv` — never hand-edit these snapshots. The ADD tab's subtotal rows (blank id) are dropped from the snapshot.
+Regenerate by exporting the Sheet's TRAY tab (File > Download > CSV) over `tool_list.csv`, and the ADD tab over `tool_list_add.csv` — never hand-edit these snapshots, with one exception: `capture_ingest.py` upserts the row it just captured, and the same row lands in the Sheet through the CAPTURE tab, so the two stay in step. The ADD tab's subtotal rows (blank id) are dropped from the snapshot.
 
-## Capture (ruled 2026-09-03)
+## Capture (spec v3, approved 2026-09-04)
 
-Trays are milled from two-tone Kaizen foam on the Shapeoko, one piece per drawer. Every pocket is the tool's bounding box plus clearance, whatever its kind, so the capture for a MEASURE row is three caliper numbers: `bbox_l_mm`, `bbox_w_mm`, `bbox_h_mm`. No photos, no scans, no outlines. Catalog parts take the datasheet. The `socket_note` column is retired as a rule (there are no per-kind socket rules any more); `trays.py` no longer reads it (C16), it stays in the schema as a free note.
+Trays are milled from two-tone Kaizen foam on the Shapeoko, one piece per drawer. A pocket comes from one of three socket rules in `parts/trays.py` and nowhere else:
+
+- `cutter` — a CATALOG row: `oal_mm` by its largest diameter
+- `collet` — a CATALOG row: `oal_mm` by the DIN 6499 ER-16 body
+- `captured` — a CAPTURED row: the pocket IS the tool's traced outline, from `captures/T0xx.dxf`, at a depth of `height_class` plus `FOAM_DEPTH_ALLOW`
+
+Everything that is not a cutter or a collet gets traced. The bounding-box-plus-clearance rule and its three caliper numbers are gone (ruled 2026-09-03, replaced 2026-09-04): a wrench is not a box.
+
+### The procedure (this is the laminated card, `capture_card.pdf`)
+
+1. **SHEET.** Take a fresh trace sheet from the stack. Write the tool's TAG (T0__, from the drawer label) in the TAG box.
+2. **HEIGHT.** Slide the tool edge-on into the gauge. The smallest slot it enters is its height: 10, 20, 30, 40 or 50. Write it in the HEIGHT box.
+3. **LAY.** Lay the tool inside the field, as it sits in the drawer. Clear of the border line and of the four corner squares.
+4. **TRACE.** Pencil in the TRACE collar. Straight up like a candle, collar riding the tool. Trace the OUTSIDE only, all the way round, until the line meets itself.
+5. **PHOTO.** Lift the tool off. Photograph the whole sheet from above: all four corner squares in frame, sheet flat, no shadow across the line.
+6. **FORM.** Open the form "CNC tray capture": tag, height, photo. Done. The tray regenerates; a rejected sheet comes back with one line saying why.
+
+One tool per sheet. Never a hand in the field, never a tool on its edge, never a tool that moved. Sheets, collar, pencil and gauge live in Drawer 1. Print sheets at 100%: the bar at the bottom must measure 100mm.
+
+### The pen rule
+
+The tracing tool is a standard wooden hex pencil (7mm across flats) in the printed TRACE collar (`tracing_collar.stl`): a 14.0mm OD contact cylinder with a hex bore, the lead exiting flush at the bottom face. The collar, not the pencil, rides the tool, so the drawn line's centreline is always the tool's outline offset outward by exactly the collar's radius, whatever the tool's height and however sharp the pencil. `capture_ingest.PEN_R = 7.0` is that radius (CONFIDENCE: design; verify with calipers on the printed collar once and correct it if the printer ran fat or thin). No other pen, no other collar: a bare pencil traces a line whose offset depends on the taper and the tool's height, and the pocket comes out wrong by an unknowable amount.
+
+### What the ingest does
+
+`capture_ingest.py <image> <tag> <height>` (or `ingest(image_path, tag, height_slot, source="trace")`): finds the four ArUco tags (three is the floor), rectifies the photo into the sheet's mm frame, crops the field, thresholds the pencil line, takes the largest closed contour, measures the line's own width from its hole, insets by half of that plus `PEN_R`, offsets by `FOAM_CLEAR` (1.0, settled by the fit test), and writes:
+
+- `captures/T0xx.dxf` — the pocket, one closed loop, mm, laid with its long side along X and its box's corner at the origin
+- `captures/preview/T0xx.png` — the rectified sheet, the detected line in orange, the pocket in cyan, L / W / H in the corner. Look at this before trusting a capture.
+- the tag's row in `tool_list.csv`: `dims_status=CAPTURED`, `silhouette`, `height_class`, `bbox_l_mm` / `bbox_w_mm` (the tool's L and W, for the record; trays pack by the loop's own box)
+
+It rejects, with one line and nothing written, when: fewer than three tags are found; the trace is not a closed loop; the trace touches the field edge; a second trace in the field is more than a quarter of the largest's area. `test_capture.py` runs the synthetic proof (a 50 x 100 stadium, 20 degrees of perspective, back within 0.3mm) and the three reject paths: `PYTHONPATH=. .venv/bin/python stations/cnc_shapeoko/tools/test_capture.py`.
+
+### The columns
+
+`tool_list.csv` and the Sheet's TRAY tab carry, beyond the catalog columns:
+
+| column | values | who writes it |
+|---|---|---|
+| `dims_status` | `CATALOG` (datasheet numbers: cutters, collets), `CAPTURED` (traced, silhouette on disk), `MEASURE` (nothing yet) | CATALOG by hand; CAPTURED by the ingest; MEASURE is the default |
+| `height_class` | 10, 20, 30, 40, 50: the gauge slot the tool passed | the ingest, from the Form |
+| `silhouette` | `captures/T0xx.dxf`, relative to this directory | the ingest |
+
+`bbox_l_mm`, `bbox_w_mm`, `bbox_h_mm` stay in the schema as the ingest's record of L and W (and the old photo estimates); `trays.py` reads none of them. `socket_note` stays as a free note.
+
+### The Form and the CAPTURE tab
+
+The Sheet's CAPTURE tab (columns `timestamp, tag, height_slot, photo_url, status, reason`) is the landing tab. `~/labnode-scripts/cnc-capture-ingest.py` reads rows whose `status` is blank, downloads the photo from Drive, runs the ingest, writes `status` (`captured` / `rejected` / `error`) and `reason` back, uploads the preview to `IC / CNC Station 2026 / 05 Capture / preview`, and puts one line in the 07:05 digest.
+
+The Form itself is a five-minute manual task (the Drive token on the Mini has no Forms scope, and this is not worth a second credential). In Google Forms:
+
+1. New form, title **CNC tray capture**. Settings > Responses: collect email off; Presentation: confirmation message "Captured. Check the tray preview tomorrow morning."
+2. Question 1, **Tag**, Dropdown, required. Options: every `id` in the TRAY tab (T013..T058 today; copy the column). Keep the list in the TRAY tab's order.
+3. Question 2, **Height slot**, Multiple choice, required. Options: `10`, `20`, `30`, `40`, `50`.
+4. Question 3, **Photo of the sheet**, File upload, required, images only, one file, 10 MB. Google will ask to create an upload folder: put it in **IC / CNC Station 2026 / 05 Capture** (the folder exists; choose it or move the auto-created one inside it).
+5. Responses > Link to Sheets > Select existing spreadsheet > "CNC Station – Tool List v1". The Form creates a new tab; rename it **CAPTURE** and delete the empty CAPTURE tab that is there now, OR leave the empty one and re-point `CAPTURE_TAB` in the script at the Form's tab name. The Form writes `Timestamp, Tag, Height slot, Photo of the sheet` as columns A..D; the script fills `status` and `reason` in E and F.
+6. Print the Form's link as a QR on the card's back, or put the short link on the drawer label.
+
+### The physical kit (Drawer 1)
+
+- a stack of `trace_sheet.pdf`, printed at 100% (the scale bar is the check)
+- the TRACE collar (`tracing_collar.stl`, PLA, 0.2 layer, no supports, bore up) with a hex pencil in it
+- the height gauge (`height_gauge.stl`, 180 x 60 x 60, prints flat on its back; five through-slots 10..50, labels embossed on the front)
+- `capture_card.pdf`, laminated
+
+All four files are in Drive under IC / CNC Station 2026 / 06 Tool Capture, generated by `trace_sheet.py`.
+
+### v2: the machine captures its own tools
+
+The ingest's image source is a plug: `ingest(..., source="camera")` is reserved for a camera on the Z plate looking down at a tool on a fiducial mat on the bed, one gSender macro to the capture pose, a frame grab on the console. Same ingest, same tags, same output. It raises `NotImplementedError` today. Nothing in v1 is built in a way that v2 would have to undo: the sheet frame becomes the mat frame and the tag positions become the mat's.
 
 The Sheet's LOG tab (date, reading, who) is the human half of the station log; the first row is reserved for the commissioning continuity reading. It is not snapshotted here.
 

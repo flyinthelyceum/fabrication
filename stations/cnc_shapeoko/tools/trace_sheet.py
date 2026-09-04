@@ -21,6 +21,8 @@ writes, beside this file:
                         tool is a cylinder of known radius whatever the tool's
                         height or the pencil's taper. PEN_R in
                         ``capture_ingest`` is this collar's radius.
+    capture_card.pdf    the laminated card: the procedure in large type, one
+                        page, for Drawer 1 beside the sheets.
 
 WHY THE TAGS SIT IN THE FIELD'S CORNERS
 =======================================
@@ -122,6 +124,24 @@ RULE_LINE = (
 amended 2026-09-04 for the collar."""
 
 RENDER_DPI = 300
+
+CARD_TITLE = "CNC TRAY CAPTURE"
+CARD_SUB = "one tool, about ninety seconds"
+CARD_STEPS = (
+    ("SHEET", "Take a fresh trace sheet from the stack. Write the tool's TAG (T0__, from the drawer label) in the TAG box."),
+    ("HEIGHT", "Slide the tool edge-on into the gauge. The smallest slot it enters is its height: 10, 20, 30, 40 or 50. Write it in the HEIGHT box."),
+    ("LAY", "Lay the tool inside the field, as it sits in the drawer. Clear of the border line and of the four corner squares."),
+    ("TRACE", "Pencil in the TRACE collar. Straight up like a candle, collar riding the tool. Trace the OUTSIDE only, all the way round, until the line meets itself."),
+    ("PHOTO", "Lift the tool off. Photograph the whole sheet from above: all four corner squares in frame, sheet flat, no shadow across the line."),
+    ("FORM", "Open the form \u201cCNC tray capture\u201d: tag, height, photo. Done. The tray regenerates; a rejected sheet comes back with one line saying why."),
+)
+CARD_FOOT = (
+    "One tool per sheet.  Never a hand in the field, never a tool on its edge, never a tool that moved.",
+    "Sheets, collar, pencil and gauge live in Drawer 1.  Print sheets at 100%: the bar at the bottom must measure 100mm.",
+)
+"""The card, verbatim. It is the spec's rule line unfolded into the six
+things a hand does, in the order it does them. SOURCE: spec v3, amended
+2026-09-04 for the collar."""
 
 
 def tag_corners(tag_id: int) -> np.ndarray:
@@ -231,6 +251,42 @@ def draw_sheet(pdf_path: Path, png_path: Path | None = None) -> list[Path]:
         written.append(png_path)
     plt.close(fig)
     return written
+
+
+def draw_card(pdf_path: Path) -> Path:
+    """The laminated card: Letter, large type, one page."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import FancyBboxPatch
+
+    MM = 1 / 25.4
+    fig = plt.figure(figsize=(PAGE_W * MM, PAGE_H * MM))
+    ax = fig.add_axes([0, 0, 1, 1])
+    ax.set_xlim(0, PAGE_W)
+    ax.set_ylim(PAGE_H, 0)
+    ax.axis("off")
+    ax.text(14, 18, CARD_TITLE, fontsize=30, fontweight="bold", va="center", ha="left")
+    ax.text(14, 30, CARD_SUB, fontsize=13, va="center", ha="left", color="0.35")
+    ax.plot([14, PAGE_W - 14], [37, 37], color="black", lw=1.5)
+    y = 50
+    for i, (word, text) in enumerate(CARD_STEPS, 1):
+        ax.add_patch(FancyBboxPatch((14, y - 6), 12, 12, boxstyle="round,pad=0,rounding_size=2", fc="black", ec="none"))
+        ax.text(20, y, str(i), fontsize=15, fontweight="bold", color="white", ha="center", va="center")
+        ax.text(31, y - 1.5, word, fontsize=13, fontweight="bold", ha="left", va="center")
+        ax.text(31, y + 8.5, text, fontsize=10.5, ha="left", va="top", wrap=True, linespacing=1.35)
+        y += 34
+    ax.plot([14, PAGE_W - 14], [y - 12, y - 12], color="black", lw=1.5)
+    for j, line in enumerate(CARD_FOOT):
+        ax.text(14, y - 4 + j * 9, line, fontsize=9.5, ha="left", va="center", color="0.15")
+    ax.text(PAGE_W - 14, PAGE_H - 10, "tools/trace_sheet.py  |  capture card v1, 2026-09-04", fontsize=6, ha="right", va="center", color="0.5")
+    # matplotlib wraps to the figure edge; keep the step text inside the margin
+    for t in ax.texts:
+        t._get_wrap_line_width = lambda: (PAGE_W - 31 - 14) * MM * fig.dpi
+    fig.savefig(pdf_path, format="pdf")
+    plt.close(fig)
+    return pdf_path
 
 
 # ================================================================ height gauge
@@ -351,6 +407,7 @@ def write_all(out_dir: Path = HERE) -> list[Path]:
     from lib.house import export_stl
 
     written = draw_sheet(out_dir / "trace_sheet.pdf", out_dir / "trace_sheet.png")
+    written.append(draw_card(out_dir / "capture_card.pdf"))
     for name, builder in (("height_gauge.stl", build_height_gauge), ("tracing_collar.stl", build_tracing_collar)):
         part = builder()
         p = out_dir / name
