@@ -101,8 +101,14 @@ NOT: neither its width (``LegHoles.flange_w``) nor which way it runs
 flange runs INTO the opening across the bay's front, it stands in the tray's
 way by tens of millimetres and nothing pulls out. ``machine.front_leg_flanges``
 builds it at the width the bolt pattern proves, this part intersects the
-extended tray with it, and the result is reported as a MEASURE until the
+tray's SWEPT volume with it, and the result is reported as a MEASURE until the
 direction is read -- and as a blocking clash the moment it reads inboard.
+
+The sweep matters. The flange is a 3.5mm plate just outside the bay's front
+face; a solid that ends up entirely in front of it at full extension has
+passed THROUGH it on the way, and a test at the end position alone would say
+nothing. ``swept`` builds the volume a solid occupies over the whole travel,
+so a hit at any point of the pull reads, not only a hit at the end of it.
 
 PANEL CONVENTION
 ================
@@ -118,7 +124,7 @@ Every panel is drawn flat on the house convention and stood up by its plane:
 
 from __future__ import annotations
 
-from build123d import Align, Box, Cylinder, Location, Part, Plane
+from build123d import Align, Box, Cylinder, GeomType, Location, Part, Plane, extrude
 
 from lib.house import GRID, SHEET_5X5_BALTIC, fits
 from stations.cnc_shapeoko.carcass import (
@@ -171,6 +177,7 @@ __all__ = [
     "panels",
     "placed_all",
     "extended",
+    "swept",
     "joint_table",
     "check_lungs_carriage",
     "export",
@@ -194,13 +201,17 @@ DP_NAME = "dp_sensor_pad"
 # ---- the slide, the one vendor fact bay_walls does not carry ------------
 SLIDE_TRAVEL = 508.0
 """Rated travel of the 500mm pair at full extension. SOURCE: Accuride 3832EC
-quick reference (3700-9508, accuride.com), row 3832-C20EC: slide length 19.68in
-[500], travel 20.00in [508]. CONFIDENCE: datasheet. The drawer member is "flush
-or under in closed position", so the tray's front edge travels the full 508.
-Read 2026-09-03 off the PDF; the maker's HTML page redirects in a loop."""
+quick reference, document 3700-9508(1183)-MK114-R5-1215,
+accuride.com/media/amasty/amfile/attach/d4ba99d10b86f194bef3fdc51f9ccb24.pdf,
+row 3832-C20EC: slide length 19.68in [500], travel 20.00in [508].
+CONFIDENCE: datasheet, READ 2026-09-03 off that PDF (the row and the "Closed
+Position: Drawer Member Flush or Under" note both extracted by text). The
+maker's HTML product page redirects in a loop; the PDF is what to cite. Flush
+or under when closed means the tray's front edge travels the full 508."""
 
 SLIDE_HEIGHT_SHEET = 45.7
-"""The same sheet's slide height, 1.80in [45.7mm]. SOURCE: as above.
+"""The same sheet's slide height, 1.80in [45.7mm]. SOURCE: as above, "Overall
+slide dimensions: 1.80" x 1/2"" and "Height: 1.80'' [45.7 mm]", read 2026-09-03.
 CONFIDENCE: datasheet. Recorded because ``bay_walls.SLIDE_MEMBER_H`` carries
 45.0 and this part builds to that; the 0.7mm is the sheet's and bay_walls's to
 reconcile, not this tray's. Nothing here reads it except the check."""
@@ -271,21 +282,29 @@ FOOT_INSET = GRID
 SOURCE: design, one grid module. CONFIDENCE: design."""
 
 # ---- the pressure sensor ----------------------------------------------------
-DP_SENSOR = "Sensirion SDP810-500Pa, tube connection"
+DP_SENSOR = "Sensirion SDP810-500Pa, tube connection, article 1-101532-01"
 DP_SOURCE = (
     "Sensirion SDP8xx-Digital datasheet v1.1 (April 2019), section 7.2 "
-    "Dimensions SDP81x - Tube Connection, figure 2"
+    "Dimensions SDP81x - Tube Connection, figure 2, page 11; "
+    "sensirion.com/media/documents/90500156/6167E43B/"
+    "Sensirion_Differential_Pressure_Datasheet_SDP8xx_Digital.pdf"
 )
 """The sensor the pad is cut for. SOURCE: the brief's BOM line reads
 "Adafruit / Sensirion"; adafruit.com carries NO SDP8xx product (site search
 'sdp810', 2026-09-03: "No products found"), so there is no Adafruit breakout
 and no Adafruit page to read. The sensor's OWN body carries the mounting holes
-and the barbs, and the datasheet dimensions them. CONFIDENCE: datasheet."""
+and the barbs, and the datasheet dimensions them. CONFIDENCE: datasheet, READ
+2026-09-03 from the PDF at the URL above (page 11 rendered and read; the
+figure is vector art and does not extract as text). The datasheet's ordering
+table (page 1) gives SDP810-500Pa the article number 1-101532-01, which is what
+J13 and the BOM should carry instead of "Adafruit / Sensirion": the bare sensor
+from a Sensirion distributor, plus a mating lead for its 4-pin 2.0mm header,
+which is J13's to source."""
 
 DP_BODY = (29.0, 18.0, 10.25)
 """Sensor body (W, H, depth behind the mounting face), figure 2: 29 +-0.4 by
-18 +-0.4, 10.25 +-0.25 to the barb shoulder. SOURCE: DP_SOURCE.
-CONFIDENCE: datasheet."""
+18 +-0.4, 10.25 +-0.25 to the barb shoulder. SOURCE: DP_SOURCE, read
+2026-09-03. CONFIDENCE: datasheet."""
 
 DP_NOZZLE_L = 13.5
 """Barb length beyond the body, figure 2. SOURCE: DP_SOURCE. CONFIDENCE:
@@ -595,6 +614,39 @@ def extended(part: Part) -> Part:
     return part.moved(Location((0, -SLIDE_TRAVEL, 0)))
 
 
+def swept(part: Part) -> Part:
+    """Every point the solid occupies between CLOSED and full extension: the
+    union of the solid and the prism of each of its faces along the travel.
+
+    A point of the swept volume that is not in the closed solid lies on a
+    segment that leaves the solid through its boundary, so the boundary's
+    prisms cover it; that is the whole sweep, exactly, with no step size to
+    choose. Planar faces are extruded along -Y (a face parallel to Y sweeps a
+    sheet with no volume and is skipped). A curved face -- the slide bores,
+    the screw holes, the tube route's walls, the isolators' barrels -- is
+    swept as the prism of its own bounding box, which is never less than its
+    true sweep and, for every curved face on this tray, sits inside the
+    silhouette of the plate or cylinder that carries it."""
+    v = (0.0, -1.0, 0.0)
+    pieces: list[Part] = [part]
+    for f in part.faces():
+        if f.geom_type == GeomType.PLANE:
+            if abs(f.normal_at().Y) < 1e-9:
+                continue
+            pieces.append(extrude(f, amount=SLIDE_TRAVEL, dir=v))
+        else:
+            bb = f.bounding_box()
+            pieces.append(
+                _box(
+                    (bb.min.X, bb.max.X),
+                    (bb.min.Y - SLIDE_TRAVEL, bb.max.Y),
+                    (bb.min.Z, bb.max.Z),
+                )
+            )
+    out = Part() + pieces
+    return out
+
+
 def joint_table(d: Datums = D) -> list[tuple]:
     """Declared joints, as ``(a, b, kind, axis, lo, hi, note)`` tuples, the
     shape ``drawers.joint_table`` uses."""
@@ -626,33 +678,45 @@ def joint_table(d: Datums = D) -> list[tuple]:
 # ---------------------------------------------------------------- checks
 
 
-def pullout_clash(d: Datums = D) -> list[tuple[str, str, float, float]]:
-    """(part, flange, shared mm3, x overlap mm) for every tray solid that
-    reaches into a front leg's Y-facing flange at full extension.
+def pullout_clash(d: Datums = D) -> list[tuple[str, str, float, float, float]]:
+    """(part, flange, shared mm3, x overlap mm, travel at first contact mm)
+    for every tray solid whose SWEPT volume, closed to full extension, reaches
+    into a front leg's Y-facing flange.
+
+    The whole travel is tested, not the end of it: the flange is a thin plate
+    at the bay's front face, and a solid standing entirely in front of it at
+    full extension went through it on the way. ``swept`` is what is
+    intersected; the end position alone would have missed the unit.
 
     ``machine`` is imported here rather than at the top because it imports
     the assembly that imports this part; the same deferral ``Datums.mast_base``
     makes for ``top_cap``."""
     from stations.cnc_shapeoko.machine import front_leg_flanges
 
-    out: list[tuple[str, str, float, float]] = []
-    for flabel, flange in front_leg_flanges(d):
-        fb = flange.bounding_box()
-        for label, _group, part in placed_all(d):
-            ext = extended(part)
-            eb = ext.bounding_box()
-            if eb.max.X <= fb.min.X or fb.max.X <= eb.min.X:
+    flanges = front_leg_flanges(d)
+    out: list[tuple[str, str, float, float, float]] = []
+    if not flanges:
+        return out
+    for label, _group, part in placed_all(d):
+        cb = part.bounding_box()
+        sw = None
+        for flabel, flange in flanges:
+            fb = flange.bounding_box()
+            if cb.max.X <= fb.min.X or fb.max.X <= cb.min.X:
                 continue
-            if eb.max.Y <= fb.min.Y or fb.max.Y <= eb.min.Y:
+            if cb.min.Y - SLIDE_TRAVEL >= fb.max.Y or fb.min.Y >= cb.max.Y:
                 continue
+            if sw is None:
+                sw = swept(part)
             try:
-                shared = ext & flange
+                shared = sw & flange
             except Exception:
                 continue
             if shared is None or shared.volume <= 1.0:
                 continue
-            overlap = min(eb.max.X, fb.max.X) - max(eb.min.X, fb.min.X)
-            out.append((label, flabel, shared.volume, overlap))
+            overlap = min(cb.max.X, fb.max.X) - max(cb.min.X, fb.min.X)
+            first = max(cb.min.Y - fb.max.Y, 0.0)
+            out.append((label, flabel, shared.volume, overlap, first))
     return out
 
 
@@ -802,25 +866,30 @@ def check_lungs_carriage(d: Datums = D) -> list[str]:
     h = s.leg_holes
     clashes = pullout_clash(d)
     worst = max((c[3] for c in clashes), default=0.0)
+    soonest = min((c[4] for c in clashes), default=0.0)
+    hit = ", ".join(f"{c[0]} by {c[3]:.1f}" for c in clashes)
     if h.front_flange_inboard is None:
         if clashes:
             notes.append(
                 "the leg's Y-facing flange is not measured: neither its width "
                 "nor which way it runs. IF it runs into the opening across the "
-                "bay's front (vertex at the leg's outer corner), then at full "
-                f"extension ({SLIDE_TRAVEL:.0f}mm toward the operator) the tray "
-                f"reaches {worst:.1f}mm into it at the width the bolt pattern "
-                f"proves ({h.span_h + h.hole_d / 2:.1f}mm), and nothing pulls out "
-                "of the lungs bay -- or the hands bay. MEASURE THIS: on a front "
-                "leg, does the flange without holes run along the machine's "
-                "front INTO the leg opening, or away from it; and how wide. "
-                "Write LegHoles.front_flange_inboard and LegHoles.flange_w."
+                "bay's front (vertex at the leg's outer corner), then somewhere "
+                f"in the {SLIDE_TRAVEL:.0f}mm of travel toward the operator "
+                f"(first contact after {soonest:.0f}mm) the tray reaches "
+                f"{worst:.1f}mm into it at the width the bolt pattern proves "
+                f"({h.span_h + h.hole_d / 2:.1f}mm): {hit}mm, swept over the "
+                "whole pull. Nothing pulls out of the lungs bay -- or the hands "
+                "bay. MEASURE THIS: on a front leg, does the flange without "
+                "holes run along the machine's front INTO the leg opening, or "
+                "away from it; and how wide. Write LegHoles.front_flange_inboard "
+                "and LegHoles.flange_w."
             )
     elif h.front_flange_inboard:
-        for label, flabel, vol, overlap in clashes:
+        for label, flabel, vol, overlap, first in clashes:
             notes.append(
-                f"{label} at full extension runs {overlap:.1f}mm into the "
-                f"{flabel} ({vol / 1000:.1f} cm3). The tray does not pull out."
+                f"{label} runs {overlap:.1f}mm into the {flabel} from "
+                f"{first:.0f}mm of travel on ({vol / 1000:.1f} cm3 swept). "
+                "The tray does not pull out."
             )
 
     # -- what the unit's faces have not told us
