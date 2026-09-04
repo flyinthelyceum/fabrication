@@ -80,6 +80,7 @@ from stations.cnc_shapeoko.carcass import (
 from stations.cnc_shapeoko.parts import (
     base_deck,
     bay_walls,
+    brain_partition,
     drawers,
     leg_joint,
     mast_base,
@@ -196,6 +197,13 @@ def components(d: Datums = DATUMS) -> list[Component]:
     for label, part in stock_rails.placed_all(d):
         out.append(Component(label, "carcass", part))
 
+    # 10. the brain-band sealed/signal partition, its tongue in the housing
+    # the spine's rear face already cuts, butting the deck, the cap and the
+    # rear door's landing. One opening, the split transit; no hardware holes.
+    out.append(
+        Component(brain_partition.PART_NAME, "carcass", brain_partition.place(d=d))
+    )
+
     return out
 
 
@@ -267,6 +275,24 @@ def joints(d: Datums = DATUMS) -> dict[frozenset[str], Joint]:
             Joint("spine_panel", wall_names[i], "housing", "y", spine_lo, spine_hi,
                   "divider's rear tongue into the spine's front-face housing")
         )
+
+    # -- spine houses the brain-band PARTITION in its rear face --------------
+    # Half-depth housing, so the band is the partition's own tongue and not
+    # HOUSE_ENGAGE. Interrupted at the split transit, where the partition is
+    # notched to match; the two are drawn from the same two constants.
+    js.append(
+        Joint("spine_panel", brain_partition.PART_NAME, "housing", "y",
+              d.y_spine + d.t - brain_partition.TONGUE, d.y_spine + d.t,
+              "partition's front tongue into the spine's rear-face housing")
+    )
+    js.append(
+        Joint("base_deck", brain_partition.PART_NAME, "butt", None, note=
+              "partition stands on the deck's top face; the deck cuts no housing")
+    )
+    js.append(
+        Joint("top_cap", brain_partition.PART_NAME, "butt", None, note=
+              "partition's top edge lands on the cap's underside; the cap cuts no housing")
+    )
 
     # -- spine BUTTS the two end walls; the tie is a screw, not a tongue ----
     for i in (0, 3):
@@ -698,6 +724,16 @@ def main() -> None:
         f"{stock_rails.slot_count(d)} slots {stock_rails.SLOT_W:.1f} wide at "
         f"{stock_rails.pitch(d):.1f} pitch, tooth {stock_rails.tooth_w(d):.1f}; "
         f"a blank stands at z {stock_rails.blank_stand_z(d):.1f}"
+    )
+
+    print("\nbrain band: the sealed/signal partition")
+    pw, ph = brain_partition.blank_size(d)
+    tz0, tz1 = brain_partition.transit_z(d)
+    print(
+        f"  {brain_partition.PART_NAME}: {pw:.1f} x {ph:.1f} x {d.t:.0f} at "
+        f"x {d.brain_split_x:.1f}, tongue {brain_partition.TONGUE:.0f} into the spine, "
+        f"rear edge at y {d.y_rear - brain_partition.DOOR_LANDING:.1f} for the door; "
+        f"transit z {tz0:.0f}..{tz1:.0f}, {brain_partition.TRANSIT_D:.0f} deep, the only opening"
     )
 
     print("\nleg joint: bolt axes, station coordinates")
