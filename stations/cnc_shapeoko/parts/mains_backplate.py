@@ -802,10 +802,10 @@ def check_mains_backplate(d: Datums = DATUMS) -> list[str]:
             "RECEPTACLE ROOM IS ARITHMETIC, standing note. The box stands "
             f"{BOX_ENV[2]:.1f}mm into the lungs bay at z {bz0:.0f}..{bz1:.0f}, leaving "
             f"{room:.0f}mm in front of a {d.s.extractor_env[0]:.0f} extractor in the "
-            f"{d.front_bay_d:.0f} bay. lungs_carriage is UNMODELLED, so no solid has "
-            "been compared against this box: a green gate here is bay depth minus "
-            "two lengths, nothing more. The carriage, when modelled, owns the "
-            "geometry check and must include this box in its clearance."
+            f"{d.front_bay_d:.0f} bay. This line is bay depth minus two lengths, "
+            "nothing more; the solid comparison is lungs_carriage's (C06), which "
+            "places the tray, the unit and the sensor and measures this box "
+            "against them, and the assembly's interference check sees the box."
         )
 
     # -- what the ordered parts have not told us yet

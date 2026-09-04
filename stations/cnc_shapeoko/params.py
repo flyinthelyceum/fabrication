@@ -700,6 +700,20 @@ class LegHoles:
     keeps ``check_leg_joint`` reporting the gap; a number closes it or fails it
     outright."""
 
+    front_flange_inboard: bool | None = None
+    """UNMEASURED. Which way the angle's OTHER flange runs: the Y-facing one,
+    the one with no holes, on a front or rear leg.
+
+    True if it runs INTO the leg opening from the corner, across the bay's
+    open front (the angle's vertex at the leg's OUTER corner). False if it runs
+    away from the opening (vertex at the inner corner). The bolted X-facing
+    flange proves nothing about it: it reaches into the opening either way.
+    Added 2026-09-03 (C06), because the lungs carriage and the three drawers
+    all pull out through the front, and a flange running inboard by the width
+    the bolt pattern already proves (66.3mm) stands squarely in their path.
+    ``machine.front_leg_flanges`` builds that case; ``lungs_carriage`` checks
+    it. ``None`` keeps the check reporting MEASURE."""
+
     def columns_h(self) -> tuple[float, ...]:
         """Column offsets in from the leg's inner edge, at ``pitch_h``."""
         return tuple(self.edge_off + i * self.pitch_h for i in range(self.cols_per_leg))

@@ -83,6 +83,7 @@ from stations.cnc_shapeoko.parts import (
     brain_partition,
     drawers,
     leg_joint,
+    lungs_carriage,
     mains_backplate,
     mast_base,
     spine_panel,
@@ -128,7 +129,7 @@ class Component:
     """One placed solid in the assembly."""
 
     label: str
-    group: str          # carcass | plinth | drawer | tray | steel | reference
+    group: str          # carcass | plinth | drawer | carriage | tray | steel | reference
     part: Part
 
     @property
@@ -219,6 +220,13 @@ def components(d: Datums = DATUMS) -> list[Component]:
     # the lungs face of the spine. The rails and the box are steel; the
     # envelopes are air the way the drive's keep-out is.
     for label, group, part in mains_backplate.placed_all(d):
+        out.append(Component(label, group, part))
+
+    # 13. the lungs carriage in its CLOSED position: four panels of the tray,
+    # the CT 15 as a reference solid on its four isolators, and the pressure
+    # sensor's body on the lip. The tray is what the receptacle box, the
+    # plenum and the lungs door are finally compared against as a solid.
+    for label, group, part in lungs_carriage.placed_all(d):
         out.append(Component(label, group, part))
 
     return out
@@ -383,6 +391,10 @@ def joints(d: Datums = DATUMS) -> dict[frozenset[str], Joint]:
     # -- the mains backplate is flat on the spine; its rails, devices and the
     # receptacle box are all faces. Read off the module's own table.
     for a, b, kind, axis, lo, hi, note in mains_backplate.joint_table(d):
+        js.append(Joint(a, b, kind, axis, lo, hi, note))
+
+    # -- inside the lungs carriage: two housings per cheek, the rest faces.
+    for a, b, kind, axis, lo, hi, note in lungs_carriage.joint_table(d):
         js.append(Joint(a, b, kind, axis, lo, hi, note))
 
     # The leg joint declares nothing here. It is not a joint between two CARCASS
@@ -614,6 +626,26 @@ def envelope(comps: list[Component] | None = None, d: Datums = DATUMS) -> list[F
     fits.append(Fit(f"{trays.TRAY_LABEL} width", plan.w, iw, "X"))
     fits.append(Fit(f"{trays.TRAY_LABEL} depth", plan.d, idep, "Y"))
 
+    # The lungs carriage against the bay less its lining and slides, and the
+    # unit against the platform it stands on.
+    s2 = d.s
+    fits.append(
+        Fit(
+            "lungs carriage width",
+            lungs_carriage.carriage_width(d),
+            s2.bay_lungs_w - 2 * (s2.lungs_lining_t + s2.lungs_slide_t),
+            "X",
+        )
+    )
+    fits.append(
+        Fit(
+            f"{lungs_carriage.CT15_NAME} on platform",
+            s2.extractor_env[0],
+            lungs_carriage.platform_size(d)[1],
+            "Y",
+        )
+    )
+
     return fits
 
 
@@ -833,6 +865,24 @@ def main() -> None:
     print(
         f"  {mains_backplate.RECEPTACLE_NAME}: {mains_backplate.RECEPTACLE} at "
         f"({rx:.1f}, {ry:.1f}, {rz:.1f}) on the lungs face of the spine, on the EXTRACTOR MAINS axis"
+    )
+
+    print("\nlungs bay: the carriage and what rides on it")
+    cx0, cy0, cz0 = lungs_carriage.carriage_origin(d)
+    cw = lungs_carriage.carriage_width(d)
+    (ex0, ex1), (ey0, ey1), (ez0, ez1) = lungs_carriage.ct15_station(d)
+    print(
+        f"  {lungs_carriage.PART_NAME}: {cw:.1f} x {bay_walls.SLIDE_LEN:.0f} x "
+        f"{lungs_carriage.CHEEK_H:.0f} at x {cx0:.1f}, y {cy0:.0f}, on the deck; "
+        f"platform top {lungs_carriage.PLATFORM_TOP:.0f} above it, lip {lungs_carriage.LIP_H:.0f} higher; "
+        f"travel {lungs_carriage.SLIDE_TRAVEL:.0f} toward the operator"
+    )
+    print(
+        f"  {lungs_carriage.CT15_NAME}: x {ex0:.1f}..{ex1:.1f}  y {ey0:.1f}..{ey1:.1f}  "
+        f"z {ez0:.1f}..{ez1:.1f} on 4 isolators o{lungs_carriage.FOOT_D:.0f} x "
+        f"{lungs_carriage.FOOT_H:.0f}; {d.top_z[0] - ez1:.0f}mm under the cap; "
+        f"{lungs_carriage.DP_NAME} on the lip's rear face, 2 x o{lungs_carriage.DP_HOLE_D} "
+        f"at {lungs_carriage.DP_HOLE_PITCH:.0f} pitch"
     )
 
     print("\nleg joint: bolt axes, station coordinates")

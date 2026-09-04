@@ -53,6 +53,7 @@ from stations.cnc_shapeoko.parts import (
     brain_partition,
     drawers,
     leg_joint,
+    lungs_carriage,
     mains_backplate,
     mast_base,
     spine_panel,
@@ -87,7 +88,6 @@ TODO_MARKS = (
 # see and will not count.
 UNMODELLED = (
     "rear_door",
-    "lungs_carriage",
     "exhaust_plenum",
     "console_plate",
     "lungs_door",
@@ -134,6 +134,7 @@ def collect() -> list[tuple[str, str, str]]:
         ("vfd_mount", vfd_mount.check_vfd_mount(d)),
         ("mains_backplate", mains_backplate.check_mains_backplate(d)),
         ("leg_joint", leg_joint.check_leg_joint(d)),
+        ("lungs_carriage", lungs_carriage.check_lungs_carriage(d)),
         ("assembly", check_assembly(comps, d)),
         ("machine", check_machine(comps, d)),
         (

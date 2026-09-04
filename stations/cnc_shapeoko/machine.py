@@ -64,7 +64,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from build123d import Compound, Part, Unit, export_step
+from build123d import Align, Box, Compound, Location, Part, Unit, export_step
 
 from stations.cnc_shapeoko.assembly import NOISE_VOL, Component, components
 from stations.cnc_shapeoko.carcass import DATUMS, EXPORT_DIR, Datums, gusset_prism
@@ -75,6 +75,7 @@ __all__ = [
     "Clash",
     "solid",
     "gussets",
+    "front_leg_flanges",
     "clearance",
     "check_machine",
     "main",
@@ -99,6 +100,39 @@ def solid(g: Gusset) -> Part:
 def gussets(d: Datums = DATUMS) -> list[tuple[Gusset, Part]]:
     """All eight, each paired with the parameters it was built from."""
     return [(g, solid(g)) for g in d.s.gussets]
+
+
+def front_leg_flanges(d: Datums = DATUMS) -> list[tuple[str, Part]]:
+    """The two front legs' Y-facing flanges, as the envelope anything pulled
+    out of a front bay has to pass, in station coordinates.
+
+    Built for the INBOARD case only: the flange running from the leg's corner
+    into the opening, ``leg_wall_t`` thick in Y just outside the leg opening's
+    front face, ``flange_w`` wide in X, floor to table. That is the case that
+    can stand in something's way; the outboard case is outside the opening and
+    clashes with nothing in it, so when ``LegHoles.front_flange_inboard`` reads
+    False this returns nothing.
+
+    ``flange_w`` is unmeasured. Until it is, the plate is built at the width
+    the bolt pattern PROVES -- the outer hole's far edge, ``span_h`` plus half
+    the hole -- which is a floor on the real width and never an overstatement.
+    The direction is unmeasured too; a caller checking against these plates
+    reports MEASURE while it is None and a clash once it is True.
+    """
+    s = d.s
+    h = s.leg_holes
+    if h.front_flange_inboard is False:
+        return []
+    w = h.flange_w if h.flange_w is not None else h.span_h + h.hole_d / 2
+    t = s.leg_wall_t
+    z0, z1 = 0.0, s.table_h          # floor to the table: the leg's whole height
+    out: list[tuple[str, Part]] = []
+    for label, x0 in (("front left leg, Y flange", d.x_left), ("front right leg, Y flange", d.x_right - w)):
+        plate = Box(w, t, z1 - z0, align=(Align.MIN, Align.MIN, Align.MIN)).moved(
+            Location((x0, d.y_front - t, z0))
+        )
+        out.append((label, plate))
+    return out
 
 
 # ---------------------------------------------------------------- clashes
