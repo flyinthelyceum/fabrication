@@ -433,8 +433,19 @@ def plan(key: str = TRAY_V1, d: Datums = D) -> TrayPlan:
 
     cell_w = snap_up(max(max(bores), FINGER_RELIEF_D) + 2 * SOCKET_WALL)
     # A lane holds one socket, its relief in front of it, and a wall each end.
-    reach = max(b + FINGER_RELIEF_D - min(FINGER_BITE, b / 4) for b in bores)
-    lane_h = snap_up(reach + 2 * SOCKET_WALL)
+    # Each socket gets its OWN lane height (a 7mm cutter's lane is 30, a
+    # collet's is 40) rather than every lane taking the tallest: since the
+    # console narrowed D1 to one column (C12), twelve tallest-lanes ran 36mm
+    # off the tray's back and the per-socket stack fits with 34 to spare.
+    # Lanes snap to the HALF grid: the seam finder needs a clear grid line
+    # somewhere between sockets, not a socket on every grid line, and a
+    # 27mm reach snapped to 20 is 40 again. ``lane_h`` on the plan stays the
+    # tallest, for anything reading it.
+    lane_hs = [
+        _snap_up_to(b + FINGER_RELIEF_D - min(FINGER_BITE, b / 4) + 2 * SOCKET_WALL, GRID / 2)
+        for b in bores
+    ]
+    lane_h = max(lane_hs)
     # The column carries a socket cell, a gap, the longest label and one wall,
     # THEN snaps up to the grid. The wall is what leaves a gutter between the
     # end of one column's text and the next column's socket, and the gutter is
@@ -445,9 +456,11 @@ def plan(key: str = TRAY_V1, d: Datums = D) -> TrayPlan:
     cols = max(1, int((tray_w - MARGIN) // col_w))
 
     sockets: list[Socket] = []
+    per_col = ceil(len(units) / cols)
     for i, (row, bd, dep) in enumerate(zip(units, bores, depths)):
-        col, lane = divmod(i, ceil(len(units) / cols))
+        col, lane = divmod(i, per_col)
         col_x = MARGIN + col * col_w
+        lane_y = MARGIN + sum(lane_hs[col * per_col:i])
         sockets.append(
             Socket(
                 tool_id=row.id,
@@ -457,7 +470,7 @@ def plan(key: str = TRAY_V1, d: Datums = D) -> TrayPlan:
                 bore_d=bd,
                 depth=dep,
                 cx=col_x + cell_w / 2,
-                cy=MARGIN + lane * lane_h + lane_h / 2,
+                cy=lane_y + lane_hs[i] / 2,
                 label_x=col_x + cell_w + LABEL_GAP,
             )
         )

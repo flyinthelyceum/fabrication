@@ -44,7 +44,7 @@ the constraint directly would put every box on the floor of the band with the
 whole of plywood's thickness tolerance still to spend.
 
 Since C12 (2026-09-03) a box can also be NARROWED: every drawer whose opening
-crosses ``console_plate.CONSOLE_BAND`` gives up ``console_plate.CONSOLE_KEEPOUT``
+crosses ``console_plate.CONSOLE_BAND`` gives up ``console_plate.DRAWER_GIVE``
 on its RIGHT side to the console's chase, by Jared's ruling that the console's
 device depth comes out of the overlapped drawers' width and not out of moving
 the plate. ``narrowing`` reads which and how much off that module; the box's
@@ -305,9 +305,10 @@ def opening(spec: DrawerSpec, d: Datums = D) -> tuple[float, float]:
 
 def narrowing(spec: DrawerSpec, d: Datums = D) -> float:
     """How much this box gives up on its right side to the console's chase:
-    ``CONSOLE_KEEPOUT`` when its opening crosses the console band, else 0."""
+    ``DRAWER_GIVE`` (the keep-out plus the cheek its slide screws to) when its
+    opening crosses the console band, else 0."""
     if spec.opening in console_plate.narrowed_openings(d):
-        return console_plate.CONSOLE_KEEPOUT
+        return console_plate.DRAWER_GIVE
     return 0.0
 
 

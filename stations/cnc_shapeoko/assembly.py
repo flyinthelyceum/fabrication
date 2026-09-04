@@ -923,8 +923,8 @@ def main() -> None:
     worst = min(console_plate.leg_bolt_clearance(d), key=lambda t: t[1])
     print(
         f"  nearest leg bolt axis: {worst[0]} at {worst[1]:.1f}mm "
-        f"(land {console_plate.LEG_LAND:.0f}); drawers narrowed by "
-        f"{console_plate.CONSOLE_KEEPOUT:.1f}: "
+        f"(land {console_plate.LEG_LAND:.0f}); keep-out {console_plate.CONSOLE_KEEPOUT:.0f}, "
+        f"drawers narrowed by DRAWER_GIVE {console_plate.DRAWER_GIVE:.1f}: "
         + ", ".join(
             f"{sp.name} -> {drawers.box_size(sp, d)[0]:.1f} outside, {drawers.interior(sp, d)[0]:.1f} inside"
             for sp in drawers.DRAWERS if drawers.narrowing(sp, d)

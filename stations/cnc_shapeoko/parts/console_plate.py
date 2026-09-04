@@ -28,7 +28,7 @@ WHAT THIS PART OWNS
     clear acrylic reveal that closes its front
   * the keep-out the drawers are checked against, as a reference solid, and
     the E-stop module's ALLOCATED envelope inside it
-  * ``narrowed_openings`` / ``CONSOLE_KEEPOUT``: what the drawers lose
+  * ``narrowed_openings`` / ``DRAWER_GIVE``: what the drawers lose
 
 It does NOT own the drawers (``drawers`` narrows itself by reading this file),
 the wall (``bay_walls`` subtracts ``wall_cutter``), the spine's crossings
@@ -104,8 +104,8 @@ down through the cap the way the spine's is; its rear edge butts the spine.
 The chase's front is closed by a clear acrylic REVEAL (transpa.rent: the
 console's back is the honest internals the design language wants shown).
 
-So every narrowed drawer loses ``CONSOLE_KEEPOUT = CHASE + T``: the air and
-the cheek that bounds it. The slide's own side clearance is unchanged; it moves
+So every narrowed drawer loses ``DRAWER_GIVE = CONSOLE_KEEPOUT + T``: the air
+and the cheek that bounds it. The slide's own side clearance is unchanged; it moves
 inboard with the box.
 
 The console's runs reach the chase through the spine's crossings. Those that
@@ -174,6 +174,9 @@ __all__ = [
     "CHASE",
     "CHASE_MARGIN",
     "CONSOLE_KEEPOUT",
+    "DRAWER_GIVE",
+    "BAND_LAND",
+    "gusset_land",
     "Device",
     "DEVICES",
     "console_z",
@@ -248,6 +251,19 @@ TOP_SCREW_LINE = CAP_TIE_REACH + SCREW_EDGE_OFF
 """What the top of the band stays below the cap's underside by: the tie screw's
 reach plus the fastener edge distance. Derived; 41mm."""
 
+BAND_LAND = GRID
+"""What the top of the band stays below the MACHINE's ceiling by, where the
+machine is lower than the cap's tie line. The front-right Y gusset plate sits
+``plate_t`` deep in the wall's outer face (the wall is relieved to it) and its
+underside tapers down toward the leg: at the band's ruled front edge (y 100)
+it is at z 620, under the cap-tie line's 657. The spec's formula for the band
+top cannot be met there; the machine is not a choice. One grid module of wall
+between the rabbet's top edge and the steel keeps the rabbet's wall whole and
+its corner reliefs closed (``gusset_land`` measures what is actually left).
+SOURCE: the machine (params.Station.clear_z); the land is this file's.
+CONFIDENCE: chosen. RULING WANTED: T or GRID; the other reading of the spec
+(start CONSOLE_Y later along the taper) moves a ruled number."""
+
 LEG_LAND = T
 """Birch kept between any console cut or keep-out and a leg-bolt axis.
 SOURCE: task C12 "18mm of land". CONFIDENCE: ruling."""
@@ -299,17 +315,29 @@ CHASE_MARGIN = GRID / 2
 
 UPPER_ROW_Y = 78.0
 LOWER_ROW_Y = 37.0
-METER_Y = 87.0
-"""Plate-local Y of the two device rows and the meter (0 at the plate's bottom
-edge). Chosen so that a 47mm XB4 body on the upper row and the ToF board at
-the top edge share no air, the lower row's D-type flanges clear the meter
-pocket above them by a cutter web, and no pocket enters the lip.
+"""Plate-local Y of the two 22mm/USB rows (0 at the plate's bottom edge), in a
+plate 120 tall whose usable field is LIP..h-LIP = 18..102. The upper row puts
+a 47mm XB4 body at 54.5..101.5, half a millimetre inside the land; the lower
+row puts the OLED's 33mm body at 20.5..53.5, a millimetre under the XB4s.
 CONFIDENCE: chosen, checked by ``check_console_plate``."""
 
-TOF_Y = 113.0
-"""Plate-local Y of the ToF bore, near the top edge: the board sits inside the
-tongue's outline and the bore sits under the lip's screw line. CONFIDENCE:
-chosen."""
+ESTOP_Y = 70.0
+PENDANT_Y = 29.0
+BAG_BAR_Y = 30.0
+"""The E-stop's 60mm allocation is taller than an XB4 body, so its bore sits
+lower (allocation 40..100) and the pendant socket and the bag bar under it
+sit lower again (19.5..38.5 and 24.9..35.1) to stay out of the allocation.
+CONFIDENCE: chosen, checked."""
+
+METER_Y = 50.0
+"""Plate-local Y of the meter: its 58mm pocket at 21..79 owns its own X band
+at the plate's right, nothing shares that band, and the ToF sits over it.
+CONFIDENCE: chosen, checked."""
+
+TOF_Y = 93.0
+"""Plate-local Y of the ToF bore, at the plate's top edge: the board's 17.5mm
+reaches 101.75, inside the tongue's outline, under the lip's screw line.
+CONFIDENCE: chosen."""
 
 ESTOP_ALLOC: tuple[float, float, float] = (GRID * 3.5, GRID * 3, GRID * 3)
 """(W along the plate, H, depth behind the plate) RESERVED for the Carbide
@@ -321,7 +349,7 @@ XB4_BODY: tuple[float, float] = (30.0, 47.0)
 """(W, H) of a Harmony XB4 complete unit behind the plate, taken as centred on
 its bore. SOURCE: every XB4 product data sheet below, Width 30 mm, Height 47
 mm. Which way the 47 hangs off the head is not on the sheet; centred is the
-reading, and the clash check has 2.75mm in hand on it. CONFIDENCE: datasheet
+reading, and the clash check has a millimetre in hand on it. CONFIDENCE: datasheet
 for the figures, assumption for the centring."""
 
 BAR_H = 8.0
@@ -410,7 +438,7 @@ DEVICES: tuple[Device, ...] = (
     Device(
         "E_STOP", "Carbide 3D Shapeoko 5 Pro power pendant, in hand, GX16 leads; "
         "mounted as a unit on a bracket behind the plate, mushroom through the bore",
-        "bore", 60.0, UPPER_ROW_Y,
+        "bore", 60.0, ESTOP_Y,
         "https://community.carbide3d.com/t/need-dimensions-of-so5-power-pendant-and-control-box/58934"
         " (asked, never answered); https://carbide3d.com/3d-print/power-pendant-home-base/"
         " (an STL, no drawing). Carbide publishes no envelope.",
@@ -458,7 +486,7 @@ DEVICES: tuple[Device, ...] = (
     Device(
         "LOAD", "85C1 moving-coil panel meter, 0-100 scale (Delixi drawing, the "
         "Adafruit 4404 class of part), recessed under a clear pane",
-        "pocket", 326.0, METER_Y,
+        "pocket", 327.0, METER_Y,
         "https://cdn-shop.adafruit.com/product-files/4404/C12723-001_datasheet_translate.pdf"
         " -- 85C1-A/V outline: face 64 x 56, bezel 10 thick, body Ø48.5 x 50 "
         "behind the bezel, 2 x M3 studs 52.5 apart 15 below centre",
@@ -470,7 +498,7 @@ DEVICES: tuple[Device, ...] = (
     Device(
         "STATE", "Adafruit 938, Monochrome 1.3in 128x64 OLED, STEMMA QT, "
         "recessed under a clear pane",
-        "pocket", 165.0, LOWER_ROW_Y,
+        "pocket", 144.0, LOWER_ROW_Y,
         "https://www.adafruit.com/product/938 -- PCB 35.6 x 33 x 6.2 mm, "
         "active area 29.42 x 14.70 mm",
         "chosen; dimensions datasheet",
@@ -480,7 +508,7 @@ DEVICES: tuple[Device, ...] = (
     Device(
         "BAG_BAR", "Kingbright DC-10YWA, 10-segment yellow LED bargraph, "
         "recessed under a clear pane (the bag bar; yellow, never red)",
-        "pocket", 105.0, LOWER_ROW_Y,
+        "pocket", 92.0, BAG_BAR_Y,
         "https://uk.farnell.com/kingbright/dc-10ywa/array-10-led-yellow-25-4x10-16mm/dp/2290326"
         " -- 25.4 x 10.16 mm package; height see BAR_H",
         "chosen; face datasheet, height assumption",
@@ -489,14 +517,14 @@ DEVICES: tuple[Device, ...] = (
     ),
     Device(
         "PENDANT", "GX16 panel socket, the house connector, pendant port",
-        "bore", 60.0, LOWER_ROW_Y,
+        "bore", 60.0, PENDANT_Y,
         "carcass.GX16_PANEL_D; https://www.handsontec.com/dataspecs/connector/GX16.pdf",
         "house standard; depth datasheet",
         bore_d=GX16_PANEL_D, front=(19.0, 19.0), behind=(19.0, 19.0, GX16_BEHIND),
     ),
     Device(
         "USB_1", "PENGLIN PL183 USB-C panel-mount coupler, D-type (params.PL183)",
-        "d_type", 235.0, LOWER_ROW_Y,
+        "d_type", 192.0, LOWER_ROW_Y,
         "params.SOURCES['PL183']: round 24 cutout, 2 x 3.5 on a 19 x 24 "
         "diagonal, flange 26 x 31 x 2.2, body 27.5 behind the flange",
         "datasheet (C00 capture)",
@@ -505,7 +533,7 @@ DEVICES: tuple[Device, ...] = (
     ),
     Device(
         "USB_2", "PENGLIN PL183 USB-C panel-mount coupler, D-type (params.PL183)",
-        "d_type", 275.0, LOWER_ROW_Y,
+        "d_type", 223.0, LOWER_ROW_Y,
         "as USB_1", "datasheet (C00 capture)",
         bore_d=24.0, d_holes=((-9.5, 12.0), (9.5, -12.0)), d_hole_d=3.5,
         front=(26.0, 31.0), behind=(24.0, 24.0, 27.5),
@@ -513,7 +541,7 @@ DEVICES: tuple[Device, ...] = (
     Device(
         "SCREEN", "PENGLIN PL183 USB-C panel-mount coupler, D-type: the "
         "touchscreen's video run out to the Ergotron arm (I91)",
-        "d_type", 315.0, LOWER_ROW_Y,
+        "d_type", 254.0, LOWER_ROW_Y,
         "as USB_1. The third coupler comes from the same 5-pack the listing "
         "sells; PL229 is unresolved (params.PL229) and is not cut for.",
         "datasheet (C00 capture)",
@@ -523,7 +551,7 @@ DEVICES: tuple[Device, ...] = (
     Device(
         "TOF", "Adafruit 3967, VL53L1X time-of-flight breakout, behind a 6mm "
         "bore at the plate's top edge",
-        "bore", 132.5, TOF_Y,
+        "bore", 327.0, TOF_Y,
         "https://www.adafruit.com/product/3967 -- 25.5 x 17.5 x 4.6 mm, FoV 27 deg",
         "chosen; dimensions datasheet",
         bore_d=6.0, front=(6.0, 6.0), behind=(25.5, 17.5, TOF_BEHIND),
@@ -537,9 +565,21 @@ CHASE_DRIVER: Device = max(DEVICES, key=lambda dv: dv.behind[2])
 CHASE = CHASE_DRIVER.behind[2] + CHASE_MARGIN
 """Air between the wall's inner face and the cheek: 96mm at today's table."""
 
-CONSOLE_KEEPOUT = CHASE + T
-"""What each overlapped drawer gives up in width: the chase and the cheek that
-bounds it. Its slide moves inboard by the same amount."""
+CONSOLE_KEEPOUT = CHASE
+"""The keep-out the spec defines: the deepest device plus ``CHASE_MARGIN``,
+96mm at today's table. The chase air, and the reference solid the drawers are
+checked against. SOURCE: task C12. CONFIDENCE: ruling (the formula), datasheet
+(the number)."""
+
+DRAWER_GIVE = CONSOLE_KEEPOUT + T
+"""What each overlapped drawer actually gives up in width: the keep-out AND
+the cheek that bounds it, because a drawer slide needs a face to screw to and
+the wall is now ``CONSOLE_KEEPOUT`` away. The spec narrows a drawer by
+``CONSOLE_KEEPOUT`` and says its slide shifts inboard with it; the cheek is
+what the slide shifts onto, and it is a sheet thickness the spec did not
+carry. Its slide moves inboard by this same amount. CONFIDENCE: derived.
+RULING WANTED: the spec's number is the keep-out; the drawer's loss is the
+keep-out plus one sheet, or the slides mount to something thinner."""
 
 # -- the chase's birch and acrylic --------------------------------------
 RIB_W = CHASE
@@ -569,16 +609,16 @@ def console_z(d: Datums = D) -> tuple[float, float]:
     own ceiling over the band's front end on the wall's outer face -- the
     front-right Y gusset plate tapers down toward the leg and is lowest at the
     band's front edge. The wall is relieved to that plate; the plate flush in
-    it cannot be, so it stays under it."""
+    it cannot be, so it stays ``BAND_LAND`` under it."""
     cap = d.top_z[0] - TOP_SCREW_LINE
-    steel = d.s.clear_z(d.x_right, CONSOLE_Y[0])
+    steel = d.s.clear_z(d.x_right, CONSOLE_Y[0]) - BAND_LAND
     return (CONSOLE_Z0, min(cap, steel))
 
 
 def band_bound(d: Datums = D) -> str:
     """Which limit sets the band's top: 'cap ties' or 'gusset'."""
     cap = d.top_z[0] - TOP_SCREW_LINE
-    steel = d.s.clear_z(d.x_right, CONSOLE_Y[0])
+    steel = d.s.clear_z(d.x_right, CONSOLE_Y[0]) - BAND_LAND
     return "gusset" if steel < cap else "cap ties"
 
 
@@ -1073,6 +1113,34 @@ def leg_bolt_clearance(d: Datums = D) -> list[tuple[str, float]]:
     return out
 
 
+def gusset_land(d: Datums = D) -> tuple[float, float]:
+    """(mm, station y) of the least wall left between the console's cuts on
+    the wall's outer face and the gusset relief above them: the rabbet's top
+    edge (``DADO_FIT`` oversize) and its two blind corner reliefs, against the
+    gusset's underside where it crosses the wall's outer face (the machine's
+    own ceiling, sampled along the band). The rabbet is ``LIP_T`` deep and the
+    relief ``plate_t`` deep, so any overlap of the two outlines is a real
+    intersection; this is the web between them, and it is held to the same
+    ``ROUTER_D`` every other pair of cuts is."""
+    w, h = plate_size(d)
+    y0, z0 = CONSOLE_Y[0], plate_z(d)[0]
+    top = z0 + h + DADO_FIT / 2
+    r = ROUTER_D / 2
+    ya, yb = y0 - DADO_FIT / 2, y0 + w + DADO_FIT / 2
+    dy = 0.5
+    n = int((yb - ya) / dy)
+    ceiling = [(ya + i * dy, d.s.clear_z(d.x_right, ya + i * dy)) for i in range(n + 1)]
+    # the top edge is horizontal: the nearest ceiling point over it is straight up
+    best = min(((zc - top, y) for y, zc in ceiling), key=lambda t: t[0])
+    # the corner reliefs are circles on the edge's ends: nearest ceiling point, less r
+    for yc in (ya, yb):
+        for y, zc in ceiling:
+            land = hypot(y - yc, zc - top) - r
+            if land < best[0]:
+                best = (land, yc)
+    return best
+
+
 def _front_rect(dv: Device) -> tuple[tuple[float, float], tuple[float, float]]:
     """What the device occupies on the outer face: its bezel/flange, or the
     pocket for a recessed instrument."""
@@ -1154,6 +1222,29 @@ def check_console_plate(d: Datums = D) -> list[str]:
         )
     if z0 + h > bz1 + 1e-9:
         notes.append(f"the plate runs {z0 + h - bz1:.1f}mm above the band's top")
+
+    # -- the wall's outer face above the rabbet is not the gusset's relief
+    land, land_y = gusset_land(d)
+    if land < ROUTER_D:
+        notes.append(
+            f"the rabbet's top edge or a corner relief comes {land:.1f}mm from the "
+            f"gusset relief at y {land_y:.0f}, under a {ROUTER_D:.2f}mm web: the "
+            "band's top is in the steel"
+        )
+    cap_line = d.top_z[0] - TOP_SCREW_LINE
+    if bz1 < cap_line - 1e-9:
+        notes.append(
+            "CONSOLE BAND TOP, standing note. The spec puts the band's top at the "
+            f"cap's underside less the tie line, z {cap_line:.0f}; the front-right Y "
+            f"gusset's underside crosses the wall's outer face at z "
+            f"{d.s.clear_z(d.x_right, CONSOLE_Y[0]):.1f} over the band's ruled front "
+            f"edge (y {CONSOLE_Y[0]:.0f}), so the band stops BAND_LAND {BAND_LAND:.0f} "
+            f"under the steel at z {bz1:.1f} and the plate is {h:.0f} tall, not "
+            f"{snap_dn(cap_line - bz0):.0f}. The least wall between the rabbet and the "
+            f"relief is {land:.1f}mm at y {land_y:.0f}. The machine set this, not a "
+            "choice; the land is chosen. Expected, and worth knowing before the "
+            "band is read against the brief."
+        )
 
     # -- 18mm of land to every leg bolt on this wall
     worst = min(leg_bolt_clearance(d), key=lambda t: t[1])
@@ -1248,13 +1339,21 @@ def check_console_plate(d: Datums = D) -> list[str]:
     ks = narrowed_openings(d)
     narrowed = [s for s in drawers.DRAWERS if s.opening in ks]
     for s in drawers.DRAWERS:
-        want = CONSOLE_KEEPOUT if s.opening in ks else 0.0
+        want = DRAWER_GIVE if s.opening in ks else 0.0
         base = d.s.bay_hands_w - d.s.drawer_slide_build_under
         got = base - drawers.box_size(s, d)[0]
         if abs(got - want) > 1e-6:
             notes.append(f"{s.name} is narrowed by {got:.1f}, not {want:.1f}")
     if len(narrowed) != len(ks):
         notes.append("the narrowed drawer count does not match the openings crossing the band")
+    notes.append(
+        f"CONSOLE KEEP-OUT, standing note. The keep-out is the spec's {CONSOLE_KEEPOUT:.0f} "
+        f"({CHASE_DRIVER.label} {CHASE_DRIVER.behind[2]:.0f} + {CHASE_MARGIN:.0f}); each "
+        f"narrowed drawer gives up DRAWER_GIVE {DRAWER_GIVE:.0f}, the keep-out plus the "
+        f"{T:.0f}mm cheek its right slide screws to. The spec narrows by the keep-out "
+        "and shifts the slide inboard with it; the cheek is what the slide shifts "
+        "onto. Expected, and worth knowing before the drawers are read against the brief."
+    )
 
     # -- the keep-out against the drawers closed and at full extension, the
     # slide members, and the cheek: bbox arithmetic on the plan the parts share
@@ -1426,7 +1525,7 @@ if __name__ == "__main__":
     )
     print(
         f"  chase {CHASE:.0f} (driver {CHASE_DRIVER.label} at {CHASE_DRIVER.behind[2]:.0f} + "
-        f"{CHASE_MARGIN:.0f}); drawers give up CONSOLE_KEEPOUT {CONSOLE_KEEPOUT:.0f}; "
+        f"{CHASE_MARGIN:.0f}); keep-out {CONSOLE_KEEPOUT:.0f}, drawers give up DRAWER_GIVE {DRAWER_GIVE:.0f}; "
         f"openings narrowed: {narrowed_openings(d)}"
     )
     for dv in DEVICES:
