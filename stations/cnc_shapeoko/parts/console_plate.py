@@ -29,11 +29,16 @@ WHAT THIS PART OWNS
   * the keep-out the drawers are checked against, as a reference solid, and
     the E-stop module's ALLOCATED envelope inside it
   * ``narrowed_openings`` / ``DRAWER_GIVE``: what the drawers lose
+  * the E-stop's callout (C17), V-carved under the mushroom guard at
+    ``estop_callout_anchor``, sized by ``estop_callout_band`` to the birch
+    between the guard and the pendant socket's flange; the one word on the
+    red budget's device, itself raw birch through black like every other.
+    It goes out on the ``VCARVE`` layer, and the painted plate goes back on
+    the machine on its two short-edge lip screws (``REGISTER``).
 
 It does NOT own the drawers (``drawers`` narrows itself by reading this file),
-the wall (``bay_walls`` subtracts ``wall_cutter``), the spine's crossings
-(``spine_panel``; this file only checks that the chase meets them) or the
-EMERGENCY STOP callout (C17; ``estop_callout_anchor`` says where it goes).
+the wall (``bay_walls`` subtracts ``wall_cutter``) or the spine's crossings
+(``spine_panel``; this file only checks that the chase meets them).
 
 
 THE PLATE IS A FLUSH INSET, SCREWED FROM OUTSIDE
@@ -162,6 +167,7 @@ from stations.cnc_shapeoko.carcass import (
     snap_dn,
     through_slot,
 )
+from stations.cnc_shapeoko.parts import callouts
 
 __all__ = [
     "PART_NAME",
@@ -196,6 +202,10 @@ __all__ = [
     "placed_all",
     "joint_table",
     "estop_callout_anchor",
+    "CALLOUT_ESTOP",
+    "estop_callout_band",
+    "callouts_local",
+    "register",
     "leg_bolt_clearance",
     "check_console_plate",
     "export",
@@ -328,6 +338,13 @@ BAG_BAR_Y = 30.0
 lower (allocation 40..100) and the pendant socket and the bag bar under it
 sit lower again (19.5..38.5 and 24.9..35.1) to stay out of the allocation.
 CONFIDENCE: chosen, checked."""
+
+CALLOUT_ESTOP = "EMERGENCY STOP"
+"""The word under the mushroom guard, V-carved (C17). SOURCE: task C17, the
+one callout on the E-stop; it names the device and is raw birch like every
+other word, never red. CONFIDENCE: spec. Its height is derived from
+``estop_callout_band``, the birch between the guard and the pendant's
+flange, by ``callouts.fit_height``; the station's CALLOUT_H does not fit."""
 
 METER_Y = 50.0
 """Plate-local Y of the meter: its 58mm pocket at 21..79 owns its own X band
@@ -784,9 +801,10 @@ def _pocket_cutter(dv: Device) -> Part:
     return c.moved(Location((dv.cx, dv.cy, T)))
 
 
-def build_plate(d: Datums = D) -> Part:
+def build_plate(d: Datums = D, *, carve: bool = True) -> Part:
     """The plate, flat, plate-local. Z = 0 is the inner face, Z = T the outer
-    face the operator reads."""
+    face the operator reads, which carries the E-stop's word unless ``carve``
+    is off (the DXF's CUT layers are read off the un-carved blank)."""
     w, h = plate_size(d)
     p = panel(w, h)
 
@@ -814,6 +832,9 @@ def build_plate(d: Datums = D) -> Part:
             p -= bore(dv.cx, dv.cy, dv.bore_d)
             for dx, dy in dv.d_holes:
                 p -= bore(dv.cx + dx, dv.cy + dy, dv.d_hole_d)
+
+    if carve:
+        p = callouts.carve(p, callouts_local(d))
     return p
 
 
@@ -1068,13 +1089,38 @@ def joint_table(d: Datums = D) -> list[tuple]:
 
 def estop_callout_anchor(d: Datums = D) -> tuple[float, float]:
     """Plate-local centre for C17's EMERGENCY STOP callout: under the mushroom
-    guard, above the pendant socket's flange. The one red text on the station
-    is cut here; this file cuts no text."""
+    guard, above the pendant socket's flange. Raw birch through black like
+    every other word; the red budget is the mushroom, not a letter (the brief
+    reads two ways on this, and ``check_console_plate`` asks)."""
     dv = next(v for v in DEVICES if v.red)
     below = next(v for v in DEVICES if v.label == "PENDANT")
     top = below.cy + below.front[1] / 2
     bottom = dv.cy - dv.front[1] / 2
     return (dv.cx, (top + bottom) / 2)
+
+
+def estop_callout_band(d: Datums = D) -> tuple[float, float]:
+    """Plate-local Y span of the birch the E-stop's word sits in: from the
+    pendant socket's flange top to the mushroom guard's bottom."""
+    dv = next(v for v in DEVICES if v.red)
+    below = next(v for v in DEVICES if v.label == "PENDANT")
+    return (below.cy + below.front[1] / 2, dv.cy - dv.front[1] / 2)
+
+
+def callouts_local(d: Datums = D) -> list[callouts.Callout]:
+    """The plate's one word, on the Z = T face the operator reads, as tall as
+    its band allows."""
+    y0, y1 = estop_callout_band(d)
+    return [callouts.Callout(CALLOUT_ESTOP, estop_callout_anchor(d), height=callouts.fit_height(y1 - y0))]
+
+
+def register(d: Datums = D) -> callouts.Register:
+    """The second fixture's datums: the two short-edge lip screws, through
+    holes the plate already has, one at each end of the plate."""
+    (ax, ay), (bx, by) = lip_screws(d)[-2:]
+    return callouts.Register(
+        (ax, ay, SCREW_CLEAR_D), (bx, by, SCREW_CLEAR_D), "the two short-edge lip screws"
+    )
 
 
 # ====================================================================
@@ -1446,6 +1492,25 @@ def check_console_plate(d: Datums = D) -> list[str]:
         "matched-radius corner would hide them; the rule stands until ruled on. "
         "Expected, and worth knowing before the first cut."
     )
+
+    # -- the E-stop's word lands on birch, clear of every flange, and the plate
+    # goes back on its two end screws
+    notes += callouts.check_callouts(
+        build_plate(d),
+        callouts_local(d),
+        register(d),
+        size=plate_size(d),
+        keep_clear=[_front_rect(dv) for dv in DEVICES],
+        label=PART_NAME,
+    )
+    notes.append(
+        f"{CALLOUT_ESTOP} COLOUR, standing note. The brief v7 reads two ways: one line "
+        "makes it 'the only red text on the station', two others say no red labels and no "
+        "fill. Built as the finish ruling says every callout is: V-carved through matte "
+        "black to raw birch, no fill, never red; the red budget stays the mushroom and the "
+        "mast's Fault state. RULING WANTED: raw birch as built, or a red fill in this one "
+        "word. Neither the carve nor the register moves either way."
+    )
     return notes
 
 
@@ -1455,12 +1520,14 @@ def check_console_plate(d: Datums = D) -> list[str]:
 
 
 def _plate_layers(d: Datums = D) -> dict[str, list[Face]]:
-    """``flat_pattern`` plus the two layers it cannot infer: E_STOP, the one
-    red bore, and ACRYLIC, the three pane outlines the laser cuts."""
-    layers = flat_pattern(build_plate(d))
+    """``flat_pattern`` off the un-carved blank, plus the layers it cannot
+    infer: E_STOP, the one red bore; ACRYLIC, the three pane outlines the
+    Universal cuts; VCARVE and REGISTER, the second fixture's word and pins."""
+    layers = flat_pattern(build_plate(d, carve=False))
     est = next(v for v in DEVICES if v.red)
     layers["E_STOP"] = [Circle(est.bore_d / 2).faces()[0].moved(Location((est.cx, est.cy, 0)))]
     layers["ACRYLIC"] = [_capsule_face(dv.cx, dv.cy, *dv.pocket) for dv in DEVICES if dv.kind == "pocket"]
+    layers.update(callouts.layers(callouts_local(d), register(d), width=plate_size(d)[0]))
     return layers
 
 
@@ -1532,6 +1599,8 @@ if __name__ == "__main__":
         print(f"  {dv.label:<9} {dv.kind:<7} at ({dv.cx:5.1f}, {dv.cy:5.1f})  {dv.model}")
     for label, mm in leg_bolt_clearance(d):
         print(f"  leg bolt {label}: {mm:.1f}mm of land")
+    for line in callouts.describe(callouts_local(d), register(d)):
+        print(f"  {line}")
     for n in check_console_plate(d):
         print(f"  - {n}")
     for p in export(d):

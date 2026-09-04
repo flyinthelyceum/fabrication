@@ -104,9 +104,31 @@ A rounded-rectangle window over the signal zone, glazed with CLEAR 3mm
 acrylic (2026-09-03 finish ruling: every reveal is clear) in a rabbet on the
 INSIDE face. Inside rather than outside so that a hand pushing from behind
 pushes the pane INTO its rabbet, and so gravity seats it when the door is a
-shelf. Four screws through the pane's lip retain it. The pane is a laser part
-on the Universal and fits a QUARTER blank; the door itself is a Shapeoko or
-track-saw part and never goes to the laser.
+shelf. Four screws through the pane's lip retain it. The pane is cut on the
+Universal and fits a QUARTER blank; the door itself is a Shapeoko or
+track-saw part and never goes to the Universal.
+
+THE CALLOUTS (C17)
+==================
+
+Two words V-carved into the OUTSIDE face, through the black to raw birch:
+``CALLOUT_VFD`` over the drive, starting ``VFD_CALLOUT_X0`` in from the
+door's left end so the word sits over the drive's own keep-out and reads
+right across the sealed side (a word centred on the sealed span would sit
+over the glands and name nothing), and ``CALLOUT_MAINS`` centred over the
+IEC inlet, where the cord goes in. Both stay left of the split, which
+``check_rear_door`` measures.
+
+The outside face is this drawing's Z = 0, its BACK, so the second fixture
+sees the CUT drawing turned over. That fixture gets its OWN file,
+``CARVE_NAME``.dxf: the door outline flipped about its vertical centreline
+for reference, and ``VCARVE`` and ``REGISTER`` in that same flipped frame,
+as the carved face is seen (``callouts.carve_drawing``). ``PART_NAME``.dxf
+keeps the CUT frame only, so no file holds two frames. The register is the
+two catch bores, through holes on the split's centreline, one low and one
+high, so the pins are 333mm apart; in the carve drawing its circles sit on
+the flipped bores. The model's word is mirrored in the door frame so it
+reads from the room.
 
 PANEL CONVENTION
 ================
@@ -163,11 +185,15 @@ from stations.cnc_shapeoko.carcass import (
     panel,
     through_slot,
 )
+from stations.cnc_shapeoko.parts import callouts
 from stations.cnc_shapeoko.parts.brain_partition import DOOR_LANDING
 from stations.cnc_shapeoko.parts.spine_panel import signal_x
 
 PART_NAME = "rear_door"
 REVEAL_NAME = "rear_door_reveal"
+CARVE_NAME = "rear_door_carve"
+"""The second fixture's DXF, the outside-face carve in its own flipped frame
+(C17). No STEP: the solid is PART_NAME's."""
 SWITCH_ENV_NAME = "interlock_switch_env"
 STRIKER_NAME = "interlock_striker"
 BRACKET_NAME = "indicator_bracket"
@@ -381,6 +407,26 @@ is derived from the door height. SOURCE: task C07 ("tool-access catch, two
 Torx screws, no hand latch"). CONFIDENCE: spec. The partition drills nothing
 in its own model; the shop pilots its edge through these holes on the fit."""
 
+# ---- the callouts (C17, OUTSIDE face) ---------------------------------------
+CALLOUT_VFD = "VARIABLE FREQUENCY DRIVE"
+CALLOUT_MAINS = "MAINS"
+"""The two words on the door's room face. SOURCE: task C17 ("VARIABLE
+FREQUENCY DRIVE over the sealed side, MAINS at the IEC"). CONFIDENCE: spec.
+Both at callouts.CALLOUT_H."""
+VFD_CALLOUT_X0 = GRID
+"""Door-local X of the drive word's LEFT edge: one module in from the left
+end wall's face, so the word starts over the drive's own keep-out. SOURCE:
+layout. CONFIDENCE: chosen, checked (left of the split)."""
+VFD_CALLOUT_Y = GRID * 23
+"""Door-local Y of the drive word's centre: the band above the glands' bores
+(GLAND_Y + GLAND_D/2 = 312.5) and below the top edge (613), on the grid.
+Nothing is cut through the outside face there. SOURCE: layout. CONFIDENCE:
+chosen, checked."""
+MAINS_CALLOUT_Y = GRID * 5
+"""Door-local Y of MAINS' centre, over the IEC cutout (top edge at 74.75
+with its clearance): the word's baseline clears it by better than a grid.
+SOURCE: layout. CONFIDENCE: chosen, checked."""
+
 # ---- the reveal -------------------------------------------------------------
 WINDOW_LAND_X = GRID * 3
 """Solid door on each side of the window: from the partition's right face and
@@ -402,7 +448,7 @@ REVEAL_DEPTH = PT
 derived."""
 PANE_FIT = 0.5
 """Per-side clearance of the pane in its rabbet, acrylic's thermal movement
-plus the laser's kerf. CONFIDENCE: chosen."""
+plus the Universal's kerf. CONFIDENCE: chosen."""
 PANE_SCREW = "5 x 12 pan head, the house screw, exposed"
 PANE_SCREW_LEN = 12.0
 PANE_SCREW_D = SCREW_CLEAR_D
@@ -523,6 +569,24 @@ def catch_positions(d: Datums = D) -> list[tuple[float, float]]:
     _w, h = door_size(d)
     cx = split_local(d) + d.t / 2
     return [(cx, CATCH_Y[0]), (cx, h - CATCH_Y[0])]
+
+
+def callouts_local(d: Datums = D) -> list[callouts.Callout]:
+    """The two words, door-local, on the OUTSIDE (Z = 0, back) face."""
+    vfd_w = callouts.text_width(CALLOUT_VFD)
+    return [
+        callouts.Callout(CALLOUT_VFD, (VFD_CALLOUT_X0 + vfd_w / 2, VFD_CALLOUT_Y), face="back"),
+        callouts.Callout(CALLOUT_MAINS, (IEC_POS[0], MAINS_CALLOUT_Y), face="back"),
+    ]
+
+
+def register(d: Datums = D) -> callouts.Register:
+    """The second fixture's datums: the two catch bores, through holes on the
+    split's centreline, low and high."""
+    (ax, ay), (bx, by) = catch_positions(d)
+    return callouts.Register(
+        (ax, ay, CATCH_CLEAR_D), (bx, by, CATCH_CLEAR_D), "the two catch bores"
+    )
 
 
 def window_local(d: Datums = D) -> tuple[tuple[float, float], tuple[float, float]]:
@@ -851,12 +915,16 @@ def _cutter(c: Cut) -> Part:
     raise ValueError(f"unknown cut kind {c.kind!r}")
 
 
-def build(d: Datums = D) -> Part:
-    """The door, flat in panel-local coordinates."""
+def build(d: Datums = D, *, carve: bool = True) -> Part:
+    """The door, flat in panel-local coordinates, its two words carved into
+    the outside face unless ``carve`` is off (the DXF's CUT layers are read
+    off the un-carved blank)."""
     w, h = door_size(d)
     part = panel(w, h, d.t)
     for c in cuts(d):
         part -= _cutter(c)
+    if carve:
+        part = callouts.carve(part, callouts_local(d), thickness=d.t)
     return part
 
 
@@ -1238,6 +1306,24 @@ def check_rear_door(d: Datums = D) -> list[str]:
         "solids from a representative listing and are NOT on the BOM. MEASURE THIS "
         "when a pair is chosen; the open shelf's load rating is theirs."
     )
+
+    # -- the callouts: on birch, on the sealed side, and the door goes back on
+    # its two catch bores
+    notes += callouts.check_callouts(
+        build(d),
+        callouts_local(d),
+        register(d),
+        size=(w, h),
+        thickness=d.t,
+        label=PART_NAME,
+    )
+    for c in callouts_local(d):
+        bb = callouts.sketch(c).bounding_box()
+        if bb.max.X > sp:
+            notes.append(
+                f"{c.text} reaches door x {bb.max.X:.1f} and the split is at {sp:.1f}: "
+                "it is not over the sealed side"
+            )
     return notes
 
 
@@ -1247,11 +1333,22 @@ def check_rear_door(d: Datums = D) -> list[str]:
 
 
 def export(d: Datums = D) -> list:
-    """STEP + DXF for the door (birch, CUT and the pocket layers), the pane on
-    an ACRYLIC layer for the Universal, and STEP alone for the reference and
+    """STEP + DXF for the door (birch: CUT and the pocket layers off the
+    un-carved blank, first fixture), a second DXF for the outside-face carve
+    (the flipped outline, VCARVE and REGISTER, one frame), the pane on an
+    ACRYLIC layer for the Universal, and STEP alone for the reference and
     wear solids."""
     written = []
-    written += export_part(build(d), PART_NAME)
+    door_layers = flat_pattern(build(d, carve=False))
+    written += export_part(build(d), PART_NAME, layers=door_layers)
+    written += export_part(
+        build(d),
+        CARVE_NAME,
+        step=False,
+        layers=callouts.carve_drawing(
+            callouts_local(d), register(d), width=door_size(d)[0], cut=door_layers["CUT"]
+        ),
+    )
     pane = build_reveal(d)
     written += export_part(pane, REVEAL_NAME, layers={"ACRYLIC": flat_pattern(pane)["CUT"]})
     out_dir = EXPORT_DIR
@@ -1287,6 +1384,8 @@ if __name__ == "__main__":
     print(f"  open     x {ob.min.X:.1f}..{ob.max.X:.1f}  y {ob.min.Y:.1f}..{ob.max.Y:.1f}  "
           f"z {ob.min.Z:.1f}..{ob.max.Z:.1f}")
     print(f"  split at door x {split_local(d):.1f}; keep-out ends at {keepout_local(d):.1f}")
+    for line in callouts.describe(callouts_local(d), register(d)):
+        print(f"  {line}")
     print(f"  window   door x {wx0:.1f}..{wx1:.1f}  y {wy0:.1f}..{wy1:.1f}, r {WINDOW_R:.0f}; "
           f"pane {pw:.1f} x {ph:.1f} x {PT:.0f} {MATERIAL_REVEAL}, r {pane_r():.1f}")
     for c in cuts(d):

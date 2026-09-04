@@ -21,9 +21,14 @@ stop on. Its inside face carries the bay's acoustic lay-up
 and not against the door alone. A magnetic catch on the divider's lungs face
 holds it shut against a strike plate on the door; a capsule finger pull near
 the free edge opens it; there is no handle. The EXTRACTION callout is
-V-carved on the outer face by C17; ``callout_centre_local`` says where.
+V-carved on the outer face (C17) at ``callout_centre_local``, through the
+paint to raw birch, on the DXF's ``VCARVE`` layer; the painted door goes
+back on the machine on the pull's two end arcs, its ``REGISTER`` layer,
+because the door has no screw hole on that face and the hinge's screws are
+driven on the fit, not modelled.
 
-    lungs_door            the birch, one capsule pull, one blind pilot
+    lungs_door            the birch, one capsule pull, one blind pilot, the
+                          callout
     lungs_door_lining     the lay-up on the inside face, a reference slab,
                           relieved around the pull; its DXF is the knife
                           template for the MLV and the foam
@@ -136,7 +141,7 @@ from stations.cnc_shapeoko.carcass import (
     panel,
     through_slot,
 )
-from stations.cnc_shapeoko.parts import lungs_carriage
+from stations.cnc_shapeoko.parts import callouts, lungs_carriage
 from stations.cnc_shapeoko.parts.bay_walls import LUNGS_SLIDE_INSET, WALLS
 from stations.cnc_shapeoko.parts.bay_walls import placed_all as walls_placed
 from stations.cnc_shapeoko.parts.drawers import PULL_DROP, PULL_H, PULL_L
@@ -162,6 +167,8 @@ __all__ = [
     "hinge_axis",
     "pull_local",
     "callout_centre_local",
+    "callouts_local",
+    "register",
     "build",
     "build_lining",
     "build_strike",
@@ -190,8 +197,8 @@ STRIKE_NAME = "lungs_catch_strike"
 HINGE_NAME = "lungs_door_hinge"
 
 CALLOUT = "EXTRACTION"
-"""The door's callout, V-carved on the outer face by C17. SOURCE: brief v8,
-"EXTRACTION on the lungs door". CONFIDENCE: spec. Not cut here."""
+"""The door's callout, V-carved on the outer face (C17) at callouts.CALLOUT_H.
+SOURCE: brief v8, "EXTRACTION on the lungs door". CONFIDENCE: spec."""
 
 
 # ====================================================================
@@ -334,6 +341,21 @@ def callout_centre_local(d: Datums = D) -> tuple[float, float]:
     return (w / 2, (h - PULL_DROP - PULL_H / 2) / 2)
 
 
+def callouts_local(d: Datums = D) -> list[callouts.Callout]:
+    """The door's one word, on the Z = t face the operator reads."""
+    return [callouts.Callout(CALLOUT, callout_centre_local(d))]
+
+
+def register(d: Datums = D) -> callouts.Register:
+    """The second fixture's datums: the pull's two end arcs, which a PULL_H
+    pin seats in. The same pins the drawer fronts use."""
+    cx, cy = pull_local(d)
+    dx = (PULL_L - PULL_H) / 2
+    return callouts.Register(
+        (cx - dx, cy, PULL_H), (cx + dx, cy, PULL_H), "the pull's two end arcs"
+    )
+
+
 def lining_size(d: Datums = D) -> tuple[float, float]:
     w, h = door_size(d)
     return (w - 2 * LINING_INSET, h - 2 * LINING_INSET)
@@ -416,13 +438,17 @@ def swing_rise(d: Datums = D) -> float:
 # ---------------------------------------------------------------- solids
 
 
-def build(d: Datums = D) -> Part:
-    """The door, flat: the blank, the capsule pull, the strike's pilot."""
+def build(d: Datums = D, *, carve: bool = True) -> Part:
+    """The door, flat: the blank, the capsule pull, the strike's pilot, and
+    the callout carved into the outer face unless ``carve`` is off (the DXF's
+    CUT layers are read off the un-carved blank)."""
     w, h = door_size(d)
     part = panel(w, h, d.t)
     part -= through_slot(pull_local(d), PULL_L, PULL_H, corner_r=PULL_H / 2)
     px, py = strike_pilot_local(d)
     part -= bore(px, py, SCREW_PILOT_D, depth=STRIKE_PILOT_DEPTH, side="back")
+    if carve:
+        part = callouts.carve(part, callouts_local(d), thickness=d.t)
     return part
 
 
@@ -917,11 +943,14 @@ def check_lungs_door(d: Datums = D) -> list[str]:
         "which screws to birch; the shop pilots the divider through the body's slots "
         "on the first fit. Expected, and worth knowing before the lay-up is bonded."
     )
-    ccx, ccy = callout_centre_local(d)
-    notes.append(
-        f"CALLOUT, standing note. {CALLOUT} is V-carved on the door's outer face by C17, "
-        f"centred at door ({ccx:.1f}, {ccy:.1f}), below the pull; this part cuts no "
-        "engraving. Expected, and worth knowing."
+    # -- the callout lands on birch, and the door goes back on its pins -------
+    notes += callouts.check_callouts(
+        build(d),
+        callouts_local(d),
+        register(d),
+        size=door_size(d),
+        thickness=d.t,
+        label=PART_NAME,
     )
     return notes
 
@@ -932,11 +961,14 @@ def check_lungs_door(d: Datums = D) -> list[str]:
 
 
 def export(d: Datums = D) -> list:
-    """STEP + DXF for the door (CUT and the pilot's pocket layer) and for the
+    """STEP + DXF for the door (CUT and the pilot's pocket layer off the
+    un-carved blank, VCARVE and REGISTER for the second fixture) and for the
     lay-up on a LINING layer, the knife template; STEP alone for the strike,
     the catch body and the knuckle."""
     written = []
-    written += export_part(build(d), PART_NAME)
+    door_layers = flat_pattern(build(d, carve=False))
+    door_layers.update(callouts.layers(callouts_local(d), register(d), width=door_size(d)[0]))
+    written += export_part(build(d), PART_NAME, layers=door_layers)
     lining = build_lining(d)
     written += export_part(lining, LINING_NAME, layers={"LINING": flat_pattern(lining)["CUT"]})
     out_dir = EXPORT_DIR
@@ -980,6 +1012,8 @@ if __name__ == "__main__":
     print(f"  lay-up   {lw:.1f} x {lh:.1f} x {lining_t(d):.0f} on the inside face, inset {LINING_INSET:.0f}")
     cx, cy = pull_local(d)
     print(f"  pull     capsule {PULL_L:.0f} x {PULL_H:.0f} at door ({cx:.1f}, {cy:.1f})")
+    for line in callouts.describe(callouts_local(d), register(d)):
+        print(f"  {line}")
     print(
         f"  catch    body x {kx0:.1f}..{kx1:.1f} y {ky0:.1f}..{ky1:.1f} z {kz0:.1f}..{kz1:.1f} "
         f"on the divider; strike at door x {strike_local(d)[0][0]:.1f}..{strike_local(d)[0][1]:.1f}"

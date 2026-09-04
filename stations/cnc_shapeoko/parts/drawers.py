@@ -22,7 +22,8 @@ WHAT THIS PART OWNS
     blind housing needs
   * the pilot rows for the slide's DRAWER member, on the two outer faces,
     matching the pattern ``bay_walls`` drills for the CABINET member
-  * the engraved callout on each front, on its own DXF layer
+  * the V-carved callout on each front, on its own DXF layer, and the
+    register the painted front goes back on the machine with
   * the pull, which is an aperture and therefore capsule-ended
 
 It does NOT own where the slides go. ``bay_walls`` committed those rows, and
@@ -111,28 +112,25 @@ in tension every time somebody opens it.
 THE FRONTS CARRY THE CALLOUT
 ============================
 
-Each front is engraved with its bay's name -- CUTTERS, INSTRUMENTS,
-WORKHOLDING -- ``ENGRAVE_D`` deep, on its own ``ENGRAVE`` DXF layer so the shop
-runs it as a V-carve and fills it. The layer is added by hand in ``export()``
-rather than inferred: ``flat_pattern`` would call it a pocket at a depth, which
-is true and useless, and a pocket layer and an engrave layer go to different
-tools.
+Each front is V-carved with its bay's name -- CUTTERS, INSTRUMENTS,
+WORKHOLDING -- ``callouts.VCARVE_D`` deep on its outer face, through the
+matte black to raw birch, no fill (finish ruling, 2026-09-03). The letters
+and the carve come from ``callouts``, which was this file's own helper until
+C17 and produces the same geometry it did then. Two DXF layers are added by
+hand in ``export()`` rather than inferred: ``VCARVE``, the letter outlines
+(``flat_pattern`` would call the carve a pocket at a depth, which is true and
+useless, since a pocket and a V-carve go to different tools on different
+fixtures), and ``REGISTER``, the two circles the painted front is pinned back
+on the machine with. A front has no screw holes on its face -- it is held in
+the sides' rabbets and screwed through the sides -- so the register is the
+pull's two end arcs, ``PULL_H`` pins 100mm apart.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from build123d import (
-    Align,
-    Location,
-    Part,
-    Plane,
-    Sketch,
-    Text,
-    available_fonts,
-    extrude,
-)
+from build123d import Part, Plane
 
 from lib.house import GRID
 from stations.cnc_shapeoko.carcass import (
@@ -156,7 +154,8 @@ from stations.cnc_shapeoko.carcass import (
     snap_dn,
     through_slot,
 )
-from stations.cnc_shapeoko.parts import console_plate
+from stations.cnc_shapeoko.parts import callouts, console_plate
+from stations.cnc_shapeoko.parts.callouts import CALLOUT_FONT  # trays reads it here
 from stations.cnc_shapeoko.parts.bay_walls import (
     SLIDE_BORE_D,
     SLIDE_BORE_DEPTH,
@@ -173,8 +172,10 @@ __all__ = [
     "BACK_INSET",
     "BACK_DROP",
     "BOTTOM_GROOVE_Z",
-    "ENGRAVE_D",
+    "CALLOUT_FONT",
     "narrowing",
+    "callout_for",
+    "register_for",
     "box_size",
     "box_origin",
     "interior",
@@ -231,33 +232,9 @@ PULL_DROP = GRID * 1.5
 """The pull: a capsule aperture, one grid module tall and six long, its centre
 ``PULL_DROP`` below the top edge of the front."""
 
-ENGRAVE_D = 1.0
-"""Depth of the engraved callout. Deep enough to hold a fill, shallow enough
-that an 18mm front is still an 18mm front."""
-
-CALLOUT_H = GRID * 0.6
-"""Cap height of the callout text."""
-
-CALLOUT_FONTS = ("Helvetica", "Arial", "DejaVu Sans", "Liberation Sans")
-"""Preference order for every engraved callout in the station. Resolved against
-``available_fonts()`` at import, because a headless box and a laptop do not have
-the same font list and a font that is missing is silently substituted -- which
-is a different drawing, cut without anyone being told."""
-
-
-def _house_font() -> str:
-    """First preferred font this machine actually has, else whatever it has."""
-    try:
-        have = {f.name for f in available_fonts()}
-    except Exception:                       # no font manager on this box
-        return CALLOUT_FONTS[0]
-    for name in CALLOUT_FONTS:
-        if name in have:
-            return name
-    return min(have) if have else CALLOUT_FONTS[0]
-
-
-CALLOUT_FONT = _house_font()
+# The carve's depth, cap height and font moved to ``callouts`` in C17 with
+# their values unchanged (VCARVE_D, CALLOUT_H, CALLOUT_FONT). ``CALLOUT_FONT``
+# is re-exported above because ``trays`` reads it off this module.
 
 
 # ================================================================ the table
@@ -513,25 +490,29 @@ def build_side(spec: DrawerSpec, hand: str, d: Datums = D) -> Part:
     return p
 
 
-def _callout(spec: DrawerSpec, d: Datums = D) -> Sketch:
-    """The engraved callout as a flat sketch at Z = 0, in panel-local XY.
-
-    One geometry, two jobs: extruded it is the pocket cut into the front, and
-    as faces it is the ENGRAVE layer of the DXF. Drawing the callout twice is
-    how a fill ends up not matching the cut.
-    """
+def callout_for(spec: DrawerSpec, d: Datums = D) -> callouts.Callout:
+    """The front's word, centred in the band below the pull, on the Z = t
+    face the operator reads. One geometry, two jobs: ``callouts.carve`` cuts
+    it into the front, and ``callouts.layers`` writes its outlines to the
+    DXF. Drawing the callout twice is how a carve ends up not matching the
+    model."""
     w, h = front_size(spec, d)
-    sk = Text(
-        spec.callout,
-        font_size=CALLOUT_H,
-        font=CALLOUT_FONT,
-        align=(Align.CENTER, Align.CENTER),
-    )
     cy = (h - PULL_DROP - PULL_H / 2) / 2
-    return sk.moved(Location((w / 2, cy, 0)))
+    return callouts.Callout(spec.callout, (w / 2, cy))
 
 
-def build_front(spec: DrawerSpec, d: Datums = D, *, engrave: bool = True) -> Part:
+def register_for(spec: DrawerSpec, d: Datums = D) -> callouts.Register:
+    """The second fixture's datums: the pull's two end arcs, which a
+    ``PULL_H`` pin seats in. The front carries no screw holes on its face."""
+    w, h = front_size(spec, d)
+    cx, cy = w / 2, h - PULL_DROP
+    dx = (PULL_L - PULL_H) / 2
+    return callouts.Register(
+        (cx - dx, cy, PULL_H), (cx + dx, cy, PULL_H), "the pull's two end arcs"
+    )
+
+
+def build_front(spec: DrawerSpec, d: Datums = D, *, carve: bool = True) -> Part:
     """The drawer front, flat. Its Z = t face is the one the operator reads."""
     w, h = front_size(spec, d)
     p = panel(w, h)
@@ -545,9 +526,8 @@ def build_front(spec: DrawerSpec, d: Datums = D, *, engrave: bool = True) -> Par
         (w / 2, h - PULL_DROP), PULL_L, PULL_H, corner_r=PULL_H / 2
     )
 
-    if engrave:
-        cut = extrude(_callout(spec, d), amount=ENGRAVE_D)
-        p -= cut.moved(Location((0, 0, T - ENGRAVE_D)))
+    if carve:
+        p = callouts.carve(p, [callout_for(spec, d)])
     return p
 
 
@@ -722,6 +702,15 @@ def check_drawers(d: Datums = D) -> list[str]:
                         f"belongs at {e[0]:.1f}..{e[1]:.1f}. Its plane is wrong."
                     )
 
+        # the callout lands on birch, and the front goes back on its pins
+        notes += callouts.check_callouts(
+            build_front(spec, d),
+            [callout_for(spec, d)],
+            register_for(spec, d),
+            size=front_size(spec, d),
+            label=f"{n}_front",
+        )
+
     # The bottom drawer stands on the deck's own face, because bay_walls put
     # its slide row at the bottom of the bay and the box hangs level with it.
     bottom = min(DRAWERS, key=lambda s2: opening(s2, d)[0])
@@ -743,15 +732,19 @@ def check_drawers(d: Datums = D) -> list[str]:
 def export(spec: DrawerSpec, d: Datums = D) -> list:
     """STEP and DXF for one box's five panels.
 
-    The front goes out with an ``ENGRAVE`` layer that ``flat_pattern`` cannot
-    infer: it is read off the un-engraved blank so the callout does not also
-    appear as a pocket, and the STEP still carries the engraving.
+    The front goes out with the ``VCARVE`` and ``REGISTER`` layers that
+    ``flat_pattern`` cannot infer: its CUT layers are read off the un-carved
+    blank so the callout does not also appear as a pocket, and the STEP
+    still carries the carve.
     """
     written = []
     for label, part, _plane in panels(spec, d):
         if label.endswith("_front"):
-            layers = flat_pattern(build_front(spec, d, engrave=False))
-            layers["ENGRAVE"] = list(_callout(spec, d).faces())
+            w, _h = front_size(spec, d)
+            layers = flat_pattern(build_front(spec, d, carve=False))
+            layers.update(
+                callouts.layers([callout_for(spec, d)], register_for(spec, d), width=w)
+            )
             written += export_part(part, label, layers=layers)
         else:
             written += export_part(part, label)

@@ -81,6 +81,7 @@ from stations.cnc_shapeoko.parts import (
     base_deck,
     bay_walls,
     brain_partition,
+    callouts,
     console_plate,
     drawers,
     leg_joint,
@@ -630,7 +631,13 @@ class Fit:
 
     @property
     def slack(self) -> float:
-        return self.room - self.have
+        """Room less have, snapped to zero inside ``BAND_EPS``. An OCC bounding
+        box is a tolerance box, not the solid's edge: the carve on an outer
+        face (C17) grew the carcass's by 1e-7 and a fit that is exactly 0.0
+        by construction read as 0.0mm over. The floor check reads the same
+        box through the same epsilon."""
+        s = self.room - self.have
+        return 0.0 if abs(s) < BAND_EPS else s
 
     def line(self) -> str:
         state = "fits" if self.slack >= 0 else "OVER"
@@ -1029,6 +1036,20 @@ def main() -> None:
         f"the tray closes at y {lungs_carriage.carriage_origin(d)[1]:.0f}; "
         f"{lungs_door.CATCH_NAME} x {kx0:.0f}..{kx1:.0f} y {ky0:.0f}..{ky1:.0f} z {kz0:.0f}..{kz1:.0f} on the divider"
     )
+
+    print("\ncallouts: V-carved through the paint on a second fixture (C17); each rides in its part")
+    carved = [
+        (rear_door.PART_NAME, rear_door.callouts_local(d), rear_door.register(d)),
+        (lungs_door.PART_NAME, lungs_door.callouts_local(d), lungs_door.register(d)),
+        (stock_rails.LABEL, stock_rails.callouts_local(d), stock_rails.register(d)),
+        (console_plate.PART_NAME, console_plate.callouts_local(d), console_plate.register(d)),
+    ] + [
+        (f"{sp.name}_front", [drawers.callout_for(sp, d)], drawers.register_for(sp, d))
+        for sp in drawers.DRAWERS
+    ]
+    for name, words, reg in carved:
+        for line in callouts.describe(words, reg):
+            print(f"  {name}: {line}")
 
     print("\nsignal side: the subplate, the cradle, the rail and the one printed part")
     sw, sh = signal_mounts.plate_size(d)

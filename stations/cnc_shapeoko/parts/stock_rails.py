@@ -11,7 +11,13 @@ edge in the stock bay is two things, and only one of them is a part:
     ``TONGUE_D`` up into a housing ``top_cap`` cuts in the cap's underside.
     Its lower edge carries the comb: one slot per blank at
     ``Station.sheet_pitch``, open at the bottom, so a blank's top passes
-    through it. Its front face is the STOCK header, the face C17 V-carves.
+    through it. Its front face is the STOCK header: the word is V-carved
+    (C17) into the comb's spine, the birch between the slot tips and the
+    cap, on the ``VCARVE`` layer, and the painted comb goes back on the
+    machine on the first and last slot's capsule tips (``REGISTER``), the
+    only voids it has. The spine is 14mm, so the word is ``callout_h``
+    tall rather than the station's 12: ``callouts.fit_height`` sizes it to
+    the band.
   * nine GROOVES, ``GROOVE_D`` deep, milled into ``base_deck``'s top face at
     the same pitch, open at the front, so a blank drops in at deck level and
     slides out FORWARD. There is no bottom rail. ``base_deck`` cuts them to
@@ -81,14 +87,21 @@ from stations.cnc_shapeoko.carcass import (
     T,
     Datums,
     export_part,
+    flat_pattern,
     panel,
     through_slot,
 )
+from stations.cnc_shapeoko.parts import callouts
 
 __all__ = [
     "LABEL",
     "BLANK_LABEL",
     "CALLOUT",
+    "callout_h",
+    "callout_centre",
+    "callouts_local",
+    "register",
+    "export",
     "RAIL_H",
     "RAIL_T",
     "TONGUE_D",
@@ -134,7 +147,8 @@ BLANK_LABEL = "stock_blank_ref"
 """The reference blank the assembly carries in slot 0."""
 
 CALLOUT = "STOCK"
-"""What C17 V-carves into ``callout_face``. SOURCE: brief v8, the STOCK header."""
+"""V-carved into ``callout_face``'s spine (C17). SOURCE: brief v8, the STOCK
+header. CONFIDENCE: spec. Its height is ``callout_h``, derived."""
 
 RAIL_H = GRID * 2
 """Visible height of the comb under the cap: the header. Two grid modules.
@@ -295,6 +309,35 @@ def groove_y(d: Datums = D) -> tuple[float, float]:
     return (d.y_front, d.y_spine - GROOVE_REAR_LAND)
 
 
+def callout_h(d: Datums = D) -> float:
+    """Cap height of the header word: the station's CALLOUT_H if the spine
+    has room for it with a clearance above and below, else what the spine
+    leaves."""
+    return callouts.fit_height(spine_w(d))
+
+
+def callout_centre(d: Datums = D) -> tuple[float, float]:
+    """Comb-local centre of the word: the middle of the span, the middle of
+    the spine between the slot tips and the cap's underside."""
+    return (rail_length(d) / 2, slot_depth(d) + spine_w(d) / 2)
+
+
+def callouts_local(d: Datums = D) -> list[callouts.Callout]:
+    """The comb's one word, on the Z = T face the operator sees."""
+    return [callouts.Callout(CALLOUT, callout_centre(d), height=callout_h(d))]
+
+
+def register(d: Datums = D) -> callouts.Register:
+    """The second fixture's datums: the first and last slot's capsule tips,
+    which a SLOT_W pin seats in. The comb has no holes; its slots are open
+    at the bottom, so the pin bears on the tip's half circle."""
+    xs = slot_centres(d)
+    y = slot_depth(d) - SLOT_R
+    return callouts.Register(
+        (xs[0], y, SLOT_W), (xs[-1], y, SLOT_W), "the first and last slot's capsule tips"
+    )
+
+
 def plane(d: Datums = D) -> Plane:
     """The comb's frame in station space: local +X along the bay, local +Y up
     from the comb's bottom edge, local +Z toward the open front. Local Z = 0 is
@@ -309,8 +352,10 @@ def plane(d: Datums = D) -> Plane:
 # ================================================================ build
 
 
-def build(d: Datums = D) -> Part:
-    """The comb, flat in its own frame."""
+def build(d: Datums = D, *, carve: bool = True) -> Part:
+    """The comb, flat in its own frame, the header word carved into its spine
+    unless ``carve`` is off (the DXF's CUT layers are read off the un-carved
+    blank)."""
     p = panel(rail_length(d), blank_h(), RAIL_T)
     depth = slot_depth(d)
     length = depth + OVERSHOOT
@@ -325,6 +370,8 @@ def build(d: Datums = D) -> Part:
         cutters = c if cutters is None else cutters + c
     if cutters is not None:
         p -= cutters
+    if carve:
+        p = callouts.carve(p, callouts_local(d), thickness=RAIL_T)
     return p
 
 
@@ -507,7 +554,30 @@ def check_stock_rails(d: Datums = D) -> list[str]:
     if abs(cf.center().Y - cy0) > EPS:
         notes.append("the callout face is not the comb's front face")
 
+    # -- the header word sits in the spine, below the cap, and the comb goes
+    # back on its two slot tips. The tongue is not a cut, so it is declared.
+    notes += callouts.check_callouts(
+        build(d),
+        callouts_local(d),
+        register(d),
+        size=(rail_length(d), blank_h()),
+        thickness=RAIL_T,
+        keep_clear=[((0.0, RAIL_H), (rail_length(d), blank_h()))],
+        label=LABEL,
+    )
+
     return notes
+
+
+# ================================================================ export
+
+
+def export(d: Datums = D) -> list:
+    """STEP + DXF for the comb: CUT off the un-carved blank, VCARVE and
+    REGISTER for the second fixture; the STEP carries the carve."""
+    layers = flat_pattern(build(d, carve=False))
+    layers.update(callouts.layers(callouts_local(d), register(d), width=rail_length(d)))
+    return export_part(build(d), LABEL, layers=layers)
 
 
 # ================================================================ main
@@ -556,6 +626,8 @@ if __name__ == "__main__":
         f"({cf.center().X:.1f}, {cf.center().Y:.1f}, {cf.center().Z:.1f}), "
         f"{cf.area / 100:.0f}cm2"
     )
+    for line in callouts.describe(callouts_local(d), register(d)):
+        print(f"  {line}")
 
     ab = Compound(children=placed).bounding_box()
     print(
@@ -564,7 +636,7 @@ if __name__ == "__main__":
     )
 
     print("\n  wrote:")
-    for p_ in export_part(flat, LABEL):
+    for p_ in export(d):
         print(f"    {p_}")
 
     found = check_stock_rails(d)
