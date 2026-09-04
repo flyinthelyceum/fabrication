@@ -181,6 +181,36 @@ SOURCES = {
                   " -- Main Filter HEPA-HF-CT COMP, order no. 204201, listed for "
                   "CT MINI/MIDI (I) from 2019 and for CT 15 and CT 25. Manual "
                   "9.5 calls it the filter drawer [1-6].",
+    # ---- the Kerf fix set, RULED by Jared 2026-09-04 (evening) ----------
+    "leg_cols_used": "RULED 2026-09-04, Jared: \"DROP the inner bolt column (8 "
+                     "bolts, outer column only; the plinth carries, bolts "
+                     "brace)\". The column nearest the leg's inner corner "
+                     "(c0, 16.78 in) fails the 18mm land rule by 6mm; the "
+                     "outer column (c1, 56.9 in) clears it. The leg's pattern "
+                     "is unchanged; the carcass uses one column of it.",
+    "stile_toe_land": "RULED 2026-09-04, Jared: \"the flange band is a fixed "
+                      "stile\". The stile's inner edge stands this far past "
+                      "the steel toe so the door's hinge corner and the "
+                      "knuckle never touch the flange on the swing; the "
+                      "number is this repo's choice.",
+    "lungs_spacer_plies": "RULED 2026-09-04, Jared: \"lungs bay +40 with the "
+                          "left slide on a 40 spacer so the tray clears the "
+                          "toe\". With the stile and its knuckle in the "
+                          "opening the tray needs 45.8 of spacer, not 40; three "
+                          "plies of the carcass birch (54) is the first "
+                          "one-material block past it. Bay follows to 460.",
+    "lungs_door_lay_gap": "RULED 2026-09-04, Jared: the lungs door \"must "
+                          "open to 180 to lie against the leg face\". The "
+                          "knuckle stands proud so the folded door clears the "
+                          "flange's front face by this much; the gap is this "
+                          "repo's choice.",
+    "corner_chamfer": "RULED 2026-09-04, Jared: \"r4.5 chamfers on the four "
+                      "end-wall/deck corners\". The leg's inside corner is a "
+                      "4.48 fillet (MEASURED 2026-09-04); a 4.5 chamfer clears "
+                      "the whole of it.",
+    "tray_knuckle_clear": "Running clearance between the lungs tray's cheek "
+                          "and the lungs door's knuckle on the pull. This "
+                          "repo's choice.",
 }
 
 # ---------------------------------------------------------------- extractors
@@ -469,6 +499,13 @@ CONFIDENCE = {
     "ct15_plug_lead": "datasheet",
     "ct15_plug_lead.exit": "MEASURE",
     "ct15_main_filter": "datasheet",
+    # ---- the Kerf fix set, 2026-09-04 (evening) ----
+    "leg_cols_used": "ruling",
+    "stile_toe_land": "choice",
+    "lungs_spacer_plies": "choice",      # under a ruling that said 40; see SOURCES
+    "lungs_door_lay_gap": "choice",
+    "corner_chamfer": "ruling",
+    "tray_knuckle_clear": "choice",
 }
 
 
@@ -789,18 +826,34 @@ class LegHoles:
         along an end wall, both measured from the station datum."""
         return None if self.flange_w is None else self.flange_w - LEG_WALL_T
 
+    cols_used: tuple[int, ...] = (1,)
+    """Which of the leg's columns the carcass bolts to, by index into
+    ``columns_h``. RULED 2026-09-04 (Jared): the OUTER column only. Column 0,
+    16.78 in from the inner face, lands 5.98mm short of the end wall's 18mm
+    land (``leg_joint.EDGE_LAND``, never relaxed); column 1 at 56.9 clears it
+    by 34. Eight bolts brace the frame, the plinth carries the carcass. SOURCE
+    "leg_cols_used"; CONFIDENCE ruling. The leg's own pattern (``cols_per_leg``)
+    is still the measured 2x2; this is what the carcass uses of it."""
+
     def columns_h(self) -> tuple[float, ...]:
-        """Column offsets in from the leg's inner edge, at ``pitch_h``."""
+        """Column offsets in from the leg's inner edge, at ``pitch_h``: the
+        leg's whole pattern."""
         return tuple(self.edge_off + i * self.pitch_h for i in range(self.cols_per_leg))
+
+    def columns_used_h(self) -> tuple[float, ...]:
+        """The columns the carcass bolts to, as offsets in from the inner
+        edge. What ``leg_joint.bolts`` iterates."""
+        cols = self.columns_h()
+        return tuple(cols[i] for i in self.cols_used)
 
     @property
     def count_per_leg(self) -> int:
-        return len(self.rows_z) * self.cols_per_leg
+        return len(self.rows_z) * len(self.cols_used)
 
     @property
     def span_h(self) -> float:
-        """How far into the opening the last column reaches."""
-        cols = self.columns_h()
+        """How far into the opening the last USED column reaches."""
+        cols = self.columns_used_h()
         return cols[-1] if cols else 0.0
 
 
@@ -930,6 +983,43 @@ class Station:
     lungs_lining_t: float = 12.0    # MLV plus open-cell foam, bonded, per side
     lungs_slide_t: float = 12.7     # slide member plus its clearance, per side
     lungs_side_clear: float = 20.0  # hand clearance, carriage to lining, per side
+    lungs_spacer_plies: int = 3
+    """Plies of the carcass birch laminated into the block the LEFT slide's
+    cabinet member screws to, standing off the left end wall's inner face.
+    RULED 2026-09-04 (Jared): "lungs bay +40 with the left slide on a 40
+    spacer so the tray clears the toe". The stile that replaced the flange
+    band carries the lungs door's knuckle at its inner edge, and the tray has
+    to pass the knuckle, not only the toe: ``lungs_carriage.spacer_needed``
+    comes out at 45.8, so 40 no longer clears and the spacer is the first
+    one-material block past it, three plies (54). The bay derives from it and
+    lands at 460, not 440. SOURCE "lungs_spacer_plies"; CONFIDENCE choice."""
+
+    # ---- the Kerf fix set, RULED 2026-09-04 (evening) ---------------------
+    # Every door and drawer front is INSET between a fixed stile and a
+    # divider, flush in the carcass plane, no overlay anywhere; the flange
+    # band at each corner is a birch stile standing inside the steel.
+    stile_toe_land: float = 2.0
+    """How far a stile's inner edge stands past the leg flange's toe, into the
+    opening. The knuckle and the door's hinge corner live at that edge, so
+    this is what keeps both off the steel on the swing. SOURCE
+    "stile_toe_land"; CONFIDENCE choice."""
+
+    lungs_door_lay_gap: float = 1.0
+    """Air between the lungs door's outer face, folded to 180, and the
+    flange's front face it lies against. Sets the proud knuckle's axis:
+    (leg_wall_t + this) / 2 in front of the carcass plane. SOURCE
+    "lungs_door_lay_gap"; CONFIDENCE choice."""
+
+    corner_chamfer: float = 4.5
+    """Chamfer on the four vertical outer corners of the carcass (end walls
+    and deck) where the leg's 4.48 inside fillet stands. RULED 2026-09-04
+    ("r4.5 chamfers"). SOURCE "corner_chamfer"; CONFIDENCE ruling; check()
+    holds it against ``LegHoles.inner_fillet_r``."""
+
+    tray_knuckle_clear: float = 2.0
+    """Running clearance between the lungs tray's left cheek and the lungs
+    door's knuckle, on the pull. SOURCE "tray_knuckle_clear"; CONFIDENCE
+    choice."""
 
     # ---- components -------------------------------------------------------
     vfd_box: tuple[float, float, float] = (142.875, 184.15, 320.675)   # vertical.
@@ -1086,17 +1176,28 @@ class Station:
 
     # ---- lungs bay width, derived rather than estimated -------------------
 
+    @property
+    def lungs_spacer(self) -> float:
+        """Thickness of the left slide's spacer block: plies of the carcass
+        birch. 54mm at three. DERIVED."""
+        return self.lungs_spacer_plies * self.carcass_t
+
     def lungs_allowance(self) -> float:
         """Total width the bay spends on everything that is not the extractor:
-        acoustic lining, slide member and hand clearance, both sides."""
-        return 2 * (self.lungs_lining_t + self.lungs_slide_t + self.lungs_side_clear)
+        acoustic lining, slide member and hand clearance, both sides, plus the
+        left slide's spacer (2026-09-04)."""
+        return (
+            2 * (self.lungs_lining_t + self.lungs_slide_t + self.lungs_side_clear)
+            + self.lungs_spacer
+        )
 
     @property
     def bay_lungs_w(self) -> float:
         """Clear width of the lungs bay, set by the fitted extractor, on the grid.
 
         Snapped UP: the bay is allowed to be generous, never short. This is the
-        one bay dimension the fitted unit sets."""
+        one bay dimension the fitted unit sets. 460 with the 54 spacer
+        (2026-09-04); was 400."""
         need = self.spec["env"][1] + self.lungs_allowance()
         return _snap_up(need)
 
@@ -1313,6 +1414,19 @@ def check(s: Station = STATION) -> list[str]:
         "envelope opens further than this model says. That is still the "
         "conservative direction, same as before fdeaee5, and it stays open."
     )
+
+    if s.corner_chamfer < s.leg_holes.inner_fillet_r:
+        problems.append(
+            f"corner_chamfer {s.corner_chamfer:.2f} is under the leg's "
+            f"{s.leg_holes.inner_fillet_r:.2f} inside fillet: the carcass corner "
+            "stands in the steel"
+        )
+
+    if any(i >= s.leg_holes.cols_per_leg for i in s.leg_holes.cols_used):
+        problems.append(
+            f"LegHoles.cols_used {s.leg_holes.cols_used} names a column the "
+            f"{s.leg_holes.cols_per_leg}-column leg does not have"
+        )
 
     if s.extractor_env[2] > s.clear_h_min:
         problems.append(

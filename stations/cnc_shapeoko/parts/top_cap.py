@@ -88,6 +88,12 @@ UNDERSIDE, plus a row of plain clearance holes on the housed panel's centreline:
                        of the four corners the T-junctions make. The comb
                        hangs from this housing and butts the dividers
                        (ruling 11, 2026-09-03); no tie screws, it is glued.
+    stiles (4)         THROUGH notch at the front or rear edge, the stile's
+                       width by its depth, DADO_FIT oversize, two dogbones
+                       (``carcass.stile_notch``): the stile's tenon passes
+                       the cap and shows on the top face. RULED 2026-09-04
+                       (Kerf, exposed joinery); ``parts/stiles.py`` owns the
+                       stile, ``Datums.stiles`` its four positions.
 
 ONE OPEN ITEM, AND IT IS NOT THIS PART'S TO SETTLE.  ``bay_walls`` cuts the end
 walls 1150 deep (full depth, so the brain band gets side walls) while
@@ -144,9 +150,11 @@ from stations.cnc_shapeoko.carcass import (
     screw_line,
     screw_positions,
     snap_up,
+    stile_notch,
     through_slot,
     to_local,
 )
+from stations.cnc_shapeoko.parts import stiles
 
 NAME = "top_cap"
 
@@ -624,6 +632,14 @@ def build(d: Datums = DATUMS) -> Part:
         corner_r=MAST_FEED_SLOT_W / 2,
     )
 
+    # -- the four stiles' tenons, THROUGH the cap at its front and rear edges
+    # (2026-09-04, Kerf: exposed joinery). JOINERY: square, two dogbones each.
+    # The tenon's end grain shows on the top face, under the machine.
+    for _label, xs, ys in d.stiles:
+        open_to = "front" if ys[0] <= d.y_front else "rear"
+        edge = d.y_front if open_to == "front" else h
+        p -= stile_notch(xs, edge, stiles.TENON, open_to=open_to, thickness=t)
+
     # -- the machine's own steel ---------------------------------------------
     relief_cut = _gusset_relief(d)
     if relief_cut is not None:
@@ -789,6 +805,22 @@ def check_top_cap(d: Datums = DATUMS) -> list[str]:
         )
     if yc + DADO_W / 2 > h:
         notes.append("the spine housing runs off the rear of the blank")
+
+    # -- the stile notches stay clear of the tie screws, the mast pad and the
+    # exhaust field on the same edges
+    for label, (sx0, sx1), (sy0, sy1) in d.stiles:
+        depth = stiles.TENON + DADO_W / 2
+        y_span = (0.0, depth) if sy0 <= d.y_front else (h - depth, h)
+        for hs in wall_housings(d):
+            for p_ in screw_positions(hs.y1 - hs.y0):
+                sy = hs.y0 + p_
+                if sx0 - SCREW_CLEAR_D < hs.screw_x < sx1 + SCREW_CLEAR_D and y_span[0] < sy < y_span[1]:
+                    notes.append(f"{label}'s notch runs into a wall tie screw at ({hs.screw_x:.0f}, {sy:.0f})")
+        for pad in mast_pads(d):
+            if pad.span_x[0] < sx1 and pad.span_x[1] > sx0 and pad.span_y[0] < y_span[1] and pad.span_y[1] > y_span[0]:
+                notes.append(f"{label}'s notch runs into the {pad.side} mast pad's plate")
+        if y_span[0] < v.y1 and y_span[1] > v.y0 and v.count and sx0 < max(v.x_centres) and sx1 > min(v.x_centres):
+            notes.append(f"{label}'s notch runs into the exhaust field")
 
     end_walls = [hs for hs in wall_housings(d) if hs.is_end]
     if len(end_walls) != 2:

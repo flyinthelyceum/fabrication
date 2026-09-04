@@ -146,6 +146,7 @@ from stations.cnc_shapeoko.parts import (
     rear_door,
     signal_mounts,
     spine_panel,
+    stiles,
     stock_rails,
     top_cap,
     trays,
@@ -221,6 +222,7 @@ GRAIN_VERTICAL = (
     brain_partition.PART_NAME,
     rear_door.PART_NAME,
     lungs_door.PART_NAME,
+    *stiles.labels(D),
 )
 """Standing panels whose face is seen: grain runs UP the panel as it stands.
 SOURCE: shop convention. CONFIDENCE: convention, RULING WANTED."""
@@ -228,6 +230,7 @@ SOURCE: shop convention. CONFIDENCE: convention, RULING WANTED."""
 GRAIN_LONG_PREFIXES = (
     "plinth_rail_",
     "drawer",
+    bay_walls.SPACER_STEM,
     stock_rails.LABEL,
     console_plate.PART_NAME,
     console_plate.RIB_NAME,
@@ -624,9 +627,9 @@ def flats(d: Datums = D) -> dict[str, tuple[Part | None, dict[str, list[Face]]]]
     add(top_cap.NAME, top_cap.build(d))
     for spec in drawers.DRAWERS:
         for label, part, _plane in drawers.panels(spec, d):
-            if label.endswith("_front"):
-                w, _h = drawers.front_size(spec, d)
-                layers = flat_pattern(drawers.build_front(spec, d, carve=False))
+            if label.endswith("_face"):
+                w, _h = drawers.face_size(spec, d)
+                layers = flat_pattern(drawers.build_face(spec, d, carve=False))
                 layers.update(
                     callouts.layers(
                         [drawers.callout_for(spec, d)], drawers.register_for(spec, d), width=w
@@ -660,6 +663,10 @@ def flats(d: Datums = D) -> dict[str, tuple[Part | None, dict[str, list[Face]]]]
         )
     )
     add(lungs_door.PART_NAME, lungs_door.build(d), door_layers)
+    for label in stiles.labels(d):
+        add(label, stiles.build(label, d))
+    for i in range(d.s.lungs_spacer_plies):
+        add(f"{bay_walls.SPACER_STEM}_{i}", bay_walls.build_spacer_ply(i, d))
     add(signal_mounts.PART_NAME, signal_mounts.build(d))
     add(signal_mounts.SHELF_NAME, signal_mounts.build_shelf(d))
     cheek = signal_mounts.build_cheek(d)

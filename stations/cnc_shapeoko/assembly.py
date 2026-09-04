@@ -92,6 +92,7 @@ from stations.cnc_shapeoko.parts import (
     rear_door,
     signal_mounts,
     spine_panel,
+    stiles,
     stock_rails,
     stock_wash,
     top_cap,
@@ -178,6 +179,14 @@ def components(d: Datums = DATUMS) -> list[Component]:
     # 2. the four verticals, each stood up by their own module
     for i, wall in enumerate(bay_walls.placed_all(d)):
         out.append(Component(f"{bay_walls.WALLS[i].name}", "carcass", wall))
+
+    # 2b. the four stiles (2026-09-04, Kerf): fixed birch behind each leg's
+    # flange band, tenoned through the deck and the cap; and the left slide's
+    # spacer block on the left end wall's lungs face, ply by ply
+    for label, group, part in stiles.placed_all(d):
+        out.append(Component(label, group, part))
+    for label, group, part in bay_walls.spacer_placed(d):
+        out.append(Component(label, group, part))
 
     # 3. the spine
     out.append(Component("spine_panel", "carcass", spine_panel.place(d=d)))
@@ -420,6 +429,18 @@ def joints(d: Datums = DATUMS) -> dict[frozenset[str], Joint]:
                   rear_face, rear_face + HOUSE_ENGAGE,
                   "cross rail bottoms out in the rear rail's housing")
         )
+
+    # -- the stiles through the deck and the cap, against the end walls -----
+    for a, b, kind, axis, lo, hi, note in stiles.joint_table(d):
+        js.append(Joint(a, b, kind, axis, lo, hi, note))
+
+    # -- the spacer's plies: on the deck, on the wall, on each other --------
+    plies = [f"{bay_walls.SPACER_STEM}_{i}" for i in range(d.s.lungs_spacer_plies)]
+    js.append(Joint(wall_names[0], plies[0], "bearing", None, note="first ply glued to the wall's lungs face, screwed from outside"))
+    for a, b in zip(plies, plies[1:]):
+        js.append(Joint(a, b, "bearing", None, note="plies laminated face to face"))
+    for p in plies:
+        js.append(Joint("base_deck", p, "butt", None, note="ply stands on the deck"))
 
     # -- inside each drawer box, and the tray that sits in one -------------
     for a, b, kind, axis, lo, hi, note in drawers.joint_table(d):
@@ -1106,6 +1127,15 @@ def main() -> None:
         f"  feed {stock_wash.CROSSING} ({stock_wash.RAIL}): "
         + " -> ".join(f"({x:.1f}, {y:.1f}, {z:.1f})" for x, y, z in stock_wash.route(d))
         + f"; lead {stock_wash.route_length(d):.0f}mm"
+    )
+
+    print("\nstiles: the flange band as a fixed birch stile, four corners")
+    sw, sh = stiles.blank_size(d)
+    print(
+        f"  four blanks {sw:.2f} x {sh:.0f} x {d.t:.0f}, tenon {stiles.TENON:.0f} through deck and cap; "
+        f"openings lungs {d.lungs_opening_x[1] - d.lungs_opening_x[0]:.2f}, hands "
+        f"{d.hands_opening_x[1] - d.hands_opening_x[0]:.2f}, rear {d.rear_opening_x[1] - d.rear_opening_x[0]:.2f}; "
+        f"left slide spacer {d.s.lungs_spacer:.0f} ({d.s.lungs_spacer_plies} plies)"
     )
 
     print("\nleg joint: bolt axes, station coordinates")

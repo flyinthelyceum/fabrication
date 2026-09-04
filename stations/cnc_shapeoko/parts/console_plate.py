@@ -9,9 +9,16 @@ arm; the E-stop sits on a fixed face at the operator's front-right corner.
 Ruling 2026-09-03 (console_drawer_overlap): the device depth behind the plate
 comes out of the OVERLAPPED DRAWERS' WIDTH. The plate does not move rearward;
 every drawer whose Z band crosses the console band is narrowed, its right-hand
-slide moves inboard with it, and drawer 1 (CUTTERS, the shallow one) takes the
-hit best. The count is computed, not chosen: ``narrowed_openings`` reports
-which openings cross the band and ``drawers`` reads it.
+slide moves inboard with it. Ruling 2026-09-04 (fix set): ALL THREE drawers
+are narrowed, "D3 narrowed to 259 on the console cheek extended to the deck",
+so the cheek runs deck to cap, every right-hand slide is on it, and the three
+inset fronts read as one column. ``CHEEK_TO_DECK`` carries it and
+``narrowed_openings`` returns every opening.
+
+Ruling 2026-09-04 (Kerf): the front-right STILE stands inside the chase's
+front corner (``parts/stiles.py``), so the clear acrylic reveal over the
+chase runs from the cheek's front edge to the stile's inner edge, and the
+floor rib is notched around the stile's foot.
 
 
 WHAT THIS PART OWNS
@@ -322,6 +329,12 @@ meter. The meter's own pocket leaves 5mm. CONFIDENCE: chosen."""
 CHASE_MARGIN = GRID / 2
 """Air behind the deepest device before the cheek. SOURCE: task C12 "plus
 10mm". CONFIDENCE: ruling."""
+
+CHEEK_TO_DECK = True
+"""The cheek stands on the deck and every drawer is narrowed onto it. RULED
+2026-09-04 (Jared, fix set): "D3 narrowed to 259 on the console cheek
+extended to the deck". False restores the C12 reading: the cheek from the
+lowest opening that crosses the band. CONFIDENCE: ruling."""
 
 UPPER_ROW_Y = 78.0
 LOWER_ROW_Y = 37.0
@@ -679,7 +692,9 @@ def cheek_x(d: Datums = D) -> tuple[float, float]:
 
 def narrowed_openings(d: Datums = D) -> tuple[int, ...]:
     """Indices into ``bay_walls.drawer_openings`` (bottom first) of every
-    opening whose Z band crosses CONSOLE_BAND. What ``drawers`` narrows."""
+    opening the cheek carries: all of them with ``CHEEK_TO_DECK`` (RULED
+    2026-09-04), else those whose Z band crosses CONSOLE_BAND. What
+    ``drawers`` narrows."""
     from stations.cnc_shapeoko.parts.bay_walls import drawer_openings
 
     z0, z1 = console_z(d)
@@ -687,14 +702,15 @@ def narrowed_openings(d: Datums = D) -> tuple[int, ...]:
     for k, (floor, height) in enumerate(drawer_openings(d)):
         lo = d.deck_top + floor
         hi = lo + height
-        if lo < z1 and hi > z0:
+        if CHEEK_TO_DECK or (lo < z1 and hi > z0):
             out.append(k)
     return tuple(out)
 
 
 def cheek_z(d: Datums = D) -> tuple[float, float]:
-    """Station Z span of the cheek: the lowest narrowed opening's floor to the
-    cap's underside, which it butts."""
+    """Station Z span of the cheek: the lowest narrowed opening's floor (the
+    deck, under the 2026-09-04 ruling) to the cap's underside, which it
+    butts."""
     from stations.cnc_shapeoko.parts.bay_walls import drawer_openings
 
     ks = narrowed_openings(d)
@@ -717,11 +733,34 @@ def chase_y(d: Datums = D) -> tuple[float, float]:
     return (d.y_front + PT, d.y_spine)
 
 
+def stile_x(d: Datums = D) -> tuple[float, float]:
+    """Station X span of the front-right stile, which stands inside the
+    chase's front corner (2026-09-04)."""
+    return next(xs for label, xs, _ys in d.stiles if label == "stile_front_right")
+
+
 def reveal_span(d: Datums = D) -> tuple[tuple[float, float], tuple[float, float]]:
     """(x span, z span) of the acrylic reveal: over the chase AND the cheek's
-    front edge, from the rib's bottom to the cap, so its screws land in the
-    cheek's edge and the rib's end."""
-    return ((cheek_x(d)[0], wall_inner_x(d)), (rib_z(d)[0], d.top_z[0]))
+    front edge, from the cheek's outer face to the front-right stile's inner
+    edge (INSET between cheek and stile, 2026-09-04), from the rib's bottom to
+    the cap, so its screws land in the cheek's edge and the rib's end."""
+    return ((cheek_x(d)[0], stile_x(d)[0]), (rib_z(d)[0], d.top_z[0]))
+
+
+def rib_notch_local(d: Datums = D) -> tuple[tuple[float, float], tuple[float, float]]:
+    """((x0, x1), (y0, y1)) of the notch the stile's foot takes out of the
+    rib, rib-local: from the rib's front end back to the stile's rear face,
+    and from the wall's inner face across to the stile's inner edge."""
+    y0, _y1 = chase_y(d)
+    sx0, _sx1 = stile_x(d)
+    stile_rear = next(ys[1] for label, _xs, ys in d.stiles if label == "stile_front_right")
+    return ((0.0, stile_rear - y0), (0.0, wall_inner_x(d) - sx0))
+
+
+def rib_front_x(d: Datums = D) -> tuple[float, float]:
+    """Station X of the rib's front end that survives the notch: what the
+    reveal's third screw lands in."""
+    return (cheek_x(d)[1], stile_x(d)[0])
 
 
 # -- local frames --------------------------------------------------------
@@ -961,22 +1000,34 @@ def build_rib(d: Datums = D) -> Part:
     """The floor rib, flat, rib-local: local X along the bay, local Y across
     the chase from the wall's inner face, thickness up. No holes: both sets of
     screws enter its EDGES, which the shop drills to the holes in the wall and
-    the cheek."""
+    the cheek. One NOTCH at its front-outer corner for the front-right stile's
+    foot (2026-09-04): JOINERY, square, one dogbone at its inside corner."""
     y0, y1 = chase_y(d)
-    return panel(y1 - y0, RIB_W)
+    p = panel(y1 - y0, RIB_W)
+    (nx0, nx1), (ny0, ny1) = rib_notch_local(d)
+    over = T
+    p -= through_slot(
+        ((nx0 - over + nx1 + DADO_FIT / 2) / 2, (ny0 - over + ny1 + DADO_FIT / 2) / 2),
+        (nx1 + DADO_FIT / 2) - (nx0 - over),
+        (ny1 + DADO_FIT / 2) - (ny0 - over),
+    )
+    p -= relief(nx1 + DADO_FIT / 2, ny1 + DADO_FIT / 2)
+    return p
 
 
 def build_reveal(d: Datums = D) -> Part:
     """The clear acrylic reveal over the chase's front, flat, reveal-local:
     local X = station X from the cheek's outer face, local Y up. Three
-    clearance holes: two into the cheek's front edge, one into the rib's end."""
+    clearance holes: two into the cheek's front edge, one into what is left
+    of the rib's front end beside the stile."""
     (x0, x1), (z0, z1) = reveal_span(d)
     w, h = x1 - x0, z1 - z0
     p = panel(w, h, PT)
     cx = T / 2                                   # the cheek's centreline
     for y in (h * 0.3, h * 0.8):
         p -= bore(cx, y, REVEAL_SCREW_D, thickness=PT)
-    p -= bore(T + RIB_W / 2, T / 2, REVEAL_SCREW_D, thickness=PT)   # the rib's end
+    rx0, rx1 = rib_front_x(d)
+    p -= bore((rx0 + rx1) / 2 - x0, T / 2, REVEAL_SCREW_D, thickness=PT)   # the rib's end
     return p
 
 
@@ -1071,6 +1122,14 @@ def joint_table(d: Datums = D) -> list[tuple]:
          "rib's end on the wall's inner face, screwed through the wall from outside"),
         ("top_cap", CHEEK_NAME, "butt", None, 0.0, 0.0,
          "cheek's top edge on the cap's underside, tied down through the cap"),
+        ("base_deck", CHEEK_NAME, "butt", None, 0.0, 0.0,
+         "cheek's bottom edge on the deck (2026-09-04: the cheek runs to the deck)"),
+        ("base_deck", RIB_NAME, "bearing", None, 0.0, 0.0,
+         "rib flat on the deck's top face"),
+        ("stile_front_right", RIB_NAME, "butt", None, 0.0, 0.0,
+         "the stile's foot in the rib's notch, DADO_FIT clear"),
+        ("stile_front_right", REVEAL_NAME, "butt", None, 0.0, 0.0,
+         "reveal's right edge beside the stile's inner edge"),
         ("spine_panel", CHEEK_NAME, "butt", None, 0.0, 0.0,
          "cheek's rear edge on the spine's front face; the spine cuts nothing"),
         ("spine_panel", RIB_NAME, "butt", None, 0.0, 0.0, "rib's rear end on the spine"),
@@ -1391,7 +1450,15 @@ def check_console_plate(d: Datums = D) -> list[str]:
         if abs(got - want) > 1e-6:
             notes.append(f"{s.name} is narrowed by {got:.1f}, not {want:.1f}")
     if len(narrowed) != len(ks):
-        notes.append("the narrowed drawer count does not match the openings crossing the band")
+        notes.append("the narrowed drawer count does not match the openings the cheek carries")
+    if CHEEK_TO_DECK and abs(cheek_z(d)[0] - d.deck_top) > 1e-6:
+        notes.append(f"the cheek is ruled to the deck and starts at z {cheek_z(d)[0]:.1f}")
+    (nx0, nx1), (ny0, ny1) = rib_notch_local(d)
+    if nx1 + DADO_FIT / 2 >= (chase_y(d)[1] - chase_y(d)[0]) or ny1 + DADO_FIT / 2 >= RIB_W - ROUTER_D:
+        notes.append(
+            f"the rib's stile notch ({nx1:.1f} x {ny1:.1f}) leaves under a cutter of rib "
+            "beside the stile"
+        )
     notes.append(
         f"CONSOLE KEEP-OUT, standing note. The keep-out is the spec's {CONSOLE_KEEPOUT:.0f} "
         f"({CHASE_DRIVER.label} {CHASE_DRIVER.behind[2]:.0f} + {CHASE_MARGIN:.0f}); each "

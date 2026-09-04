@@ -173,6 +173,8 @@ __all__ = [
     "screw_line",
     "bore",
     "relief",
+    "edge_chamfer",
+    "stile_notch",
     "gusset_prism",
     "to_local",
     "gusset_domain",
@@ -611,6 +613,63 @@ class Datums:
 
     # -- blank sizes, so parts do not re-derive them -------------------------
 
+    # -- the stiles: the flange band is a fixed birch stile (2026-09-04) -----
+    # RULED by Jared: "absolutely no overlays. reconfigure depth to ensure
+    # everything is a la kerf design cabinets." At each of the four corners
+    # the leg's Y flange stands across the carcass plane, ``flange_reach``
+    # past the end wall's outer face. Behind that band, inside the opening,
+    # stands one fixed birch stile, ``t`` deep (y 0..t at the front, y_rear-t..
+    # y_rear at the rear), from the end wall's inner face to ``stile_toe_land``
+    # past the flange's toe, full opening height, tongued THROUGH the deck
+    # and the cap. Every door and drawer front is inset between a stile and
+    # a divider, flush in the carcass plane. ``parts/stiles.py`` builds them;
+    # everything else reads the spans from here.
+
+    @property
+    def stile_w(self) -> float:
+        """Width of a stile in X: from the end wall's inner face to the leg
+        flange's toe plus the land past it. 64.48 at the measured leg."""
+        reach = self.s.leg_holes.flange_reach
+        if reach is None:
+            reach = self.s.leg_holes.span_h + self.s.leg_holes.hole_d / 2
+        return reach - self.t + self.s.stile_toe_land
+
+    @property
+    def stiles(self) -> tuple[tuple[str, tuple[float, float], tuple[float, float]], ...]:
+        """(label, x span, y span) of the four stiles, station coordinates:
+        front-left, front-right, rear-left, rear-right."""
+        w = self.stile_w
+        xl = (self.x_left + self.t, self.x_left + self.t + w)
+        xr = (self.x_right - self.t - w, self.x_right - self.t)
+        yf = (self.y_front, self.y_front + self.t)
+        yr = (self.y_rear - self.t, self.y_rear)
+        return (
+            ("stile_front_left", xl, yf),
+            ("stile_front_right", xr, yf),
+            ("stile_rear_left", xl, yr),
+            ("stile_rear_right", xr, yr),
+        )
+
+    @property
+    def lungs_opening_x(self) -> tuple[float, float]:
+        """Clear X of the lungs bay's front opening: the front-left stile's
+        inner edge to the lungs/stock divider's face. What the lungs door
+        fills and the tray passes through."""
+        return (self.lungs_x[0] + self.stile_w, self.lungs_x[1])
+
+    @property
+    def hands_opening_x(self) -> tuple[float, float]:
+        """Clear X of the hands bay's front opening between the stock/hands
+        divider and the front-right stile. The console cheek stands inside
+        it; ``console_plate`` and ``drawers`` split it."""
+        return (self.hands_x[0], self.hands_x[1] - self.stile_w)
+
+    @property
+    def rear_opening_x(self) -> tuple[float, float]:
+        """Clear X of the brain band's rear opening, stile to stile: what the
+        rear door fills."""
+        return (self.x_left + self.t + self.stile_w, self.x_right - self.t - self.stile_w)
+
     @property
     def deck_size(self) -> tuple[float, float]:
         return (self.x_right - self.x_left, self.y_rear - self.y_front)
@@ -989,6 +1048,88 @@ def relief(
     side    which face a blind relief is cut from, matching ``groove``.
     """
     return bore(x, y, 2 * r, thickness=thickness, depth=depth, side=side)
+
+
+def edge_chamfer(
+    axis: str,
+    at: tuple[float, float],
+    size: float,
+    span: tuple[float, float],
+    into: tuple[float, float] = (1.0, 1.0),
+) -> Part:
+    """Cutter for a 45-degree chamfer on one straight edge of a flat panel,
+    panel-local. Subtract it.
+
+    ``axis`` is the edge's direction, ``"y"`` (a vertical edge of a standing
+    panel drawn flat, at local (x, z) = ``at``) or ``"z"`` (a corner of a
+    lying panel, at local (x, y) = ``at``). ``span`` is the edge's run along
+    that axis and ``into`` the signs of the two cross axes on which the
+    material lies, so the same call chamfers any of a panel's four corners.
+
+    RULED 2026-09-04: the leg's inside corner is a fillet, and the carcass's
+    outer corners stand in it unless chamfered ``Station.corner_chamfer``.
+    The triangle is overshot by ``size`` on its two legs so the boolean is
+    clean; its hypotenuse is exactly the line a + b = size.
+    """
+    over = size
+    sa, sb = into
+    pts = [
+        (-sa * over, -sb * over),
+        (sa * (size + over), -sb * over),
+        (-sa * over, sb * (size + over)),
+    ]
+    if sa * sb < 0:
+        # a mirrored triangle winds the other way, which flips the face's
+        # normal and sends the extrusion out of the panel instead of along it
+        pts.reverse()
+    lo, hi = span
+    length = (hi - lo) + 2 * over
+    if axis == "y":
+        # triangle in the XZ plane, extruded along +Y (Plane.XZ's normal is -Y)
+        body = extrude(Plane.XZ * Polygon(*pts), -length)
+        return body.moved(Location((at[0], lo - over, at[1])))
+    if axis == "z":
+        body = extrude(Plane.XY * Polygon(*pts), length)
+        return body.moved(Location((at[0], at[1], lo - over)))
+    raise ValueError(f"axis must be y|z, got {axis!r}")
+
+
+def stile_notch(
+    x: tuple[float, float],
+    y_edge: float,
+    depth: float,
+    *,
+    open_to: str,
+    thickness: float = T,
+    fit: float = DADO_FIT,
+) -> Part:
+    """Cutter for the THROUGH notch a stile's tenon passes in the deck or the
+    cap: a rectangle ``x`` wide by ``depth`` deep, open on the blank's front
+    (``open_to="front"``, the edge at panel-local ``y_edge`` with material at
+    +Y) or rear edge (``"rear"``, material at -Y), ``fit`` oversize, with a
+    dogbone at each of its two inside corners. JOINERY: square, relieved
+    outward, never rounded in (see ``through_slot``).
+
+    Exposed on purpose (Kerf language, RULED 2026-09-04): the tenon's end
+    grain shows flush in the deck's underside and the cap's top face, and
+    the notch's mouth shows on the edge.
+    """
+    x0, x1 = x
+    w = (x1 - x0) + fit
+    over = thickness
+    if open_to == "front":
+        y0, y1 = y_edge - over, y_edge + depth + fit / 2
+        y_in = y1
+    elif open_to == "rear":
+        y0, y1 = y_edge - depth - fit / 2, y_edge + over
+        y_in = y0
+    else:
+        raise ValueError(f"open_to must be front|rear, got {open_to!r}")
+    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+    cut = through_slot((cx, cy), w, y1 - y0, thickness=thickness)
+    for xe in (cx - w / 2, cx + w / 2):
+        cut += relief(xe, y_in, thickness=thickness)
+    return cut
 
 
 def gusset_prism(g: Gusset) -> Part:

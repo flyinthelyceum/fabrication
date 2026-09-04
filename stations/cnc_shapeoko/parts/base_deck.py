@@ -48,7 +48,7 @@ brain intake    the bottom of the VFD chimney. A slotted field through the deck
                 this field into the brain band, and leaves through the top cap.
                 The plinth is therefore not decorative: it is the intake plenum.
 
-stock grooves   nine blind grooves in the TOP face of the stock bay, one per
+stock grooves   eight blind grooves in the TOP face of the stock bay, one per
                 HALF blank, at the rack's pitch line. Ruling 11, 2026-09-03:
                 there is no bottom comb rail; the blank's lower edge drops into
                 a groove at deck level and slides out FORWARD. So each groove
@@ -58,10 +58,24 @@ stock grooves   nine blind grooves in the TOP face of the stock bay, one per
                 screw line crosses the grooves, and its heads are counterbored
                 below the groove floor; ``check_base_deck`` holds that.
 
+stile notches    four THROUGH notches, one per stile (``Datums.stiles``), open
+                on the deck's front or rear edge, the stile's width by its
+                depth, DADO_FIT oversize, a dogbone at each inside corner.
+                RULED 2026-09-04 (Kerf): the stile's tenon passes the whole
+                deck and its end grain shows on the underside; the notch's
+                mouth shows on the edge. ``parts/stiles.py`` owns the stile;
+                this part only cuts.
+
+chamfers        the four corners, ``Station.corner_chamfer`` at 45 degrees,
+                because the leg's inside corner is a fillet (MEASURED
+                2026-09-04) and a square corner flush to both leg faces stands
+                in it. RULED 2026-09-04.
+
 No reliefs are cut on the intake slots, the grille or the stock grooves. A
 dogbone earns its place where a mating part has to seat; a radiused corner on
 an air slot is just a radiused corner, and a blank's edge rides in a groove
-without ever seating against its end.
+without ever seating against its end. The stile notches are joinery and get
+theirs.
 """
 
 from __future__ import annotations
@@ -77,15 +91,17 @@ from stations.cnc_shapeoko.carcass import (
     SCREW_CBORE_D,
     T,
     bore,
+    edge_chamfer,
     export_part,
     groove,
     panel,
     relief,
     screw_line,
     screw_positions,
+    stile_notch,
     through_slot,
 )
-from stations.cnc_shapeoko.parts import stock_rails
+from stations.cnc_shapeoko.parts import stiles, stock_rails
 
 __all__ = [
     "build",
@@ -376,6 +392,23 @@ def build_deck() -> Part:
     for cx in STOCK_GROOVE_X:
         p -= _stock_groove(cx)
 
+    # The four stiles' tenons, THROUGH the deck at its front and rear edges
+    # (2026-09-04, Kerf: exposed joinery). JOINERY: square, two dogbones each.
+    for _label, xs, ys in D.stiles:
+        open_to = "front" if ys[0] <= D.y_front else "rear"
+        edge = D.y_front if open_to == "front" else DECK_H
+        p -= stile_notch(xs, edge, stiles.TENON, open_to=open_to)
+
+    # The four corners, chamfered clear of the leg's inside fillet (RULED
+    # 2026-09-04, corner_chamfer). The end walls take the same chamfer above.
+    for (cx, cy), into in (
+        ((0.0, 0.0), (1.0, 1.0)),
+        ((DECK_W, 0.0), (-1.0, 1.0)),
+        ((0.0, DECK_H), (1.0, -1.0)),
+        ((DECK_W, DECK_H), (-1.0, -1.0)),
+    ):
+        p -= edge_chamfer("z", (cx, cy), D.s.corner_chamfer, (0.0, T), into=into)
+
     return p
 
 
@@ -604,6 +637,27 @@ def check_base_deck() -> list[str]:
                     f"stock groove at x={gx:.1f} sits over the cross rail at "
                     f"x={cx:.0f}, where the deck is screwed down through it"
                 )
+
+    # The stile notches against what shares the deck's edges with them: the
+    # end walls' rabbets (they merge, by design), the plinth's screw lines and
+    # the rear door's hinge leaf, which lands on the rear edge between them.
+    for label, (sx0, sx1), (sy0, sy1) in D.stiles:
+        depth = stiles.TENON + DADO_W / 2
+        near_front = sy0 <= D.y_front
+        y_span = (0.0, depth) if near_front else (DECK_H - depth, DECK_H)
+        for cy in X_RAIL_CY:
+            if y_span[0] - SCREW_CBORE_D / 2 < cy < y_span[1] + SCREW_CBORE_D / 2:
+                notes.append(
+                    f"{label}'s notch (y {y_span[0]:.1f}..{y_span[1]:.1f}) runs into the "
+                    f"plinth rail's screw line at y={cy:.0f}"
+                )
+        for cx in Y_RAIL_CX:
+            if sx0 - SCREW_CBORE_D / 2 < cx < sx1 + SCREW_CBORE_D / 2:
+                if y_span[0] < (Y_RAIL_SPAN[0] if near_front else Y_RAIL_SPAN[1]) + SCREW_CBORE_D / 2 and \
+                   y_span[1] > (Y_RAIL_SPAN[0] if near_front else Y_RAIL_SPAN[1]) - SCREW_CBORE_D / 2:
+                    notes.append(
+                        f"{label}'s notch runs into the cross rail screw line at x={cx:.0f}"
+                    )
 
     return notes
 

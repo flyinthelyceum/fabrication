@@ -506,7 +506,8 @@ def window_station(d: Datums = D) -> tuple[tuple[float, float], tuple[float, flo
     corner radius. Read from rear_door, which owns it."""
     (x0, x1), (y0, y1) = rear_door.window_local(d)
     zb = rear_door.z_bottom(d)
-    return ((x0 + d.t, x1 + d.t), (zb + y0, zb + y1), rear_door.WINDOW_R)
+    xl = rear_door.x_left(d)
+    return ((x0 + xl, x1 + xl), (zb + y0, zb + y1), rear_door.WINDOW_R)
 
 
 def cradle_x_local(d: Datums = D) -> float:

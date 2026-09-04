@@ -64,9 +64,19 @@ otherwise. It is resolved by ORDER instead of by geometry:
     2. the machine is LEVELLED FIRST, on its own feet, before anything is bolted.
     3. THEN the bolts go in, at whatever height the levelled legs put their holes.
     4. re-levelling later means LOOSENING THEM. Not adjusting them, not shimming
-       them: sixteen M6 out, wind the feet, sixteen M6 back in. That is the
-       whole cost, it is an hour, and it is the correct trade for a joint with
-       no bracket, no wedge and no slot in it.
+       them: eight M6 out, wind the feet, eight M6 back in. That is the whole
+       cost, it is an hour, and it is the correct trade for a joint with no
+       bracket, no wedge and no slot in it.
+
+EIGHT BOLTS, NOT SIXTEEN (RULED 2026-09-04)
+==========================================
+
+The leg's pattern is a 2x2 cluster per leg and the carcass uses ONE column of
+it: the outer one, 56.9 in from the inner face. The inner column, 16.78 in
+(the heel reading of 2026-09-04), puts its pilot 5.98mm inside the end wall's
+``EDGE_LAND`` and the land rule stands. Jared: "DROP the inner bolt column (8
+bolts, outer column only; the plinth carries, bolts brace)". ``LegHoles.
+cols_used`` carries it; the BOM buys 8 inserts, 8 M6 x 16 and 8 DIN 125.
 
 WHAT CARRIES WHAT, which is the thing a slot used to blur:
 
@@ -214,7 +224,7 @@ a 3/8in (9.525mm) pilot; a distributor listing for the stainless variant of the
 same part reads 12.70mm installed length on a 25/64in (9.92mm) pilot. The LONGER
 length and the SMALLER pilot are taken below, because both errors are in the
 direction that still yields a working joint: a pilot bore deep enough either way,
-and a hole the insert can bite. Confirm against the packet before drilling 16 of
+and a hole the insert can bite. Confirm against the packet before drilling 8 of
 them."""
 
 INSERT_THREAD = BOLT_THREAD
@@ -368,11 +378,13 @@ class Bolt:
 def bolts(d: Datums = D) -> list[Bolt]:
     """Every bolt in the joint, in station coordinates.
 
-    Four legs, ``cols_per_leg`` columns each and one bolt per row in
-    ``rows_z``. The columns march from the leg's INNER edge into the opening,
-    which on a front leg is +Y and on a rear leg is -Y, because that edge is the
-    datum the station origin sits on and because a column the other way has no
-    carcass behind it.
+    Four legs, the columns ``LegHoles.cols_used`` names (RULED 2026-09-04:
+    the OUTER column only, eight bolts) and one bolt per row in ``rows_z``.
+    The columns march from the leg's INNER edge into the opening, which on a
+    front leg is +Y and on a rear leg is -Y, because that edge is the datum
+    the station origin sits on and because a column the other way has no
+    carcass behind it. The inner column, 16.78 in, fails ``EDGE_LAND`` by 6
+    and is left empty; the land rule is not relaxed.
     """
     h = d.s.leg_holes
     out: list[Bolt] = []
@@ -386,7 +398,7 @@ def bolts(d: Datums = D) -> list[Bolt]:
     )
     for side, wall, x, inward in sides:
         for end, y0, along in ends:
-            for c, col in enumerate(h.columns_h()):
+            for c, col in zip(h.cols_used, h.columns_used_h()):
                 y = y0 + along * col
                 for r, z in enumerate(h.rows_z):
                     out.append(
@@ -614,7 +626,7 @@ def check_leg_joint(d: Datums = D) -> list[str]:
     # The leg is an angle (2026-09-03), so there IS such a flange; how wide it is
     # is the last unmeasured thing on this joint.
     reach = h.span_h + WALL_CBORE_D / 2
-    proven = h.span_h + h.hole_d / 2
+    proven = max(h.columns_h()) + h.hole_d / 2
     if h.flange_w is None:
         notes.append(
             f"the angle's flange width is not measured, so the columns still "
@@ -632,8 +644,8 @@ def check_leg_joint(d: Datums = D) -> list[str]:
         notes.append(
             f"the angle's flange is {h.flange_w:.1f}mm wide from the heel, "
             f"{h.flange_reach:.1f}mm past the inner face, and the columns need "
-            f"{reach:.1f}mm of it ({h.cols_per_leg} columns from {h.edge_off:.1f}mm "
-            f"at {h.pitch_h:.1f}mm pitch, plus the counterbore's radius). The "
+            f"{reach:.1f}mm of it (columns {h.cols_used} of {h.cols_per_leg} from "
+            f"{h.edge_off:.1f}mm at {h.pitch_h:.1f}mm pitch, plus the counterbore's radius). The "
             f"outer column overhangs the steel by {reach - h.flange_reach:.1f}mm, so "
             "its bolt has birch behind it and nothing in front. Either that column "
             "goes unused and the joint runs one column per leg, or the counterbore "

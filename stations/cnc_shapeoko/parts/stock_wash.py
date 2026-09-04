@@ -42,7 +42,7 @@ The task says "under the C02 top rail's front lip". Ruling 11 made the top
 rail a COMB: its slots are open at the bottom and every blank's top edge
 passes up through it to ``stock_rails.blank_top_z``, 15mm above the comb's
 own bottom edge. Anything hung under the comb across the bay's width is in
-the path of nine blanks. So "under the rail" can only mean the band the comb
+the path of eight blanks. So "under the rail" can only mean the band the comb
 leaves in front of itself: ``stock_rails.COMB_INSET`` (one grid module)
 between the carcass's front plane and the comb's front face, under the cap,
 above the blank tops. That band is 20 deep and 25 tall and the channel is

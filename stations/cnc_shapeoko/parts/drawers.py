@@ -18,13 +18,20 @@ WHAT THIS PART OWNS
 ===================
 
   * the five panels of each box: two sides, a front, a back, a bottom
+  * the INSET FACE of each drawer (2026-09-04): a sixth panel, the front the
+    operator sees, standing flush in the carcass plane between the
+    stock/hands divider and the console cheek, screwed to the box's front
+    from inside. RULED: "absolutely no overlays ... a la kerf design
+    cabinets". The box front is structure; the face is the front.
   * the rabbets and dados that hold them together, and the dogbones the one
     blind housing needs
   * the pilot rows for the slide's DRAWER member, on the two outer faces,
     matching the pattern ``bay_walls`` drills for the CABINET member
-  * the V-carved callout on each front, on its own DXF layer, and the
-    register the painted front goes back on the machine with
-  * the pull, which is an aperture and therefore capsule-ended
+  * the V-carved callout on each FACE, on its own DXF layer, and the
+    register the painted face goes back on the machine with
+  * the pull, which is an aperture and therefore capsule-ended, through the
+    face and, where the box front stands behind it, relieved through the
+    box front too so the fingers pass
 
 It does NOT own where the slides go. ``bay_walls`` committed those rows, and
 this file reads ``SLIDE_LEN``, ``SLIDE_FRONT_INSET`` and ``SLIDE_MEMBER_H`` out
@@ -55,9 +62,23 @@ slide moves inboard onto the chase's cheek. The others stay 373.
 DEPTH is ``SLIDE_LEN``. A side-mount pair wants its two members the same length
 and flush, so the box is exactly as deep as the slide and its front face lands
 at ``SLIDE_FRONT_INSET``, which is where ``bay_walls`` starts the cabinet
-member. That is also why the fronts sit one grid module back from the bay's
-open face: the recess is the slide's, not a styling choice, and it is what the
-fingers reach into over the pull.
+member: one panel thickness back, directly behind the inset face that fills
+the first ``T`` of the bay.
+
+THE FACE (2026-09-04, Kerf)
+===========================
+
+Each drawer's FACE is a separate ``T`` panel standing in the front opening
+between the stock/hands divider's face and the console cheek's bay face
+(``console_plate.cheek_x``), ``FRONT_REVEAL`` off each, its outer face flush
+with the carcass plane at ``y_front``. The three faces stack with
+``FRONT_REVEAL`` between them and to the deck and the cap
+(``face_z``), so the column reads as one run of inset panels; the box behind
+each is narrower by the slides' clearance and shorter by the service gap, and
+the face covers both. Four screws from inside the box through its front into
+the face (``FACE_SCREW``); the face carries the pull and the callout, and the
+box front is plain. Where the pull's capsule lies over the box front, the
+front takes a matching relief a hand-clearance larger so the fingers pass.
 
 HEIGHT is the opening less one ``SERVICE_GAP``, snapped DOWN to the grid. The
 snap is what makes three boxes out of a bay whose 4:3:2 shares are 275.6,
@@ -164,6 +185,7 @@ from stations.cnc_shapeoko.parts.bay_walls import (
     SLIDE_MEMBER_H,
     drawer_openings,
 )
+from stations.cnc_shapeoko.parts.rear_door import TOP_REVEAL
 
 __all__ = [
     "DrawerSpec",
@@ -179,6 +201,11 @@ __all__ = [
     "box_size",
     "box_origin",
     "interior",
+    "FRONT_REVEAL",
+    "face_x",
+    "face_z",
+    "face_size",
+    "build_face",
     "build_side",
     "build_front",
     "build_back",
@@ -230,7 +257,24 @@ PULL_H = GRID
 PULL_L = GRID * 6
 PULL_DROP = GRID * 1.5
 """The pull: a capsule aperture, one grid module tall and six long, its centre
-``PULL_DROP`` below the top edge of the front."""
+``PULL_DROP`` below the top edge of the FACE."""
+
+FRONT_REVEAL = TOP_REVEAL
+"""Gap between a face and whatever bounds it: the divider, the cheek, the
+deck, the cap, the next face. The house reveal, the rear door's figure.
+SOURCE: rear_door.TOP_REVEAL. CONFIDENCE: design (2026-09-04)."""
+
+HAND_RELIEF = GRID / 2
+"""How far past the pull the box front's relief runs, all round, where the
+pull lies over it: fingers through the face need room behind it. SOURCE:
+lungs_door.HAND_RELIEF, the same figure for the same reason. CONFIDENCE:
+design."""
+
+FACE_SCREW = f"4 x {2 * T - 4:.0f} pan head, four per drawer, from inside the box through its front into the face"
+"""How the face fixes to the box: through the box front's 18 into the face's
+18, stopping 4 short of the room face. Positions are the shop's on the fit
+(the face is squared in its opening first, then screwed). CONFIDENCE:
+chosen."""
 
 # The carve's depth, cap height and font moved to ``callouts`` in C17 with
 # their values unchanged (VCARVE_D, CALLOUT_H, CALLOUT_FONT). ``CALLOUT_FONT``
@@ -353,6 +397,50 @@ def front_size(spec: DrawerSpec, d: Datums = D) -> tuple[float, float]:
     return (iw + 2 * RABBET_D, h)
 
 
+def face_x(d: Datums = D) -> tuple[float, float]:
+    """Station X span every face fills: the stock/hands divider's face to the
+    console cheek's bay face, one reveal in from each. Derived; one span for
+    all three because the cheek runs to the deck (2026-09-04)."""
+    return (d.hands_x[0] + FRONT_REVEAL, console_plate.cheek_x(d)[0] - FRONT_REVEAL)
+
+
+def face_z(spec: DrawerSpec, d: Datums = D) -> tuple[float, float]:
+    """Station Z span of one face: its opening, less a full reveal at the
+    deck and the cap and half a reveal at each face-to-face joint, so every
+    gap in the column is ``FRONT_REVEAL``."""
+    openings = drawer_openings(d)
+    floor, height = openings[spec.opening]
+    lo = FRONT_REVEAL if spec.opening == 0 else FRONT_REVEAL / 2
+    hi = FRONT_REVEAL if spec.opening == len(openings) - 1 else FRONT_REVEAL / 2
+    return (d.deck_top + floor + lo, d.deck_top + floor + height - hi)
+
+
+def face_size(spec: DrawerSpec, d: Datums = D) -> tuple[float, float]:
+    """The face's blank, (width, height)."""
+    x0, x1 = face_x(d)
+    z0, z1 = face_z(spec, d)
+    return (x1 - x0, z1 - z0)
+
+
+def pull_local(spec: DrawerSpec, d: Datums = D) -> tuple[float, float]:
+    """Face-local centre of the pull: mid-width, PULL_DROP below the top."""
+    w, h = face_size(spec, d)
+    return (w / 2, h - PULL_DROP)
+
+
+def pull_on_front(spec: DrawerSpec, d: Datums = D) -> tuple[float, float] | None:
+    """Front-local centre of the pull's relief in the BOX FRONT, or None when
+    the pull's band lies wholly above the box front's top edge."""
+    fw, fh = front_size(spec, d)
+    x0, _y0, z0 = box_origin(spec, d)
+    px, pz = pull_local(spec, d)
+    z_pull = face_z(spec, d)[0] + pz
+    y_local = z_pull - z0
+    if y_local - PULL_H / 2 - HAND_RELIEF >= fh:
+        return None
+    return (face_x(d)[0] + px - (x0 + T - RABBET_D), y_local)
+
+
 def _back_dado_x(spec: DrawerSpec, d: Datums = D) -> float:
     """Side-local X of the back dado's centreline."""
     _w, depth, _h = box_size(spec, d)
@@ -401,6 +489,17 @@ def _plane_back(spec: DrawerSpec, d: Datums = D) -> Plane:
     _w, depth, _h = box_size(spec, d)
     return Plane(
         origin=(x0 + T - DADO_D, y0 + depth - BACK_INSET, z0),
+        x_dir=(1, 0, 0),
+        z_dir=(0, -1, 0),
+    )
+
+
+def _plane_face(spec: DrawerSpec, d: Datums = D) -> Plane:
+    """The face: like the front, local X = station +X, local Y up, thickness
+    into -Y from its inside face at y_front + T, so local Z = T is the face
+    the operator reads."""
+    return Plane(
+        origin=(face_x(d)[0], d.y_front + T, face_z(spec, d)[0]),
         x_dir=(1, 0, 0),
         z_dir=(0, -1, 0),
     )
@@ -491,29 +590,41 @@ def build_side(spec: DrawerSpec, hand: str, d: Datums = D) -> Part:
 
 
 def callout_for(spec: DrawerSpec, d: Datums = D) -> callouts.Callout:
-    """The front's word, centred in the band below the pull, on the Z = t
+    """The face's word, centred in the band below the pull, on the Z = t
     face the operator reads. One geometry, two jobs: ``callouts.carve`` cuts
-    it into the front, and ``callouts.layers`` writes its outlines to the
+    it into the face, and ``callouts.layers`` writes its outlines to the
     DXF. Drawing the callout twice is how a carve ends up not matching the
     model."""
-    w, h = front_size(spec, d)
+    w, h = face_size(spec, d)
     cy = (h - PULL_DROP - PULL_H / 2) / 2
     return callouts.Callout(spec.callout, (w / 2, cy))
 
 
 def register_for(spec: DrawerSpec, d: Datums = D) -> callouts.Register:
     """The second fixture's datums: the pull's two end arcs, which a
-    ``PULL_H`` pin seats in. The front carries no screw holes on its face."""
-    w, h = front_size(spec, d)
-    cx, cy = w / 2, h - PULL_DROP
+    ``PULL_H`` pin seats in. The face carries no screw holes on its face."""
+    cx, cy = pull_local(spec, d)
     dx = (PULL_L - PULL_H) / 2
     return callouts.Register(
         (cx - dx, cy, PULL_H), (cx + dx, cy, PULL_H), "the pull's two end arcs"
     )
 
 
-def build_front(spec: DrawerSpec, d: Datums = D, *, carve: bool = True) -> Part:
-    """The drawer front, flat. Its Z = t face is the one the operator reads."""
+def build_face(spec: DrawerSpec, d: Datums = D, *, carve: bool = True) -> Part:
+    """The inset face, flat: the blank, the capsule pull, the word. Its
+    Z = t face is the one the operator reads. Nothing else: the face screws
+    on from behind and its edges are reveals."""
+    w, h = face_size(spec, d)
+    p = panel(w, h)
+    p -= through_slot(pull_local(spec, d), PULL_L, PULL_H, corner_r=PULL_H / 2)
+    if carve:
+        p = callouts.carve(p, [callout_for(spec, d)])
+    return p
+
+
+def build_front(spec: DrawerSpec, d: Datums = D) -> Part:
+    """The box front, flat: plain birch behind the face, with the bottom
+    groove and, where the face's pull lies over it, a relief for the hand."""
     w, h = front_size(spec, d)
     p = panel(w, h)
 
@@ -521,13 +632,15 @@ def build_front(spec: DrawerSpec, d: Datums = D, *, carve: bool = True) -> Part:
     gy = BOTTOM_GROOVE_Z + DADO_W / 2
     p -= groove((0, gy), (w, gy), width=DADO_W, depth=DADO_D, side="back")
 
-    # the pull: an aperture, so capsule-ended
-    p -= through_slot(
-        (w / 2, h - PULL_DROP), PULL_L, PULL_H, corner_r=PULL_H / 2
-    )
-
-    if carve:
-        p = callouts.carve(p, [callout_for(spec, d)])
+    # the hand's way through behind the pull: an aperture, capsule-ended,
+    # HAND_RELIEF larger than the pull all round, running out the top edge
+    # where the pull sits above it
+    at = pull_on_front(spec, d)
+    if at is not None:
+        p -= through_slot(
+            at, PULL_L + 2 * HAND_RELIEF, PULL_H + 2 * HAND_RELIEF,
+            corner_r=(PULL_H + 2 * HAND_RELIEF) / 2,
+        )
     return p
 
 
@@ -558,6 +671,7 @@ def panels(spec: DrawerSpec, d: Datums = D) -> list[tuple[str, Part, Plane]]:
         (f"{spec.name}_front", build_front(spec, d), _plane_front(spec, d)),
         (f"{spec.name}_back", build_back(spec, d), _plane_back(spec, d)),
         (f"{spec.name}_bottom", build_bottom(spec, d), _plane_bottom(spec, d)),
+        (f"{spec.name}_face", build_face(spec, d), _plane_face(spec, d)),
     ]
 
 
@@ -619,6 +733,10 @@ def joint_table(d: Datums = D) -> list[tuple]:
         out.append(
             (f"{n}_back", f"{n}_bottom", "housing", "y", b_face, b_face + DADO_D,
              "bottom's rear edge in the back's groove")
+        )
+        out.append(
+            (f"{n}_front", f"{n}_face", "bearing", None, 0.0, 0.0,
+             f"face flat on the box front's outer face, {FACE_SCREW}")
         )
     return out
 
@@ -687,6 +805,7 @@ def check_drawers(d: Datums = D) -> list[str]:
                 (y0 + T - DADO_D, y0 + depth - BACK_INSET - T + DADO_D),
                 (z0 + BOTTOM_GROOVE_Z, z0 + BOTTOM_GROOVE_Z + BOTTOM_T),
             ),
+            f"{n}_face": (face_x(d), (d.y_front, d.y_front + T), face_z(spec, d)),
         }
         for label, part in placed(spec, d):
             bb = part.bounding_box()
@@ -702,35 +821,75 @@ def check_drawers(d: Datums = D) -> list[str]:
                         f"belongs at {e[0]:.1f}..{e[1]:.1f}. Its plane is wrong."
                     )
 
-        # the callout lands on birch, and the front goes back on its pins
+        # the face: inset in its opening, flush, covering the box, its pull
+        # relieved through the box front where it needs to be
+        fx0, fx1 = face_x(d)
+        fz0, fz1 = face_z(spec, d)
+        if fx0 - FRONT_REVEAL < d.hands_x[0] - 1e-6 or fx1 + FRONT_REVEAL > console_plate.cheek_x(d)[0] + 1e-6:
+            notes.append(f"{n}_face runs past the divider or the cheek")
+        if fx0 > x0 + 1e-6 or fx1 < x0 + w - 1e-6:
+            notes.append(f"{n}_face ({fx0:.1f}..{fx1:.1f}) does not cover its box ({x0:.1f}..{x0 + w:.1f})")
+        # the box stands on its opening's floor and the face keeps its reveal
+        # to the deck or the face below, so the box front's lowest FRONT_REVEAL
+        # shows in the gap: black on black, and the same on every drawer
+        if fz0 > z0 + FRONT_REVEAL + 1e-6 or fz1 < z0 + h - 1e-6:
+            notes.append(f"{n}_face (z {fz0:.1f}..{fz1:.1f}) does not cover its box (z {z0:.1f}..{z0 + h:.1f})")
+        if fz1 - fz0 < PULL_DROP + PULL_H / 2 + FRONT_REVEAL:
+            notes.append(f"{n}_face is {fz1 - fz0:.1f} tall and the pull runs off it")
+        at = pull_on_front(spec, d)
+        if at is not None and (at[1] - PULL_H / 2 - HAND_RELIEF) < BOTTOM_GROOVE_Z + DADO_W:
+            notes.append(f"{n}: the hand relief in the box front runs into the bottom groove")
+        if abs(SLIDE_FRONT_INSET - T) > 1e-9:
+            notes.append(
+                f"the box front sits at y {SLIDE_FRONT_INSET:.1f} and the face is {T:.0f} "
+                "thick: the face does not lie on the box front"
+            )
+
+        # the callout lands on birch, and the face goes back on its pins
         notes += callouts.check_callouts(
-            build_front(spec, d),
+            build_face(spec, d),
             [callout_for(spec, d)],
             register_for(spec, d),
-            size=front_size(spec, d),
-            label=f"{n}_front",
+            size=face_size(spec, d),
+            label=f"{n}_face",
         )
 
     # Every box pulls out through the front plane, and a front leg's Y flange
     # is a plate across that plane at each corner (MEASURED 2026-09-04,
-    # inboard). A box whose X span overlaps the plate's does not pass it at
-    # any point of its travel, so this is an interval test, not a sweep.
-    # ``machine`` is imported here because it imports the assembly that
-    # imports this part.
+    # inboard), with a stile behind it (RULED the same day). A box whose X
+    # span overlaps either does not pass it at any point of its travel, so
+    # this is an interval test, not a sweep. ``machine`` is imported here
+    # because it imports the assembly that imports this part.
     from stations.cnc_shapeoko.machine import front_leg_flanges
+    from stations.cnc_shapeoko.parts import stiles
 
-    for flabel, flange in front_leg_flanges(d):
+    fixed = list(front_leg_flanges(d)) + [
+        (label, part) for label, _g, part in stiles.placed_all(d) if "_front_" in label
+    ]
+    for flabel, flange in fixed:
         fb = flange.bounding_box()
         for spec in DRAWERS:
             x0, _y0, _z0 = box_origin(spec, d)
             w = box_size(spec, d)[0]
-            over = min(x0 + w, fb.max.X) - max(x0, fb.min.X)
+            clear = side_clearance(spec, d)
+            over = min(x0 + w + clear, fb.max.X) - max(x0 - clear, fb.min.X)
             if over > 0.0:
                 notes.append(
-                    f"{spec.name} spans x {x0:.1f}..{x0 + w:.1f} and the {flabel} "
-                    f"stands across the front plane at x {fb.min.X:.1f}..{fb.max.X:.1f}: "
-                    f"the box overlaps the steel by {over:.1f}mm. The drawer does not pull out."
+                    f"{spec.name} and its slides span x {x0 - clear:.1f}..{x0 + w + clear:.1f} "
+                    f"and the {flabel} stands across the front plane at x {fb.min.X:.1f}.."
+                    f"{fb.max.X:.1f}: the box overlaps it by {over:.1f}mm. The drawer does "
+                    "not pull out."
                 )
+    notes.append(
+        f"INSET FACES, standing note. RULED 2026-09-04 (Kerf, no overlays): each drawer's "
+        f"face is a separate {T:.0f}mm panel flush in the carcass plane, x "
+        f"{face_x(d)[0]:.1f}..{face_x(d)[1]:.1f} between the divider and the console "
+        f"cheek with {FRONT_REVEAL:.0f} reveals all round; faces "
+        + ", ".join(f"{sp.name} {face_size(sp, d)[0]:.1f} x {face_size(sp, d)[1]:.1f}" for sp in DRAWERS)
+        + f"; {FACE_SCREW}. The box front behind it is plain and relieved for the hand "
+        "where the pull lies over it. Expected, and worth knowing before a front is "
+        "cut to the box."
+    )
 
     # The bottom drawer stands on the deck's own face, because bay_walls put
     # its slide row at the bottom of the bay and the box hangs level with it.
@@ -751,18 +910,18 @@ def check_drawers(d: Datums = D) -> list[str]:
 
 
 def export(spec: DrawerSpec, d: Datums = D) -> list:
-    """STEP and DXF for one box's five panels.
+    """STEP and DXF for one box's five panels and its face.
 
-    The front goes out with the ``VCARVE`` and ``REGISTER`` layers that
+    The face goes out with the ``VCARVE`` and ``REGISTER`` layers that
     ``flat_pattern`` cannot infer: its CUT layers are read off the un-carved
     blank so the callout does not also appear as a pocket, and the STEP
     still carries the carve.
     """
     written = []
     for label, part, _plane in panels(spec, d):
-        if label.endswith("_front"):
-            w, _h = front_size(spec, d)
-            layers = flat_pattern(build_front(spec, d, carve=False))
+        if label.endswith("_face"):
+            w, _h = face_size(spec, d)
+            layers = flat_pattern(build_face(spec, d, carve=False))
             layers.update(
                 callouts.layers([callout_for(spec, d)], register_for(spec, d), width=w)
             )

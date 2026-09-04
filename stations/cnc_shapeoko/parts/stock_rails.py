@@ -1,4 +1,4 @@
-"""Stock rack: one comb under the cap, nine grooves in the deck.
+"""Stock rack: one comb under the cap, eight grooves in the deck.
 
 WHAT IT IS
 ==========
@@ -18,7 +18,7 @@ edge in the stock bay is two things, and only one of them is a part:
     only voids it has. The spine is 14mm, so the word is ``callout_h``
     tall rather than the station's 12: ``callouts.fit_height`` sizes it to
     the band.
-  * nine GROOVES, ``GROOVE_D`` deep, milled into ``base_deck``'s top face at
+  * eight GROOVES, ``GROOVE_D`` deep, milled into ``base_deck``'s top face at
     the same pitch, open at the front, so a blank drops in at deck level and
     slides out FORWARD. There is no bottom rail. ``base_deck`` cuts them to
     this module's lines (``slot_x_station``, ``groove_y``), so the deck and
@@ -195,9 +195,11 @@ dividers' raw edges. SOURCE: house grid; the ruling names no inset.
 CONFIDENCE: ruling (Jared, 2026-09-04): the 20mm inset is accepted."""
 
 RULED_PITCH = GRID * 2
-RULED_COUNT = 9
-"""What ruling 11 says the rack holds: 40mm pitch, 9 blanks. Held here so the
-derived count is checked against the ruling rather than trusted."""
+RULED_COUNT = 8
+"""What the rack holds by ruling: 40mm pitch, 8 blanks. Ruling 11 (2026-09-03)
+said 9; the lungs bay's +60 (2026-09-04, the spacer behind the stile) takes
+the stock bay to 322 and Jared accepted 9 -> 8 with the fix set. Held here so
+the derived count is checked against the ruling rather than trusted."""
 
 SPINE_MIN = ROUTER_D
 """Least birch between a slot's capsule tip and the tongue: one cutter diameter,

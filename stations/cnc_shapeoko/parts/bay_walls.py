@@ -103,7 +103,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from math import hypot, isclose, pi
 
-from build123d import Compound, Location, Part
+from build123d import Compound, Location, Part, Plane
 
 from lib.house import GRID
 from stations.cnc_shapeoko.carcass import (
@@ -113,6 +113,7 @@ from stations.cnc_shapeoko.carcass import (
     RABBET_D,
     ROUTER_D,
     SCREW_CLEAR_D,
+    SCREW_D,
     SCREW_END_INSET,
     SCREW_PILOT_D,
     SCREW_PITCH,
@@ -120,6 +121,7 @@ from stations.cnc_shapeoko.carcass import (
     T,
     Datums,
     bore,
+    edge_chamfer,
     export_part,
     gusset_prism,
     gussets_over,
@@ -142,6 +144,13 @@ __all__ = [
     "build_all",
     "place",
     "placed_all",
+    "SPACER_STEM",
+    "spacer_x",
+    "spacer_size",
+    "spacer_plane",
+    "build_spacer_ply",
+    "spacer_placed",
+    "spacer_needed",
     "check_bay_walls",
 ]
 
@@ -168,10 +177,20 @@ the joint and it is already the house third-of-thickness."""
 SLIDE_MEMBER_H = 45.0       # cabinet-member height, Accuride 3832 class
 SLIDE_MEMBER_T = 12.7       # one member plus its clearance, per side
 SLIDE_LEN = 500.0           # BOM slide length
-SLIDE_FRONT_INSET = GRID    # slide's front end set back from the open front
+SLIDE_FRONT_INSET = T
+"""Slide's front end set back from the open front: one panel thickness, the
+INSET drawer front's (2026-09-04, Kerf: every drawer front sits between a
+stile and a divider, flush in the carcass plane, and the box's own front
+sits directly behind it). Was one grid module while the box front was the
+face. SOURCE: ruling; CONFIDENCE derived."""
 
 SLIDE_BORE_D = SCREW_PILOT_D    # blind pilot for the slide's fixing screw
 SLIDE_BORE_DEPTH = RABBET_D     # half the panel, so an end wall shows nothing
+
+SPACER_ENGAGE = GRID * 1.6
+"""Thread the spacer's wall screws take in the block past the wall: 32, so a
+5 x 50 through the 18 wall. SOURCE: chosen against the stock 50 length.
+CONFIDENCE chosen."""
 
 EXTRACTOR_SLIDE_Z = SLIDE_MEMBER_H / 2
 """Slide centreline above ``deck_top`` in the lungs bay.
@@ -197,6 +216,20 @@ running gap between the lay-up and the tray. ``lungs_carriage`` closes here
 and ``lungs_door`` measures its lay-up against it. SOURCE: derived,
 snap_up(T + LINING_T). CONFIDENCE: ruling (Jared, 2026-09-04): the carriage's
 20mm move rearward this sets is accepted."""
+
+# ---- the left slide's spacer (2026-09-04) ----------------------------------
+SPACER_STEM = "lungs_spacer"
+"""Label stem of the spacer's plies in the assembly: ``lungs_spacer_0..n``."""
+
+SPACER_H = SLIDE_MEMBER_H
+"""Height of the spacer block: the cabinet member's own, standing on the
+deck like the member does. SOURCE: derived from the slide. CONFIDENCE
+derived."""
+
+SPACER_SCREW = f"{SCREW_D:.0f} x {T + SPACER_ENGAGE:.0f} pan head, from the left end wall's OUTER face into the block, on the slide row's line"
+"""How the block fixes to the wall: through the wall from outside, where the
+leg's X flange does not cover it (the flange reaches ``flange_reach`` back
+from the front corner; the first screw is set past it). CONFIDENCE chosen."""
 
 # ---- hands bay ------------------------------------------------------------
 DRAWER_SHARES = (4, 3, 2)
@@ -332,10 +365,91 @@ def _slide_row(
     return cutters
 
 
-def _lungs_face(side: str, d: Datums = D) -> Part:
+def _lungs_face(side: str, d: Datums = D, *, spec: WallSpec | None = None) -> Part:
     """Extractor carriage: one slide row, low in the bay, behind the lungs
-    door and its lay-up."""
+    door and its lay-up. On the LEFT END WALL the row is not drilled here: the
+    member screws to the spacer block (2026-09-04), and what the wall gets is
+    the block's own fixing, through from the outer face on the same line."""
+    if spec is not None and spec.index == 0:
+        return _spacer_screws(d)
     return _slide_row(TONGUE_D + EXTRACTOR_SLIDE_Z, side, d, inset=LUNGS_SLIDE_INSET)
+
+
+def spacer_x(d: Datums = D) -> tuple[float, float]:
+    """Station X of the spacer block: on the left end wall's inner face."""
+    return (d.lungs_x[0], d.lungs_x[0] + d.s.lungs_spacer)
+
+
+def spacer_size() -> tuple[float, float]:
+    """One ply's blank: the slide's length by the block's height."""
+    return (SLIDE_LEN, SPACER_H)
+
+
+def spacer_plane(i: int, d: Datums = D) -> Plane:
+    """Ply ``i`` of the block, drawn like a wall: local X = station +Y from
+    the block's front, local Y up, thickness into +X."""
+    return Plane(
+        origin=(spacer_x(d)[0] + i * T, LUNGS_SLIDE_INSET, d.deck_top),
+        x_dir=(0, 1, 0),
+        z_dir=(1, 0, 0),
+    )
+
+
+def _spacer_screw_positions() -> list[float]:
+    """Along the block (from its front), the wall screws: the slide row's
+    rhythm, but starting past the leg flange's reach so every head is on the
+    wall's free outer face."""
+    reach = D.s.leg_holes.flange_reach or 0.0
+    first = max(reach - LUNGS_SLIDE_INSET + SCREW_END_INSET, SCREW_END_INSET)
+    return [p for p in screw_positions(SLIDE_LEN, pitch=SCREW_PITCH, inset=SCREW_END_INSET) if p >= first]
+
+
+def _spacer_screws(d: Datums = D) -> Part:
+    """Clearance holes through the left end wall for the block's screws."""
+    y = TONGUE_D + EXTRACTOR_SLIDE_Z
+    cutters = None
+    for p in _spacer_screw_positions():
+        c = bore(LUNGS_SLIDE_INSET + p, y, SCREW_CLEAR_D)
+        cutters = c if cutters is None else cutters + c
+    return cutters
+
+
+def build_spacer_ply(i: int, d: Datums = D) -> Part:
+    """One ply of the spacer block, flat. The INNER ply (the last one) takes
+    the slide's cabinet-member pilots on its bay face; every ply takes the
+    wall screws' pilots on its wall-side face where the screw reaches."""
+    w, h = spacer_size()
+    p = panel(w, h)
+    n = d.s.lungs_spacer_plies
+    if i == n - 1:
+        p -= _slide_row(SLIDE_MEMBER_H / 2, "front", d, inset=0.0)
+    # the wall screw's pilot, as far as it reaches into this ply
+    reach_in = T + SPACER_ENGAGE - T - i * T          # past the wall and the plies before
+    if reach_in > 0:
+        depth = min(reach_in, T)
+        for q in _spacer_screw_positions():
+            p -= bore(q, SLIDE_MEMBER_H / 2, SCREW_PILOT_D, depth=depth, side="back")
+    return p
+
+
+def spacer_placed(d: Datums = D) -> list[tuple[str, str, Part]]:
+    """(label, group, placed solid) for the block's plies: birch, nested."""
+    return [
+        (f"{SPACER_STEM}_{i}", "carcass", spacer_plane(i, d) * build_spacer_ply(i, d))
+        for i in range(d.s.lungs_spacer_plies)
+    ]
+
+
+def spacer_needed(d: Datums = D) -> float:
+    """The spacer the tray actually needs: what puts the left cheek's outer
+    face past the front-left stile's inner edge, the lungs door's knuckle in
+    the gap and a running clearance. ``check_bay_walls`` holds the fitted
+    block against it."""
+    from stations.cnc_shapeoko.parts.rear_door import HINGE_GAP
+
+    s = d.s
+    cheek_min = d.lungs_opening_x[0] + HINGE_GAP + s.tray_knuckle_clear
+    return cheek_min - (d.lungs_x[0] + s.lungs_lining_t + s.lungs_slide_t)
 
 
 def drawer_openings(d: Datums = D) -> list[tuple[float, float]]:
@@ -574,10 +688,21 @@ def build(i: int = 0, d: Datums = D) -> Part:
             continue
         if bay == "hands" and spec.index == 3:
             cut = _hands_face(side, d, skip=console_plate.narrowed_openings(d))
+        elif bay == "lungs":
+            cut = _lungs_face(side, d, spec=spec)
         else:
             cut = feature(side, d)
         if cut is not None:
             p -= cut
+
+    if spec.is_end:
+        # the outer front and rear corners, chamfered clear of the leg's
+        # inside fillet (RULED 2026-09-04, corner_chamfer). The outer face
+        # is local Z = 0 on wall 0 and Z = t on wall 3.
+        w, h = blank_size(spec, d)
+        z_out, sz = (0.0, 1.0) if spec.index == 0 else (T, -1.0)
+        p -= edge_chamfer("y", (0.0, z_out), d.s.corner_chamfer, (0.0, h), into=(1.0, sz))
+        p -= edge_chamfer("y", (w, z_out), d.s.corner_chamfer, (0.0, h), into=(-1.0, sz))
 
     if spec.is_end:
         p -= _spine_screws(d)
@@ -649,10 +774,15 @@ def _wall_features(
     slide_ps = screw_positions(SLIDE_LEN, pitch=SCREW_PITCH, inset=SCREW_END_INSET)
     slide_xs = [SLIDE_FRONT_INSET + p for p in slide_ps]
 
-    if spec.side_of("lungs") is not None:
+    if spec.side_of("lungs") is not None and spec.index != 0:
         for p in slide_ps:
             out.append(
                 ("lungs slide mount", LUNGS_SLIDE_INSET + p, TONGUE_D + EXTRACTOR_SLIDE_Z, slide_r)
+            )
+    if spec.index == 0:
+        for p in _spacer_screw_positions():
+            out.append(
+                ("spacer screw", LUNGS_SLIDE_INSET + p, TONGUE_D + EXTRACTOR_SLIDE_Z, SCREW_CLEAR_D / 2)
             )
 
     if spec.side_of("hands") is not None:
@@ -708,8 +838,32 @@ def check_bay_walls(d: Datums = D) -> list[str]:
 
     # -- lungs bay width, once the acoustic lining and the slides are in
     carriage_w = (
-        d.lungs_x[1] - d.lungs_x[0] - 2 * LINING_T - 2 * SLIDE_MEMBER_T
+        d.lungs_x[1] - d.lungs_x[0] - 2 * LINING_T - 2 * SLIDE_MEMBER_T - s.lungs_spacer
     )
+    if carriage_w - 2 * T < s.extractor_env[1]:
+        notes.append(
+            f"lungs carriage is {carriage_w:.0f}mm wide once the {s.lungs_spacer:.0f}mm "
+            f"spacer, {LINING_T:.0f}mm of lining and {SLIDE_MEMBER_T:.1f}mm of slide go "
+            f"on, and its two {T:.0f}mm cheeks leave {carriage_w - 2 * T:.0f} for the "
+            f"extractor's {s.extractor_env[1]:.0f}mm"
+        )
+    need = spacer_needed(d)
+    if s.lungs_spacer < need - 1e-6:
+        notes.append(
+            f"the left slide's spacer is {s.lungs_spacer:.1f} ({s.lungs_spacer_plies} plies) "
+            f"and the tray needs {need:.1f} to pass the front-left stile's inner edge, "
+            "the lungs door's knuckle and a running clearance: the tray hits the knuckle"
+        )
+    else:
+        notes.append(
+            f"LUNGS SPACER, standing note. RULED 2026-09-04 (\"+40 with the left slide on a "
+            f"40 spacer\"): the tray needs {need:.1f} of spacer past the stile's edge, the "
+            f"knuckle and {s.tray_knuckle_clear:.0f} of clearance, so the block is "
+            f"{s.lungs_spacer_plies} plies of the carcass birch, {s.lungs_spacer:.0f}, and the "
+            f"bay follows to {s.bay_lungs_w:.0f}. {SPACER_SCREW}, "
+            f"{len(_spacer_screw_positions())} of them, the first past the leg flange's "
+            f"reach. Expected, and worth knowing before the bay is read as +40."
+        )
     if carriage_w < s.extractor_env[1]:
         notes.append(
             f"lungs carriage is {carriage_w:.0f}mm wide once "
@@ -871,6 +1025,14 @@ if __name__ == "__main__":
         )
         for p in export_part(flat, f"{_EXPORT_STEM}_{spec.index}_{spec.name}"):
             written.append(str(p))
+
+    for i in range(D.s.lungs_spacer_plies):
+        for p in export_part(build_spacer_ply(i), f"{SPACER_STEM}_{i}"):
+            written.append(str(p))
+    print(
+        f"\n  lungs spacer: {D.s.lungs_spacer_plies} plies {spacer_size()[0]:.0f} x {spacer_size()[1]:.0f} x {T:.0f} "
+        f"= {D.s.lungs_spacer:.0f} on the left end wall; tray needs {spacer_needed():.1f}"
+    )
 
     ab = Compound(children=placed).bounding_box()
     print(

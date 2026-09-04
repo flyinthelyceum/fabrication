@@ -4,14 +4,15 @@ WHAT THIS PART IS
 =================
 
 One 18mm Baltic birch door filling the lungs bay's front opening -- between
-the left end wall's inner face and the lungs/stock divider's left face, deck
-top to cap underside -- on a continuous (piano) hinge along its LEFT edge, so
-it swings OUTBOARD, to the operator's left, and the CT 15 on its carriage
-(C06) is pulled forward through the opening it leaves. RULED 2026-09-03
-(faces): lungs is the leftmost FRONT bay and this door closes its front, not
-the left end wall. The brief's "hinges on the left end wall's front edge" is
-where the hinge's fixed leaf lands: on that wall's 18mm of end grain at the
-carcass's front plane.
+the FRONT-LEFT STILE's inner edge and the lungs/stock divider's left face,
+deck top to cap underside -- on a continuous (piano) hinge along its LEFT
+edge, so it swings OUTBOARD, to the operator's left, and the CT 15 on its
+carriage (C06) is pulled forward through the opening it leaves. RULED
+2026-09-03 (faces): lungs is the leftmost FRONT bay and this door closes its
+front, not the left end wall. RULED 2026-09-04 (Kerf): the flange band at
+the corner is a fixed stile (``parts/stiles.py``), the door is INSET between
+that stile and the divider, and the hinge's fixed leaf lands on the stile's
+inner edge, its 18mm of end grain at the carcass's front plane.
 
 Closed, the door is INSET. Its outer face is flush with the carcass's front
 plane at ``y_front``, the plane the end wall's and both dividers' front edges
@@ -57,35 +58,33 @@ the tray. The drawers' row did not move. The bay is 821 deep and the tray
 500, so the 20mm came from behind the tray, where nothing stood.
 
 
-THE HINGE, AND WHAT IT COSTS THE BLANK
-======================================
+THE HINGE, THE PROUD KNUCKLE, AND WHAT IT COSTS THE BLANK
+==========================================================
 
-Same construction and the SAME BOM LINE as the rear door (C07): "Piano
-hinge, rear door and lungs door, Amazon, 2". This is the second of the two.
-Surface mount, one leaf on the door's OUTER face and one on the left end
-wall's FRONT EDGE, both coplanar at ``y_front``, so the knuckle sits on the
-joint line, half in the gap between the wall's inner face and the door's
-hinge edge. That gap is the knuckle's diameter (``HINGE_GAP``); the free edge
-gets ``SIDE_REVEAL`` to the divider, which the swing arc needs; the top and
-bottom edges get ``REVEAL`` each, because a side-hung door has no knuckle
-above or below it. The pin runs vertically, ``HINGE_AXIS_OFF`` in front of
-the face plane. The hinge's numbers are the rear door's constants, imported,
-so one representative hinge is measured once when the pair arrives.
+Same class and the SAME BOM LINE as the rear door (C07): "Piano hinge, rear
+door and lungs door, Amazon, 2". This is the second of the two, and it is
+NOT the rear door's flat surface-mount construction. The leaves go into the
+GAP: one on the stile's inner edge face, one on the door's hinge edge face,
+and the knuckle stands in front of the carcass plane on a pin
+``AXIS_OFF`` ahead of it -- a PROUD knuckle. RULED 2026-09-04: the door
+"must open to 180 to lie against the leg face so the tray path is clear; if
+180 needs a proud knuckle, model it." It does: the leg's flange stands
+``leg_wall_t`` (3.52) in front of the carcass plane at the corner, a door
+folded 180 on a flat hinge lies 1mm off the plane and lands on the steel
+2.5mm short of flat. On a pin ``(leg_wall_t + lungs_door_lay_gap) / 2``
+ahead of the plane the folded door's outer face lies ``lungs_door_lay_gap``
+in front of the flange's face: against the leg, clear of it. The gap
+between stile and door is the knuckle's diameter (``HINGE_GAP``); the free
+edge gets ``SIDE_REVEAL`` to the divider, which the swing arc needs; the top
+and bottom edges get ``REVEAL`` each. The knuckle is a reference solid; the
+hinge's other numbers are the rear door's, so one representative hinge is
+measured once when the pair arrives, and the proud barrel is what to buy
+(an offset or raised-barrel continuous hinge; MEASURE THIS).
 
-The barrel is proud of the carcass front by roughly 3mm, the way the rear
-door's is proud of the rear, and the front-left leg's own steel is 3.5mm
-proud of the same plane. Two consequences, measured rather than assumed:
-
-  1. IF the leg's Y-facing flange runs INBOARD across the bay's front, the
-     knuckle and the first degrees of swing stand in it. That is the same
-     unmeasured reading (``LegHoles.front_flange_inboard``) the carriage's
-     pull-out and the rear door's shelf wait on; this door is the third part
-     the tape answers.
-  2. The door does not fold flat to 180 in EITHER case: at 180 it lies in
-     front of the carcass 1mm off the face plane, and the leg's front face is
-     3.5mm off it. There is also no wall for it to lie against -- the left
-     end wall's outer face IS the leg's inner face. ``leg_stop_angle`` says
-     how far it does swing.
+What the knuckle costs: it stands in the tray's path unless the tray's left
+cheek passes outboard of it, which is what the left slide's spacer block
+(``Station.lungs_spacer``, RULED the same day) is for. ``lungs_carriage``
+sweeps the tray against it.
 
 
 THE SWING, AND THE TRAY
@@ -93,15 +92,16 @@ THE SWING, AND THE TRAY
 
 The tray is pulled through the opening the open door leaves, so the open
 door has to be out of the tray's way and not merely out of the bay. At 90
-the door stands straight out the front, hinge side, and with its lining it
-is 30mm thick standing 0.5mm off the pin: the extended carriage's left cheek
-passes ``lungs_lining_t + lungs_slide_t`` off the wall, which is the same
-30mm, and the lining is in its path. ``carriage_clear_angle`` scans the
-swing and reports the first opening at which every solid of the extended
-carriage clears the open door, lining and strike; the operator opens the
-door past it before pulling. Both acceptance angles are reported by
-``swing_report`` as gaps and shared volumes against the front-left leg's
-envelope (``machine.front_left_leg_envelope``) and the extended carriage.
+the door stands straight out the front, hinge side, its thickness and
+lining reaching into the opening past the knuckle. ``carriage_clear_angle``
+scans the swing and reports the first opening at which every solid of the
+extended carriage clears the open door, lining and strike; the operator
+opens the door past it before pulling. At 180 the door lies against the
+leg, outboard of the stile's edge, entirely clear of the opening. Both
+acceptance angles are reported by ``swing_report`` as gaps and shared
+volumes against the front-left leg's envelope (``machine.
+front_left_leg_envelope``, the X flange and the Y flange band), the two
+front stiles and the extended carriage.
 
 
 PANEL CONVENTION
@@ -112,8 +112,8 @@ corner AS SEEN FROM THE FRONT (the hinge corner), local +X to station +X,
 local +Y up, local +Z through the thickness from the INSIDE face at Z = 0
 to the OUTSIDE (reading) face at Z = t, so the DXF's CUT layer is the face
 the operator reads and the face the callout lands on. Placed with
-``plane``, origin (x_left + t + HINGE_GAP, y_front + t, deck_top + REVEAL),
-z_dir station -Y. The lining is drawn flat the same way and placed by
+``plane``, origin (lungs_opening_x[0] + HINGE_GAP, y_front + t, deck_top +
+REVEAL), z_dir station -Y. The lining is drawn flat the same way and placed by
 ``lining_plane`` one lay-up thickness behind the door's inside face.
 
 The pull is an APERTURE and is capsule-ended, per ``through_slot``; the
@@ -147,7 +147,6 @@ from stations.cnc_shapeoko.parts.bay_walls import placed_all as walls_placed
 from stations.cnc_shapeoko.parts.drawers import PULL_DROP, PULL_H, PULL_L
 from stations.cnc_shapeoko.parts.rear_door import (
     HINGE,
-    HINGE_AXIS_OFF,
     HINGE_KNUCKLE_D,
     HINGE_LEAF_T,
     HINGE_LEAF_W,
@@ -157,6 +156,8 @@ from stations.cnc_shapeoko.parts.rear_door import (
 
 __all__ = [
     "PART_NAME",
+    "AXIS_OFF",
+    "STOP_FAMILIES",
     "LINING_NAME",
     "CATCH_NAME",
     "STRIKE_NAME",
@@ -211,10 +212,22 @@ SOURCE: brief v8, "EXTRACTION on the lungs door". CONFIDENCE: spec."""
 
 # ---- the hinge --------------------------------------------------------------
 HINGE_GAP = HINGE_KNUCKLE_D
-"""Gap between the left end wall's inner face and the door's hinge edge: the
-knuckle lies in it. SOURCE: derived, the rear door's construction turned
-through 90 degrees. CONFIDENCE: derived from a representative hinge; MEASURE
-THIS with the hinge (the note is the rear door's, shared)."""
+"""Gap between the front-left stile's inner edge and the door's hinge edge:
+the knuckle lies in it, its leaves down the two edge faces. SOURCE: derived,
+the rear door's knuckle. CONFIDENCE: derived from a representative hinge;
+MEASURE THIS with the hinge (the note is the rear door's, shared)."""
+
+AXIS_OFF = (D.s.leg_wall_t + D.s.lungs_door_lay_gap) / 2
+"""The pin's stand-off in front of the carcass plane: the PROUD knuckle.
+Half the leg's wall plus half the lay gap, so the door folded to 180 lies
+``lungs_door_lay_gap`` clear of the flange's front face. SOURCE: derived
+from params (leg_wall_t MEASURED, lungs_door_lay_gap choice) under the
+2026-09-04 ruling. CONFIDENCE: derived. Replaces the rear door's flat
+HINGE_AXIS_OFF (0.5) for this door only."""
+
+STOP_FAMILIES = ("measured", "inboard", "stile")
+"""What the swing is stopped by: the front-left leg's bolted X flange, its
+Y flange band across the bay's front, and the two front stiles."""
 
 SIDE_REVEAL = TOP_REVEAL
 """Gap between the door's free edge and the divider's face. SOURCE: the rear
@@ -293,14 +306,16 @@ SOURCE: the rear door's pilots. CONFIDENCE: chosen."""
 
 
 def door_size(d: Datums = D) -> tuple[float, float]:
-    """(width, height) of the cut blank: the bay's clear width less the
-    knuckle gap and the side reveal, the bay height less two reveals."""
-    return (d.s.bay_lungs_w - HINGE_GAP - SIDE_REVEAL, d.bay_h - 2 * REVEAL)
+    """(width, height) of the cut blank: the lungs OPENING (stile's inner
+    edge to the divider) less the knuckle gap and the side reveal, the bay
+    height less two reveals."""
+    x0, x1 = d.lungs_opening_x
+    return (x1 - x0 - HINGE_GAP - SIDE_REVEAL, d.bay_h - 2 * REVEAL)
 
 
 def x_hinge_edge(d: Datums = D) -> float:
-    """Station X of the door's hinge edge."""
-    return d.lungs_x[0] + HINGE_GAP
+    """Station X of the door's hinge edge: the stile's edge plus the gap."""
+    return d.lungs_opening_x[0] + HINGE_GAP
 
 
 def z_bottom(d: Datums = D) -> float:
@@ -319,10 +334,10 @@ def plane(d: Datums = D) -> Plane:
 
 
 def hinge_axis(d: Datums = D) -> Axis:
-    """The pin: vertical, in the middle of the knuckle gap, HINGE_AXIS_OFF in
-    front of the carcass's front plane."""
+    """The pin: vertical, in the middle of the knuckle gap, AXIS_OFF in
+    front of the carcass's front plane (the proud knuckle)."""
     return Axis(
-        (d.lungs_x[0] + HINGE_GAP / 2, d.y_front - HINGE_AXIS_OFF, 0.0),
+        (d.lungs_opening_x[0] + HINGE_GAP / 2, d.y_front - AXIS_OFF, 0.0),
         (0, 0, 1),
     )
 
@@ -432,7 +447,7 @@ def swing_rise(d: Datums = D) -> float:
     w, _h = door_size(d)
     L = HINGE_GAP / 2 + w
     _st = STRIKE[2]
-    return hypot(L, d.t + _st + HINGE_AXIS_OFF) - L
+    return hypot(L, d.t + _st + AXIS_OFF) - L
 
 
 # ---------------------------------------------------------------- solids
@@ -548,17 +563,22 @@ def joint_table(d: Datums = D) -> list[tuple]:
 
 def _obstacles(d: Datums = D) -> list[tuple[str, str, Part]]:
     """(label, family, solid): the front-left leg's envelope pieces (family
-    is their case, "measured" / "inboard" / "outboard") and every solid of
-    the carriage at full extension (family "carriage").
+    is their case, "measured" / "inboard" / "outboard"), the two front
+    stiles (family "stile", 2026-09-04) and every solid of the carriage at
+    full extension (family "carriage").
 
-    ``machine`` is imported here rather than at the top because it imports
-    the assembly that imports this part; the same deferral the carriage
-    makes."""
+    ``machine`` and ``stiles`` are imported here rather than at the top
+    because the machine imports the assembly that imports this part; the
+    same deferral the carriage makes."""
     from stations.cnc_shapeoko.machine import front_left_leg_envelope
+    from stations.cnc_shapeoko.parts import stiles
 
     out: list[tuple[str, str, Part]] = [
         (label, case, solid) for label, case, solid in front_left_leg_envelope(d)
     ]
+    for label, _group, part in stiles.placed_all(d):
+        if "_front_" in label:
+            out.append((label, "stile", part))
     for label, _group, part in lungs_carriage.placed_all(d):
         out.append((label, "carriage", lungs_carriage.extended(part)))
     return out
@@ -633,10 +653,11 @@ def leg_stop_angle(
 ) -> float:
     """The largest opening angle, in SWING_STEP steps from closed, before the
     door, lay-up or strike first touches the front-left leg in the given
-    flange ``case`` ("inboard" / "outboard"); the leg's measured X flange
-    counts in both. 0 when the closed door's first step already does."""
+    flange ``case`` ("inboard" / "outboard") or a front stile; the leg's
+    measured X flange counts in both. 0 when the closed door's first step
+    already does."""
     obstacles = _obstacles(d) if obstacles is None else obstacles
-    ok = lambda f: f in ("measured", case)  # noqa: E731
+    ok = lambda f: f in ("measured", "stile", case)  # noqa: E731
     last = 0.0
     a = SWING_STEP
     while a <= 180.0 + 1e-9:
@@ -671,8 +692,8 @@ def check_lungs_door(d: Datums = D) -> list[str]:
     walls = walls_placed(d)
 
     # -- the blank -----------------------------------------------------------
-    if abs(w - (s.bay_lungs_w - HINGE_GAP - SIDE_REVEAL)) > 1e-6:
-        notes.append(f"the door is {w:.2f} wide, not the bay less HINGE_GAP and SIDE_REVEAL")
+    if abs(w - (d.lungs_opening_x[1] - d.lungs_opening_x[0] - HINGE_GAP - SIDE_REVEAL)) > 1e-6:
+        notes.append(f"the door is {w:.2f} wide, not the opening less HINGE_GAP and SIDE_REVEAL")
     if abs(h - (d.bay_h - 2 * REVEAL)) > 1e-6:
         notes.append(f"the door is {h:.2f} tall, not bay_h less two reveals")
     travel = min(s.travel_x, s.travel_y)
@@ -696,10 +717,11 @@ def check_lungs_door(d: Datums = D) -> list[str]:
             f"the door's outer face is at y {db.min.Y:.2f} and the divider's front "
             f"edge at {divider_front:.2f}: not flush"
         )
-    if db.min.X < d.lungs_x[0] + HINGE_GAP - 1e-6 or db.max.X > d.lungs_x[1] - SIDE_REVEAL + 1e-6:
+    ox0, ox1 = d.lungs_opening_x
+    if db.min.X < ox0 + HINGE_GAP - 1e-6 or db.max.X > ox1 - SIDE_REVEAL + 1e-6:
         notes.append(
-            f"the door spans x {db.min.X:.1f}..{db.max.X:.1f} against a bay "
-            f"{d.lungs_x[0]:.1f}..{d.lungs_x[1]:.1f}: the gap or the reveal is wrong"
+            f"the door spans x {db.min.X:.1f}..{db.max.X:.1f} against an opening "
+            f"{ox0:.1f}..{ox1:.1f}: the gap or the reveal is wrong"
         )
     if db.min.Z < d.deck_top + REVEAL - 1e-6 or db.max.Z > d.top_z[0] - REVEAL + 1e-6:
         notes.append(f"the door spans z {db.min.Z:.1f}..{db.max.Z:.1f} and is not inside the bay's reveals")
@@ -772,44 +794,28 @@ def check_lungs_door(d: Datums = D) -> list[str]:
     if kz1 > d.top_z[0] - 1e-6:
         notes.append("the catch body runs into the cap")
 
-    # -- the hinge: its leaf on the wall's front edge, on birch --------------
+    # -- the hinge: its fixed leaf on the stile's inner edge face, in the gap
+    from stations.cnc_shapeoko.parts import stiles as _stiles
+
+    stile = _stiles.place("stile_front_left", d=d)
     if HINGE_LEAF_W > d.t:
         notes.append(
-            f"the hinge leaf is {HINGE_LEAF_W:.1f} wide and the left end wall's front "
-            f"edge is {d.t:.0f}: the wall-side leaf hangs off the edge"
+            f"the hinge leaf is {HINGE_LEAF_W:.1f} wide and the stile's inner edge is "
+            f"{d.t:.0f} deep: the stile-side leaf hangs off the edge"
         )
-    leaf_x0 = d.lungs_x[0] - HINGE_LEAF_W
-    leaf = Box(HINGE_LEAF_W, 1.0, h, align=(Align.MIN, Align.MIN, Align.MIN)).moved(
-        Location((leaf_x0, d.y_front, z_bottom(d)))
+    leaf = Box(1.0, HINGE_LEAF_W, h, align=(Align.MAX, Align.MIN, Align.MIN)).moved(
+        Location((ox0, d.y_front, z_bottom(d)))
     )
-    leaf_frac = _probe_fraction(walls[0], leaf)
-    line_x = d.lungs_x[0] - HINGE_LEAF_W / 2
-    line = Box(SCREW_PILOT_D, 1.0, h, align=(Align.CENTER, Align.MIN, Align.MIN)).moved(
-        Location((line_x, d.y_front, z_bottom(d)))
+    leaf_frac = _probe_fraction(stile, leaf)
+    line = Box(1.0, SCREW_PILOT_D, h, align=(Align.MAX, Align.CENTER, Align.MIN)).moved(
+        Location((ox0, d.y_front + HINGE_LEAF_W / 2, z_bottom(d)))
     )
-    line_frac = _probe_fraction(walls[0], line)
-    # the front-left X gusset's relief notches the wall's front edge above its
-    # z_bot, tapering in from the leg face; where it crosses the screw line is
-    # where the leaf's top screw has to stop
-    gx = next(g for g in s.gussets if g.axis == "x" and g.side == "near" and g.cross_side == "near")
-    z_line = gx.z_bot + gx.taper_h * min(HINGE_LEAF_W / 2, gx.intrude) / gx.intrude
-    if line_frac < 0.9:
+    line_frac = _probe_fraction(stile, line)
+    if line_frac < 1.0 - 1e-3 or leaf_frac < 1.0 - 1e-3:
         notes.append(
-            f"the hinge leaf's screw line at x {line_x:.1f} lands on {line_frac:.0%} "
-            "birch on the left end wall's front edge"
-        )
-    elif line_frac < 1.0 - 1e-3 or leaf_frac < 1.0 - 1e-3:
-        notes.append(
-            f"HINGE LEAF ON THE WALL, standing note. The wall-side leaf ({HINGE_LEAF_W:.1f} "
-            f"wide, x {leaf_x0:.1f}..{d.lungs_x[0]:.1f} on the left end wall's front edge) "
-            f"lands on {leaf_frac:.0%} birch and its screw line on {line_frac:.0%}: the "
-            f"front X gusset's relief notches that edge above z {gx.z_bot:.0f}, reaching "
-            f"the screw line at z {z_line:.0f}, and the front Y gusset's relief takes the "
-            "wall's outer face back above z "
-            f"{min(g.z_bot for g in s.gussets if g.axis == 'y'):.0f}. The leaf's top "
-            f"screw goes below z {z_line:.0f}; the leaf itself overhangs the notches to "
-            f"the door's top at z {z_bottom(d) + h:.0f}. Expected, and worth knowing "
-            "before the hinge is drilled."
+            f"the hinge leaf on the stile's inner edge (x {ox0:.1f}, y {d.y_front:.0f}.."
+            f"{d.y_front + HINGE_LEAF_W:.1f}) lands on {leaf_frac:.0%} birch and its screw "
+            f"line on {line_frac:.0%}"
         )
     notes.append(
         f"the hinge is the rear door's representative {HINGE}: leaf {HINGE_LEAF_T:.1f}, "
@@ -846,8 +852,8 @@ def check_lungs_door(d: Datums = D) -> list[str]:
     stop_in = leg_stop_angle("inboard", d, obstacles)
 
     # the one thing the swing has to do: open far enough for the tray to pass
-    # before the door meets the leg. In the outboard case that is decided
-    # here; the inboard case is decided by the tape, below.
+    # before the door meets the leg or a stile. In the outboard case that is
+    # decided here; the inboard (measured) case is decided below.
     if clear_a is not None and stop_out < clear_a:
         notes.append(
             f"in the outboard-flange case the door stops on the front-left leg at "
@@ -855,10 +861,19 @@ def check_lungs_door(d: Datums = D) -> list[str]:
             "needs: the tray does not pass the open door"
         )
 
-    # the Y flange: three parts now wait on the same reading
-    knuckle_hit = _shared(build_hinge(d), next(sol for _l, c, sol in obstacles if c == "inboard")) if any(
-        c == "inboard" for _l, c, _s in obstacles
-    ) else 0.0
+    # the knuckle against the steel and the stiles: it stands in the gap and
+    # must share nothing with either
+    knuckle = build_hinge(d)
+    knuckle_hit = sum(_shared(knuckle, sol) for _l, c, sol in obstacles if c == "inboard")
+    for lab, c, sol in obstacles:
+        if c in ("measured", "stile"):
+            v = _shared(knuckle, sol)
+            if v > 1.0:
+                notes.append(f"the knuckle stands {v / 1000:.1f} cm3 inside {lab}")
+    for lab, c, sol in obstacles:
+        if c == "stile":
+            for m, o, _f, _g, v in [r for r in reports[SWING_ANGLES[1]] if r[1] == lab and r[4] > 1.0]:
+                notes.append(f"{m} at 180 open runs into {o} ({v / 1000:.1f} cm3)")
     inboard_90, _ = worst(reports[SWING_ANGLES[0]], "inboard")
     if hh.front_flange_inboard is None:
         if knuckle_hit > 1.0 or inboard_90:
@@ -884,6 +899,14 @@ def check_lungs_door(d: Datums = D) -> list[str]:
             )
         for m, o, _f, _g, v in inboard_90:
             notes.append(f"{m} at 90 open runs into the {o} ({v / 1000:.1f} cm3). The door does not open.")
+        inboard_180, _ = worst(reports[SWING_ANGLES[1]], "inboard")
+        for m, o, _f, _g, v in inboard_180:
+            notes.append(f"{m} at 180 open runs into the {o} ({v / 1000:.1f} cm3). The door does not lie against the leg.")
+        if stop_in < SWING_ANGLES[1]:
+            notes.append(
+                f"the door stops at {stop_in:.0f} degrees against the leg or a stile; the "
+                f"ruling wants {SWING_ANGLES[1]:.0f}, flat against the leg"
+            )
 
     # the tray through the open door
     hits_90, gap_90 = worst(reports[SWING_ANGLES[0]], "carriage")
@@ -905,33 +928,31 @@ def check_lungs_door(d: Datums = D) -> list[str]:
             f"TRAY THROUGH THE OPEN DOOR, standing note. The extended carriage clears "
             f"the open door, lay-up and strike from {clear_a:.0f} degrees; {how}; at 180 "
             f"it clears by {gap_180:.1f}mm. The door is {d.t:.0f} of birch and "
-            f"{lt:.0f} of lay-up standing {HINGE_AXIS_OFF:.1f} off a pin in the knuckle gap, "
-            f"and the cheek passes {s.lungs_lining_t + s.lungs_slide_t:.1f} off the wall. "
+            f"{lt:.0f} of lay-up standing {AXIS_OFF:.2f} off a pin in the knuckle gap, "
+            f"and the cheek passes {lungs_carriage.carriage_origin(d)[0] - d.lungs_opening_x[0]:.1f} "
+            "past the stile's edge. "
             "Open the door past that angle before pulling the tray. Expected, and worth "
             "knowing."
         )
 
-    # flat against nothing: the leg is proud of the plane the door folds to
+    # flat against the leg: the proud knuckle puts the folded door clear of
+    # the flange's front face by the lay gap
     o180 = door_open(SWING_ANGLES[1], d).bounding_box()
-    x_hits = {a: worst(rows, "measured")[0] for a, rows in reports.items()}
-    x_gap = {a: worst(rows, "measured")[1] for a, rows in reports.items()}
-    at = "; ".join(
-        f"at {a:.0f} the bolted X flange "
-        + (f"shares {sum(v for *_r, v in x_hits[a]) / 1000:.1f} cm3 with the door" if x_hits[a]
-           else f"is {x_gap[a]:.1f}mm clear")
-        for a in SWING_ANGLES
-    )
+    gaps = {
+        fam: worst(reports[SWING_ANGLES[1]], fam)[1] for fam in ("measured", "inboard", "stile")
+    }
+    lay = o180.max.Y - (d.y_front - s.leg_wall_t)
     notes.append(
-        f"NO WALL TO LIE AGAINST, standing note. At 180 the door lies y "
-        f"{o180.max.Y:.1f}..{o180.min.Y:.1f}, {HINGE_AXIS_OFF * 2:.1f}mm in front of the "
-        f"carcass's front plane, and the front-left leg's own steel stands "
-        f"{s.leg_wall_t:.1f}mm in front of it, so the door lands on the leg's corner "
-        f"by {s.leg_wall_t - 2 * HINGE_AXIS_OFF:.1f}mm whichever way the Y flange runs "
-        f"({at}): the swing stops at {stop_out:.0f} degrees in the outboard case, "
-        f"{stop_in:.0f} in the inboard case. The left end wall's outer face is the "
-        "leg's inner face, so there is no louvre wall for the open door to lie against; "
-        "it stands out the front, hinge side. Expected, and worth knowing before a "
-        "hold-open is chosen."
+        f"AGAINST THE LEG AT 180, standing note. The knuckle is PROUD: pin {AXIS_OFF:.2f} "
+        f"in front of the carcass plane (half the leg's {s.leg_wall_t:.2f} wall plus half "
+        f"a {s.lungs_door_lay_gap:.1f} lay gap). At 180 the door lies y "
+        f"{o180.max.Y:.2f}..{o180.min.Y:.2f}, its outer face {-lay:.2f} in front of the "
+        f"flange's front face at y {d.y_front - s.leg_wall_t:.2f}; closest approach to the "
+        f"X flange {gaps['measured']:.2f}, the Y flange band {gaps['inboard']:.2f}, a stile "
+        f"{gaps['stile']:.2f}. The swing runs to {stop_in:.0f} degrees; the extended tray "
+        f"passes from {clear_a if clear_a is not None else float('nan'):.0f}. "
+        "The barrel to buy is an offset/raised-barrel continuous hinge; MEASURE THIS "
+        "when it arrives. Expected, and worth knowing before a hold-open is chosen."
     )
 
     # -- what the geometry cannot enforce ------------------------------------
@@ -996,9 +1017,10 @@ if __name__ == "__main__":
     ax = hinge_axis(d)
     (kx0, kx1), (ky0, ky1), (kz0, kz1) = catch_station(d)
     print(
-        f"{PART_NAME}: blank {w:.1f} x {h:.1f} x {d.t:.0f} (bay {d.s.bay_lungs_w:.0f} less "
+        f"{PART_NAME}: blank {w:.1f} x {h:.1f} x {d.t:.0f} (opening "
+        f"{d.lungs_opening_x[1] - d.lungs_opening_x[0]:.2f} less "
         f"HINGE_GAP {HINGE_GAP:.0f} and SIDE_REVEAL {SIDE_REVEAL:.0f}; {d.bay_h:.0f} less "
-        f"2 x REVEAL {REVEAL:.0f})"
+        f"2 x REVEAL {REVEAL:.0f}); pin {AXIS_OFF:.2f} proud"
     )
     print(
         f"  closed   x {pb.min.X:.1f}..{pb.max.X:.1f}  y {pb.min.Y:.1f}..{pb.max.Y:.1f}  "

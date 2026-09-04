@@ -354,20 +354,30 @@ tubes turn once and go through. SOURCE: derived. CONFIDENCE: design."""
 
 def carriage_width(d: Datums = D) -> float:
     """Outside width of the tray, cheek face to cheek face: the bay less the
-    lining and the slide member on each side. The hand clearance the bay
-    also budgets (``lungs_side_clear``) is spent INSIDE this width, between
-    the unit and the lining; see ``check_lungs_carriage``."""
+    left slide's spacer block (2026-09-04), the lining and the slide member
+    on each side. The hand clearance the bay also budgets
+    (``lungs_side_clear``) is spent INSIDE this width, between the unit and
+    the lining; see ``check_lungs_carriage``."""
     s = d.s
-    return s.bay_lungs_w - 2 * (s.lungs_lining_t + s.lungs_slide_t)
+    return s.bay_lungs_w - s.lungs_spacer - 2 * (s.lungs_lining_t + s.lungs_slide_t)
+
+
+def lining_faces(d: Datums = D) -> tuple[float, float]:
+    """Station X of the bay's two lining faces: on the spacer block's bay
+    face to the left, on the divider's lungs face to the right."""
+    s = d.s
+    return (d.lungs_x[0] + s.lungs_spacer + s.lungs_lining_t, d.lungs_x[1] - s.lungs_lining_t)
 
 
 def carriage_origin(d: Datums = D) -> tuple[float, float, float]:
-    """Station coordinates of the tray's lower, left, front corner: centred
-    across the bay, front flush with the cabinet member's front end (the
-    lungs bay's own inset, behind the door and its lay-up), standing on the
-    deck."""
+    """Station coordinates of the tray's lower, left, front corner: one
+    spacer, one lining and one slide off the left end wall (RULED 2026-09-04:
+    the left slide on a spacer, so the tray clears the front-left stile's
+    edge and the lungs door's knuckle on the pull), front flush with the
+    cabinet member's front end (the lungs bay's own inset, behind the door
+    and its lay-up), standing on the deck."""
     s = d.s
-    x0 = d.lungs_x[0] + s.lungs_lining_t + s.lungs_slide_t
+    x0 = lining_faces(d)[0] + s.lungs_slide_t
     return (x0, LUNGS_SLIDE_INSET, d.deck_top)
 
 
@@ -682,22 +692,37 @@ def joint_table(d: Datums = D) -> list[tuple]:
 # ---------------------------------------------------------------- checks
 
 
+def pullout_obstacles(d: Datums = D) -> list[tuple[str, Part]]:
+    """(label, solid) of everything the tray has to pass on the pull: the two
+    front legs' Y flange bands (steel), the two FRONT stiles (birch, 2026-09-04)
+    and the lungs door's knuckle, which stands proud of the carcass plane in
+    the gap between the front-left stile and the door.
+
+    ``machine`` and ``lungs_door`` are imported here rather than at the top
+    because both import this part; the same deferral ``Datums.mast_base``
+    makes for ``top_cap``."""
+    from stations.cnc_shapeoko.machine import front_leg_flanges
+    from stations.cnc_shapeoko.parts import lungs_door, stiles
+
+    out: list[tuple[str, Part]] = list(front_leg_flanges(d))
+    for label, _group, part in stiles.placed_all(d):
+        if "_front_" in label:
+            out.append((label, part))
+    out.append((lungs_door.HINGE_NAME, lungs_door.build_hinge(d)))
+    return out
+
+
 def pullout_clash(d: Datums = D) -> list[tuple[str, str, float, float, float]]:
-    """(part, flange, shared mm3, x overlap mm, travel at first contact mm)
+    """(part, obstacle, shared mm3, x overlap mm, travel at first contact mm)
     for every tray solid whose SWEPT volume, closed to full extension, reaches
-    into a front leg's Y-facing flange.
+    into a front leg's Y-facing flange, a front stile or the lungs door's
+    knuckle (``pullout_obstacles``).
 
     The whole travel is tested, not the end of it: the flange is a thin plate
     at the bay's front face, and a solid standing entirely in front of it at
     full extension went through it on the way. ``swept`` is what is
-    intersected; the end position alone would have missed the unit.
-
-    ``machine`` is imported here rather than at the top because it imports
-    the assembly that imports this part; the same deferral ``Datums.mast_base``
-    makes for ``top_cap``."""
-    from stations.cnc_shapeoko.machine import front_leg_flanges
-
-    flanges = front_leg_flanges(d)
+    intersected; the end position alone would have missed the unit."""
+    flanges = pullout_obstacles(d)
     out: list[tuple[str, str, float, float, float]] = []
     if not flanges:
         return out
@@ -738,7 +763,7 @@ def check_lungs_carriage(d: Datums = D) -> list[str]:
     long, wide, tall = CT15["env"]
 
     # -- the width is the bay's own arithmetic, not a choice
-    want = s.bay_lungs_w - 2 * (s.lungs_lining_t + s.lungs_slide_t)
+    want = s.bay_lungs_w - s.lungs_spacer - 2 * (s.lungs_lining_t + s.lungs_slide_t)
     if abs(w - want) > 0.1:
         notes.append(f"carriage is {w:.1f} wide against the bay's {want:.1f}")
 
@@ -752,8 +777,7 @@ def check_lungs_carriage(d: Datums = D) -> list[str]:
         )
 
     # -- hand clearance: the unit to each LINING face, the bay's own figure
-    lin_l = d.lungs_x[0] + s.lungs_lining_t
-    lin_r = d.lungs_x[1] - s.lungs_lining_t
+    lin_l, lin_r = lining_faces(d)
     for side, gap in (("left", cx0 - lin_l), ("right", lin_r - cx1)):
         if gap < s.lungs_side_clear - 1e-6:
             notes.append(
@@ -894,6 +918,15 @@ def check_lungs_carriage(d: Datums = D) -> list[str]:
                 f"{label} runs {overlap:.1f}mm into the {flabel} from "
                 f"{first:.0f}mm of travel on ({vol / 1000:.1f} cm3 swept). "
                 "The tray does not pull out."
+            )
+        if not clashes:
+            obs = ", ".join(lab for lab, _p in pullout_obstacles(d))
+            notes.append(
+                f"TRAY PULL-OUT, standing note. The tray's left cheek passes at x {x0:.1f}; "
+                f"the front-left stile's inner edge is at {d.lungs_opening_x[0]:.2f} and the "
+                "lungs door's knuckle stands in the gap past it. Swept over the whole "
+                f"{SLIDE_TRAVEL:.0f} of travel against {obs}: nothing shared. Expected, "
+                "and worth knowing before the spacer is read as optional."
             )
 
     # -- what the unit's faces have not told us

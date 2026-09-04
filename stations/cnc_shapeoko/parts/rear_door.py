@@ -3,10 +3,14 @@
 WHAT THIS PART IS
 =================
 
-One 18mm Baltic birch door spanning the brain band's open rear face, between
-the two end walls' inner faces, from the deck's top to the cap's underside,
-hinged along its BOTTOM edge on a continuous (piano) hinge so it swings down
-through 90 degrees and lies flat as a shelf. Ruled in the brief (v7, "Rear:
+One 18mm Baltic birch door spanning the brain band's open rear face, INSET
+between the two REAR STILES' inner edges (``parts/stiles.py``, RULED
+2026-09-04: the flange band at each corner is a fixed stile and every door
+sits between stile and divider, flush, no overlay), from the deck's top to
+the cap's underside, hinged along its BOTTOM edge on a continuous (piano)
+hinge so it swings down through 90 degrees and lies flat as a shelf. Between
+the stiles it also drops between the two rear legs' flange TOES, which the
+wall-to-wall door of C07 could not. Ruled in the brief (v7, "Rear:
 Brain"): "a full-width door that swings down on a piano hinge and becomes a
 shelf, so a hand holding a multimeter has somewhere to put it. The door
 carries the interlock switch, the IEC inlet, the RJ45, the external GX16s,
@@ -29,8 +33,8 @@ runs into the door's left end too: nothing is cut through the door there.
 THE JOINTS. ALL FACES, ONE HOUSING
 ==================================
 
-    left end wall     door's left end butts the wall's inner face
-    right end wall    door's right end butts the wall's inner face
+    rear-left stile   door's left end, END_REVEAL off the stile's inner edge
+    rear-right stile  door's right end, the same
     brain_partition   partition's rear edge (end grain) lands on the door's
                       inside face; the two Torx catch screws go through the
                       door into that edge
@@ -38,14 +42,13 @@ THE JOINTS. ALL FACES, ONE HOUSING
     top_cap           no contact: TOP_REVEAL, which the swing arc needs
     rear_door_reveal  the ONE housing: the pane sits in a PT-deep rabbet in
                       the door's inside face, flush with it
-    interlock_block   an 18mm birch offcut on the left end wall's inner face,
-                      the seat the interlock switch body screws to; the key
-                      on the door reaches into the switch's head
+    interlock_block   an 18mm birch offcut hung from the CAP's underside at
+                      the door's sealed end, the seat the interlock switch
+                      body screws to; the key on the door reaches into the
+                      switch's head
 
-The door's ends are cut to the end walls' faces with no side reveal: the
-acceptance for this part reads the door's X extent against
-``leg_x_inner - 2 * carcass_t`` to 0.1mm. The shop eases the ends on the
-first fit; the model does not pre-spend that.
+The door's ends stand ``END_REVEAL`` off each stile's inner edge, the house
+reveal, so the door reads as one more inset panel in the run of them.
 
 THE HINGE, AND WHY THE DOOR IS SHORTER THAN THE BAND
 ====================================================
@@ -68,9 +71,11 @@ THE INTERLOCK
 RULED 2026-09-04 (Jared): a TONGUE interlock, positive mode, Omron D4NS
 class. The operation key (D4DS-K1) is screwed to the door's inside face at
 the sealed end, its tongue standing ``KEY_TONGUE[2]`` into the band along
--Y; the switch body sits on the carcass side, on an 18mm birch offcut block
-screwed to the left end wall's inner face, its mounting face parallel to the
-door and ``SWITCH_STANDOFF`` inside it, head up, key slot facing the door.
+-Y; the switch body sits on the carcass side, on an 18mm birch offcut block hung
+from the cap's underside (the door's left end is now a stile's width in
+from the wall, so a block on the wall no longer reaches the key), its
+mounting face parallel to the door and ``SWITCH_STANDOFF`` inside it, head
+up, key slot facing the door.
 Closed, the tongue is in the head and the cam holds the direct-opening NC
 contact closed; the moment the door turns the tongue withdraws and the NC
 contact is forced open. That NC contact feeds the CONTACTOR COIL and nothing
@@ -145,8 +150,9 @@ PANEL CONVENTION
 Drawn flat: local origin at the door's lower-left corner AS SEEN FROM INSIDE
 THE BAND (station +X to local +X), local +Y up, local +Z through the
 thickness from the OUTSIDE (room) face at Z = 0 to the INSIDE (band) face at
-Z = t. Placed with ``plane``, whose origin is (t, y_rear, deck_top + HINGE_GAP)
-and whose z_dir is station -Y, the same convention the spine uses. In
+Z = t. Placed with ``plane``, whose origin is (x_left(d), y_rear, deck_top +
+HINGE_GAP) -- the rear-left stile's inner edge plus END_REVEAL -- and whose
+z_dir is station -Y, the same convention the spine uses. In
 ``flat_pattern`` terms the inside face is the CUT face, an inside-face pocket
 is POCKET_FRONT and an outside-face pocket is POCKET_BACK.
 
@@ -257,6 +263,11 @@ TOP_REVEAL = 2.0
 """Gap between the door's top edge and the cap's underside. SOURCE: design;
 the swing arc's rise is under 0.5mm and the rest is a finish reveal.
 CONFIDENCE: design, checked against the arc."""
+
+END_REVEAL = TOP_REVEAL
+"""Gap between each end of the door and the rear stile's inner edge it sits
+beside (2026-09-04: the door is between the stiles). The house reveal, the
+same figure the top edge and every drawer front get. CONFIDENCE: design."""
 
 HINGE_CLEAR = HINGE_GAP + TOP_REVEAL
 """What the door gives up against the bay height: the acceptance's "hinge
@@ -446,8 +457,9 @@ SOURCE: layout. CONFIDENCE: chosen, checked."""
 # ---- the reveal -------------------------------------------------------------
 WINDOW_LAND_X = GRID * 3
 """Solid door on each side of the window: from the partition's right face and
-from the right end wall's inner face. SOURCE: design. CONFIDENCE: design. Big
-enough that the right-hand stay's foot stays off the rabbet."""
+from the door's right end (the rear-right stile's edge, 2026-09-04). SOURCE:
+design. CONFIDENCE: design. Big enough that the right-hand stay's foot stays
+off the rabbet."""
 WINDOW_Y = (GRID * 5, GRID * 2)
 """(bottom edge up from the door's bottom, top land down from the door's top).
 The bottom clears the signal row's flanges and the rabbet's lip. SOURCE:
@@ -549,24 +561,28 @@ VFD standoff slab's top (z 458.7 station) by more than the switch body's
 length, so nothing of the switch stands in the drive's air. SOURCE: layout
 against vfd_mount.standoff_slab. CONFIDENCE: chosen, checked."""
 
-BLOCK = "18mm birch offcut, 40 x 120, screwed to the left end wall's inner face"
+BLOCK = "18mm birch offcut, 40 x 140, hung from the cap's underside"
 BLOCK_W = GRID * 2
-BLOCK_H = GRID * 6
-BLOCK_TOP_OVER = GRID / 2
-"""The switch's seat: one thickness of birch standing on the wall's inner
-face, its rear face SWITCH_STANDOFF inside the door, 40 wide so the 31 body
-sits on it with a pilot's worth of birch each side, 120 tall so the screw row
-and the stud row both land on it with the block's top BLOCK_TOP_OVER above
-the head. SOURCE: design; the wall is solid birch there, which the check
-proves (the louvre field stops 82mm short of the door). CONFIDENCE: design,
-checked. NOT nested: an offcut, cut from the sheet's waste."""
-BLOCK_SCREW = "5 x 60 pan head, two, through the block's outer (+X) face into the end wall, drilled at the fit"
-"""The block's own fixing runs along X, through 40 of birch into the wall's
-18: an edge-drilled hole the flat pattern cannot carry. Standing note.
-CONFIDENCE: chosen."""
-KEY_X = BLOCK_W / 2
-"""Door-local X of the tongue's centreline: the block's centre, which is the
-switch's centre. CONFIDENCE: derived."""
+BLOCK_H = GRID * 7
+"""The switch's seat: one thickness of birch hanging from the cap's
+underside, its top edge on the cap, its rear face SWITCH_STANDOFF inside the
+door, 40 wide so the 31 body sits on it with a pilot's worth of birch each
+side, 140 tall so the screw row and the stud row both land on it under the
+cap (head top 31.5 under the cap, studs 88 below that, half a module of birch
+under them; the check holds it). Hung from
+the cap rather than stood on the wall because the door's left end is a
+stile's width in from the wall (2026-09-04) and the key with it. SOURCE:
+design. CONFIDENCE: design, checked. NOT nested: an offcut, cut from the
+sheet's waste."""
+BLOCK_SCREW = "5 x 50 pan head, two, down through the cap into the block's top edge, drilled at the fit"
+"""The block's own fixing runs along Z, through the cap's 18 and 32 into the
+block's top edge: RULED 2026-09-04 (fix set, "interlock block screws 5x50").
+An edge-drilled hole the flat pattern cannot carry. Standing note.
+CONFIDENCE: ruling (length), chosen (route)."""
+KEY_X = GRID * 3
+"""Door-local X of the tongue's centreline: three modules in from the door's
+left end, so the block hangs clear of the stile and the drive's keep-out
+below it stays sealed. CONFIDENCE: chosen, checked."""
 
 # ---- the stays --------------------------------------------------------------
 STAY = "folding lid stay, two-arm, 200mm class, one each end"
@@ -586,10 +602,18 @@ four up from the bottom. SOURCE: layout. CONFIDENCE: chosen, checked."""
 # ====================================================================
 
 
+def x_left(d: Datums = D) -> float:
+    """Station X of the door's left end: the rear-left stile's inner edge
+    plus the end reveal. Every door-local X is measured from here."""
+    return d.rear_opening_x[0] + END_REVEAL
+
+
 def door_size(d: Datums = D) -> tuple[float, float]:
-    """(width, height) of the cut blank: wall face to wall face, bay height
-    less the hinge clearance."""
-    return (d.x_right - 2 * d.t, d.bay_h - HINGE_CLEAR)
+    """(width, height) of the cut blank: the rear opening between the two
+    stiles' inner edges less an end reveal each side, bay height less the
+    hinge clearance."""
+    x0, x1 = d.rear_opening_x
+    return (x1 - x0 - 2 * END_REVEAL, d.bay_h - HINGE_CLEAR)
 
 
 def z_bottom(d: Datums = D) -> float:
@@ -602,7 +626,7 @@ def plane(d: Datums = D) -> Plane:
     from the rear face at y_rear. Origin at the door's lower-left corner on
     its OUTSIDE face."""
     return Plane(
-        origin=(d.t, d.y_rear, z_bottom(d)),
+        origin=(x_left(d), d.y_rear, z_bottom(d)),
         x_dir=(1, 0, 0),
         z_dir=(0, -1, 0),
     )
@@ -619,12 +643,12 @@ def hinge_axis(d: Datums = D) -> Axis:
 
 def split_local(d: Datums = D) -> float:
     """Door-local X of the partition's LEFT face, the sealed/signal split."""
-    return d.brain_split_x - d.t
+    return d.brain_split_x - x_left(d)
 
 
 def keepout_local(d: Datums = D) -> float:
     """Door-local X where the VFD keep-out ends; nothing is cut left of it."""
-    return d.vfd_keepout_x[1] - d.t
+    return d.vfd_keepout_x[1] - x_left(d)
 
 
 def catch_positions(d: Datums = D) -> list[tuple[float, float]]:
@@ -655,10 +679,12 @@ def register(d: Datums = D) -> callouts.Register:
 
 def window_local(d: Datums = D) -> tuple[tuple[float, float], tuple[float, float]]:
     """((x0, x1), (y0, y1)) of the window aperture, door-local."""
-    _w, h = door_size(d)
-    sx0, sx1 = signal_x(d)
-    x0 = sx0 - d.t + WINDOW_LAND_X
-    x1 = sx1 - d.t - WINDOW_LAND_X
+    w, h = door_size(d)
+    sx0, _sx1 = signal_x(d)
+    # the signal zone runs to the right end wall; the door now stops at the
+    # rear-right stile, so the right land is measured from the door's end
+    x0 = sx0 - x_left(d) + WINDOW_LAND_X
+    x1 = w - WINDOW_LAND_X
     return ((x0, x1), (WINDOW_Y[0], h - WINDOW_Y[1]))
 
 
@@ -714,7 +740,7 @@ def swing_rise(d: Datums = D) -> float:
 def key_axis(d: Datums = D) -> tuple[float, float]:
     """(station x, station z) of the tongue's centreline, which runs along
     Y from the door's inside face into the switch's head."""
-    return (d.t + KEY_X, z_bottom(d) + KEY_Y)
+    return (x_left(d) + KEY_X, z_bottom(d) + KEY_Y)
 
 
 def switch_mount_y(d: Datums = D) -> float:
@@ -735,15 +761,17 @@ def switch_axis(d: Datums = D) -> tuple[float, float]:
 
 
 def block_extent(d: Datums = D) -> tuple[tuple[float, float], tuple[float, float], tuple[float, float]]:
-    """((x0, x1), (y0, y1), (z0, z1)) of the block, station coordinates: on
-    the wall's inner face, one thickness ending at the mounting face."""
+    """((x0, x1), (y0, y1), (z0, z1)) of the block, station coordinates:
+    hanging from the cap's underside, centred on the key, one thickness
+    ending at the mounting face."""
     y1 = switch_mount_y(d)
-    z1 = head_top_z(d) + BLOCK_TOP_OVER
-    return ((d.t, d.t + BLOCK_W), (y1 - d.t, y1), (z1 - BLOCK_H, z1))
+    x, _z = key_axis(d)
+    z1 = d.top_z[0]
+    return ((x - BLOCK_W / 2, x + BLOCK_W / 2), (y1 - d.t, y1), (z1 - BLOCK_H, z1))
 
 
 def block_plane(d: Datums = D) -> Plane:
-    """Block frame: local +X to station -X from the block's outer edge, local
+    """Block frame: local +X to station -X from the block's right edge, local
     +Y up (station +Z), local +Z into +Y so the mounting face is local Z = t,
     the CUT face in ``flat_pattern`` terms."""
     (x0, x1), (y0, _y1), (z0, _z1) = block_extent(d)
@@ -758,6 +786,8 @@ def switch_holes_local(d: Datums = D) -> list[tuple[str, float, float, float, fl
     cx = BLOCK_W / 2
     y_screw = head_top_z(d) - SWITCH_SCREW_ROW - z0
     y_stud = y_screw - SWITCH_STUD_ROW
+    # the block's own two 5 x 50s come down from the cap into this top edge:
+    # an edge hole, not a face feature, so nothing is cut here for them
     return [
         ("switch_screw_l", cx - SWITCH_SCREW_PITCH / 2, y_screw, SCREW_PILOT_D, T / 2),
         ("switch_screw_r", cx + SWITCH_SCREW_PITCH / 2, y_screw, SCREW_PILOT_D, T / 2),
@@ -849,7 +879,7 @@ def build_lamp_env(side: int, d: Datums = D) -> Part:
     the collar in the counterbore are not drawn: the bezel stands proud of
     the carcass envelope by design and the collar is inside the bore."""
     lx, ly = lamp_local(side, d)
-    x, z = d.t + lx, z_bottom(d) + ly
+    x, z = x_left(d) + lx, z_bottom(d) + ly
     y_land = d.y_rear - LAMP_LAND
     body_l = LAMP_DEPTH - LAMP_BEZEL_PROUD - LAMP_LAND
     return Box(
@@ -875,7 +905,7 @@ def build_stay(end: str, d: Datums = D) -> Part:
     return Box(
         STAY_FOLDED[0], STAY_FOLDED[2], STAY_FOLDED[1],
         align=(Align.MIN, Align.MAX, Align.MIN),
-    ).moved(Location((d.t + lx, d.y_rear - d.t, z_bottom(d) + ly)))
+    ).moved(Location((x_left(d) + lx, d.y_rear - d.t, z_bottom(d) + ly)))
 
 
 def stay_pilots_local(end: str, d: Datums = D) -> list[tuple[float, float]]:
@@ -1080,21 +1110,16 @@ def placed_all(d: Datums = D) -> list[tuple[str, str, Part]]:
 def joint_table(d: Datums = D) -> list[tuple]:
     """Declared joints for ``assembly.joints``. One housing (the pane in its
     rabbet); everything else meets on a face."""
-    from stations.cnc_shapeoko.parts.bay_walls import WALLS
     from stations.cnc_shapeoko.parts.brain_partition import PART_NAME as PARTITION
 
     y_in = d.y_rear - d.t
     out: list[tuple] = [
-        (WALLS[0].name, PART_NAME, "butt", None, 0.0, 0.0,
-         "door's left end on the wall's inner face"),
-        (WALLS[3].name, PART_NAME, "butt", None, 0.0, 0.0,
-         "door's right end on the wall's inner face"),
         (PARTITION, PART_NAME, "butt", None, 0.0, 0.0,
          "partition's rear edge lands on the door's inside face; two Torx screws through the door into it"),
         (PART_NAME, REVEAL_NAME, "housing", "y", y_in, y_in + REVEAL_DEPTH,
          "pane flush in the inside-face rabbet"),
-        (WALLS[0].name, BLOCK_NAME, "butt", None, 0.0, 0.0,
-         "block flat on the wall's inner face, two screws through its outer face"),
+        ("top_cap", BLOCK_NAME, "butt", None, 0.0, 0.0,
+         "block's top edge on the cap's underside, two 5 x 50 down through the cap"),
         (BLOCK_NAME, SWITCH_ENV_NAME, "bearing", None, 0.0, 0.0,
          "switch body on the block's rear face, two M4 and two studs"),
         (PART_NAME, KEY_ENV_NAME, "bearing", None, 0.0, 0.0,
@@ -1189,10 +1214,17 @@ def check_rear_door(d: Datums = D) -> list[str]:
     all_cuts = cuts(d)
 
     # -- the blank -----------------------------------------------------------
-    if abs(w - (s.leg_x_inner - 2 * s.carcass_t)) > 0.1:
+    ox0, ox1 = d.rear_opening_x
+    if abs(w - (ox1 - ox0 - 2 * END_REVEAL)) > 0.1:
         notes.append(
-            f"the door is {w:.2f} wide and the end walls' inner faces are "
-            f"{s.leg_x_inner - 2 * s.carcass_t:.2f} apart: it does not span them"
+            f"the door is {w:.2f} wide and the rear stiles' inner edges are "
+            f"{ox1 - ox0:.2f} apart: it is not the opening less two reveals"
+        )
+    pb = place(d=d).bounding_box()
+    if pb.min.X < ox0 + END_REVEAL - 1e-6 or pb.max.X > ox1 - END_REVEAL + 1e-6:
+        notes.append(
+            f"the door spans x {pb.min.X:.1f}..{pb.max.X:.1f} against the stiles' "
+            f"{ox0:.1f}..{ox1:.1f}: an end reveal is wrong"
         )
     if abs(h - (d.bay_h - HINGE_CLEAR)) > 1e-6:
         notes.append(f"the door is {h:.2f} tall, not bay_h less HINGE_CLEAR")
@@ -1289,9 +1321,10 @@ def check_rear_door(d: Datums = D) -> list[str]:
     # -- the window and the pane --------------------------------------------
     (wx0, wx1), (wy0, wy1) = window_local(d)
     sx0, sx1 = signal_x(d)
-    if wx0 + d.t < sx0 or wx1 + d.t > sx1:
+    xl = x_left(d)
+    if wx0 + xl < sx0 or wx1 + xl > sx1:
         notes.append(
-            f"the window runs x {wx0 + d.t:.1f}..{wx1 + d.t:.1f} station and the signal "
+            f"the window runs x {wx0 + xl:.1f}..{wx1 + xl:.1f} station and the signal "
             f"zone is {sx0:.1f}..{sx1:.1f}: the reveal is not wholly over the signal side"
         )
     rw, rh = rabbet_size(d)
@@ -1337,25 +1370,29 @@ def check_rear_door(d: Datums = D) -> list[str]:
             f"the key swings on a {key_radius(d):.0f}mm radius; the datasheet wants "
             f"{KEY_R_MIN:.0f} or more for a hinged door"
         )
-    # the block has to land on solid birch, not on the louvre field
-    from stations.cnc_shapeoko.parts.bay_walls import placed_all as walls_placed
-    wall = walls_placed(d)[0]
-    (_bx0, _bx1), (by0, by1), (bz0, bz1) = block_extent(d)
-    probe = Box(1.0, by1 - by0, bz1 - bz0, align=(Align.MAX, Align.MIN, Align.MIN)).moved(
-        Location((d.t, by0, bz0))
+    # the block's top edge has to land on solid cap, not on the exhaust field
+    # or the mast pad, and the block has to stay clear of the stile
+    from stations.cnc_shapeoko.parts.top_cap import build as build_cap
+    cap = d.top_plane * build_cap(d)
+    (bx0, bx1), (by0, by1), (bz0, bz1) = block_extent(d)
+    probe = Box(bx1 - bx0, by1 - by0, 1.0, align=(Align.MIN, Align.MIN, Align.MIN)).moved(
+        Location((bx0, by0, bz1))
     )
     try:
-        solid = (wall & probe).volume
+        solid = (cap & probe).volume
     except Exception:
         solid = 0.0
-    footprint = (by1 - by0) * (bz1 - bz0)
+    footprint = (bx1 - bx0) * (by1 - by0)
     if solid < footprint - 1.0:
         notes.append(
-            f"the interlock block lands on {solid / footprint:.0%} birch at y {by0:.0f}..{by1:.0f} "
-            f"z {bz0:.0f}..{bz1:.0f}: the louvre field is under it"
+            f"the interlock block hangs on {solid / footprint:.0%} cap at x {bx0:.0f}..{bx1:.0f} "
+            f"y {by0:.0f}..{by1:.0f}: a cut in the cap is over it"
         )
-    if bz1 >= d.top_z[0]:
-        notes.append(f"the interlock block's top at z {bz1:.1f} is in the cap")
+    if abs(bz1 - d.top_z[0]) > 1e-6:
+        notes.append(f"the interlock block's top at z {bz1:.1f} is not on the cap's underside")
+    for lab, (sx0, sx1), (sy0, sy1) in d.stiles:
+        if bx0 < sx1 and bx1 > sx0 and by0 < sy1 and by1 > sy0:
+            notes.append(f"the interlock block stands in {lab}")
     for label, x, y, dia, depth in switch_holes_local(d):
         if x - dia / 2 < 0 or x + dia / 2 > BLOCK_W or y - dia / 2 < 0 or y + dia / 2 > BLOCK_H:
             notes.append(f"{label} runs off the {BLOCK_W:.0f} x {BLOCK_H:.0f} block")
@@ -1386,8 +1423,8 @@ def check_rear_door(d: Datums = D) -> list[str]:
         f"({KEY_X:.0f}, {KEY_Y:.0f}), tongue {reach:.1f} into the head closed, insertion radius "
         f"{key_radius(d):.0f}. The coil rides the direct-opening NC contact, closed while the "
         "key is in. The key stands 28 proud of the door's inside face at its left end, and "
-        "of the open shelf. The block is NOT nested: a 40 x 120 offcut, fixed with two "
-        f"{BLOCK_SCREW}. The M20 conduit exits the body's bottom, downward. Expected, and "
+        "of the open shelf. The block is NOT nested: a 40 x 140 offcut hung from the cap, "
+        f"fixed with two {BLOCK_SCREW}. The M20 conduit exits the body's bottom, downward. Expected, and "
         "worth knowing before the key is fitted: its slotted holes are the +-1 alignment."
     )
 
@@ -1403,8 +1440,8 @@ def check_rear_door(d: Datums = D) -> list[str]:
         )
     if ob.max.Y <= d.y_rear:
         notes.append("the open door did not swing rearward: OPEN_ANGLE's sign is wrong")
-    if ob.min.X < d.t - 1e-6 or ob.max.X > d.x_right - d.t + 1e-6:
-        notes.append("the open door reaches into a rear leg's bolt flange")
+    if ob.min.X < d.rear_opening_x[0] - 1e-6 or ob.max.X > d.rear_opening_x[1] + 1e-6:
+        notes.append("the open door reaches past a rear stile's inner edge")
     hh = s.leg_holes
     clashes = open_clash(d)
     if hh.front_flange_inboard is None and clashes:
@@ -1533,7 +1570,8 @@ if __name__ == "__main__":
     ax = hinge_axis(d)
     (wx0, wx1), (wy0, wy1) = window_local(d)
     pw, ph = pane_size(d)
-    print(f"{PART_NAME}: blank {w:.1f} x {h:.1f} x {d.t:.0f} (bay {d.bay_h:.0f} less "
+    print(f"{PART_NAME}: blank {w:.1f} x {h:.1f} x {d.t:.0f} (between the rear stiles less "
+          f"2 x END_REVEAL {END_REVEAL:.0f}; bay {d.bay_h:.0f} less "
           f"HINGE_CLEAR {HINGE_CLEAR:.0f} = gap {HINGE_GAP:.0f} + reveal {TOP_REVEAL:.0f})")
     print(f"  closed   x {pb.min.X:.1f}..{pb.max.X:.1f}  y {pb.min.Y:.1f}..{pb.max.Y:.1f}  "
           f"z {pb.min.Z:.1f}..{pb.max.Z:.1f}   volume {flat.volume / 1000:.1f} cm3")
