@@ -797,6 +797,16 @@ def check_mains_backplate(d: Datums = DATUMS) -> list[str]:
             f"extractor is {d.s.extractor_env[0]:.0f} long in a {d.front_bay_d:.0f} bay: "
             f"{-room:.0f}mm short"
         )
+    else:
+        notes.append(
+            "RECEPTACLE ROOM IS ARITHMETIC, standing note. The box stands "
+            f"{BOX_ENV[2]:.1f}mm into the lungs bay at z {bz0:.0f}..{bz1:.0f}, leaving "
+            f"{room:.0f}mm in front of a {d.s.extractor_env[0]:.0f} extractor in the "
+            f"{d.front_bay_d:.0f} bay. lungs_carriage is UNMODELLED, so no solid has "
+            "been compared against this box: a green gate here is bay depth minus "
+            "two lengths, nothing more. The carriage, when modelled, owns the "
+            "geometry check and must include this box in its clearance."
+        )
 
     # -- what the ordered parts have not told us yet
     notes.append(
