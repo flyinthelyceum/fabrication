@@ -62,6 +62,7 @@ from stations.cnc_shapeoko.parts import (
     signal_mounts,
     spine_panel,
     stock_rails,
+    stock_wash,
     top_cap,
     trays,
     vfd_mount,
@@ -92,7 +93,6 @@ TODO_MARKS = (
 # see and will not count.
 UNMODELLED = (
     "exhaust_plenum",
-    "stock_wash",
 )
 
 MEASURE_MARKS = (
@@ -139,6 +139,7 @@ def collect() -> list[tuple[str, str, str]]:
         ("rear_door", rear_door.check_rear_door(d)),
         ("lungs_door", lungs_door.check_lungs_door(d)),
         ("signal_mounts", signal_mounts.check_signal_mounts(d)),
+        ("stock_wash", stock_wash.check_stock_wash(d)),
         ("assembly", check_assembly(comps, d)),
         ("machine", check_machine(comps, d)),
         (
@@ -191,9 +192,9 @@ def main() -> int:
         todo = sum(1 for r in rows if r[0] == "TODO")
         print(
             "SAFE TO CUT as modelled. The measurements above still gate the real "
-            f"sheet, and {todo} part(s) remain unmodelled for final assembly: "
-            + ", ".join(UNMODELLED)
-            + "."
+            "sheet. UNMODELLED for final assembly: "
+            + (", ".join(UNMODELLED) if UNMODELLED else "none")
+            + f" ({todo} TODO)."
         )
     return 1 if blocking else 0
 
