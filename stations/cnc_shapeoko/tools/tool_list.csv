@@ -11,8 +11,8 @@ T021,#251 .25in Downcut Flat Endmill,D1,cutter,6.35,6.35,63.5,,,,1,CATALOG,,,
 T022,#301 .50in 90-degree V-bit,D1,cutter,6.35,12.7,50.8,,,,1,CATALOG,,,
 T023,#302 .50in 60-degree V-bit,D1,cutter,6.35,12.7,50.8,,,,1,CATALOG,,,
 T024,McFly Surfacing Cutter (1/4in shank),D1,cutter,6.35,25.4,47,,,,1,CATALOG,"oal photo-derived 2026-09-03, +/-5%. Socket depth caps at GRID (20mm) so this tolerance never reaches the geometry; bore comes off the nominal 6.35 shank.",,
-T025,16mm spindle-shaft wrench,D1,wrench,,,,150,41,,1,MEASURE,"photo 2026-09-03, +/-5%. Thickness not captured: lay flat in both frames.",,
-T026,22mm collet-nut wrench,D1,wrench,,,,167,50,,1,MEASURE,"photo 2026-09-03, +/-5%. Thickness not captured: lay flat in both frames.",,
+T025,16mm spindle-shaft wrench,D1,wrench,,,,145.8,39.4,,1,CAPTURED,"photo 2026-09-03, +/-5%. Thickness not captured: lay flat in both frames.",10,captures/T025.dxf
+T026,22mm collet-nut wrench,D1,wrench,,,,163.8,49.1,,1,CAPTURED,"photo 2026-09-03, +/-5%. Thickness not captured: lay flat in both frames.",10,captures/T026.dxf
 T027,ER-16 collet nut (M19 thread),D1,block,,,,,,,1,MEASURE,"not resolvable from the photos: only candidate in frame is the tube labelled COLLETS ER16 1/8, which is T014 packaging.",,
 T028,Spare carbide inserts for McFly (included set),D1,block,,,,,,,4,MEASURE,not photographed loose. The inserts were installed in the McFly body.,,
 T029,2-meter USB cable (removable),D2,block,,,,213,49,,1,MEASURE,"coiled footprint, photo 2026-09-03, +/-5%.",,

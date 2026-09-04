@@ -14,9 +14,13 @@ until it is built.
 PIPELINE
 ========
 
-    ArUco detect (DICT_4X4_50, ids 0-3; three or more, else reject)
-    -> homography from the detected corners to sheet mm at PX_PER_MM
-       (``trace_sheet.tag_corners`` is the only source of those positions)
+    ArUco detect (DICT_4X4_50) -> which SHEET SIZE is in the frame, from the
+       quartet of ids the markers belong to (``trace_sheet.SIZE_FOR_TAG``);
+       reject on two quartets, on none, or on fewer than MIN_TAGS of the one
+       that is there
+    -> homography from the detected corners to that size's sheet mm at
+       PX_PER_MM (``SheetSpec.tag_corners`` is the only source of those
+       positions)
     -> warp the photo into the sheet frame, crop the trace field inside its
        border line, white out any tag square that overlaps the crop (the
        14mm-margin sheet keeps the field clear of the tags, so this is
@@ -47,6 +51,27 @@ PIPELINE
 A rejection writes NOTHING: no DXF, no preview, no row. The Result carries
 one line saying why, and that line is what the Form's CAPTURE tab and the
 morning digest show.
+
+THE SHEET SIZE IS NEVER AN ARGUMENT
+===================================
+
+Nobody tells this module what paper the trace is on. Each size in
+``trace_sheet.SIZES`` carries its own quartet of ArUco ids -- LETTER 0-3, A4
+4-7, TABLOID 8-11, A3 12-15, A2 16-19, ARCH_B 20-23 -- so the markers in the
+photo name the geometry, and ``identify`` looks it up. Two consequences worth
+having:
+
+  * a student who prints TABLOID and photographs it gets TABLOID's window and
+    TABLOID's mm, with nothing to get wrong on a form;
+  * the failure that would otherwise be silent -- a sheet read against the
+    wrong page size, every dimension out by the ratio of the two pages -- is
+    not reachable. It is a rejection, not a wrong number.
+
+``identify`` counts a quartet as a candidate sheet at ``SHEET_MIN_TAGS``
+markers, not one: a single stray id out of a 50-marker dictionary is a
+detector false positive, and one false positive should not reject an
+otherwise good capture. Two candidates in one frame is "two different sheet
+sizes in frame" and rejects.
 
 THE OFFSETS
 ===========
@@ -93,7 +118,7 @@ CONFIDENCE: choice, settled by the fit test (spec step 5)."""
 
 DEFAULT_PRINT_SCALE = 1.0
 """``ingest``'s ``print_scale`` default: an unscaled, 100% print. DEFINITION:
-measured scale-bar length / 100 (the bar prints at ``trace_sheet.SCALE_BAR``,
+measured scale-bar length / 100 (the bar prints at ``trace_sheet.SCALE_BAR_MM``,
 100mm nominal). If the printer will not lay the sheet down at 100% and Jared
 prints it smaller instead, every mm in the photo is smaller than the sheet's
 tags say by that same factor, and the recovered L/W come back inflated by
@@ -109,7 +134,8 @@ CONFIDENCE: rule; verify a scaled print returns the correct mm before
 trusting a capture made on one."""
 
 PX_PER_MM = 10.0
-"""The rectified sheet's resolution: 0.1mm a pixel, 2159 x 2794 for Letter.
+"""The rectified sheet's resolution: 0.1mm a pixel, 2159 x 2794 for LETTER and
+4200 x 5940 for A2.
 Finer than any phone delivers at arm's length, coarse enough to run in a
 second. CONFIDENCE: choice."""
 
@@ -156,6 +182,15 @@ no hole; a closed loop around anything bigger than a coin has a large one.
 CONFIDENCE: rule."""
 
 MIN_TAGS = 3
+"""Tags of the identified size needed to rectify. Three corners fix a
+homography; the fourth is redundancy. CONFIDENCE: rule."""
+
+SHEET_MIN_TAGS = 2
+"""Detections of one size's quartet before that size counts as a sheet in the
+frame. One is a false positive out of a 50-marker dictionary and is ignored;
+two is a sheet, and two sizes at two each is two sheets in one photo.
+CONFIDENCE: rule."""
+
 HEIGHT_CLASSES = sheet.GAUGE_SLOTS
 
 PREVIEW_PX_PER_MM = 3.0
@@ -174,22 +209,26 @@ class Result:
     preview_path: Path | None = None
     L: float | None = None
     W: float | None = None
+    size: str | None = None
+    """Which sheet size the tags said this was. Set on every accepted capture,
+    and on a rejection whenever the size was identified before the reason."""
 
     def line(self) -> str:
         if self.ok:
-            return f"ok: L {self.L:.1f} W {self.W:.1f}, {self.dxf_path}"
+            return f"ok: {self.size} sheet, L {self.L:.1f} W {self.W:.1f}, {self.dxf_path}"
         return f"rejected: {self.reason}"
 
 
-def _reject(reason: str) -> Result:
-    return Result(ok=False, reason=reason)
+def _reject(reason: str, size: str | None = None) -> Result:
+    return Result(ok=False, reason=reason, size=size)
 
 
 # ================================================================ steps
 
 
 def detect_tags(gray: np.ndarray) -> dict[int, np.ndarray]:
-    """id -> 4 x 2 image corners for every sheet tag found."""
+    """id -> 4 x 2 image corners for every marker found that belongs to SOME
+    sheet in the family. Ids outside the family are dropped here."""
     d = cv2.aruco.getPredefinedDictionary(getattr(cv2.aruco, sheet.ARUCO_DICT))
     params = cv2.aruco.DetectorParameters()
     params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
@@ -198,28 +237,50 @@ def detect_tags(gray: np.ndarray) -> dict[int, np.ndarray]:
     if ids is None:
         return found
     for c, i in zip(corners, ids.flatten()):
-        if int(i) in sheet.TAG_IDS:
+        if int(i) in sheet.SIZE_FOR_TAG:
             found[int(i)] = c.reshape(4, 2).astype(np.float64)
     return found
 
 
-def rectify(img: np.ndarray, tags: dict[int, np.ndarray]) -> np.ndarray:
-    """The photo warped into the sheet frame at PX_PER_MM."""
+def identify(found: dict[int, np.ndarray]) -> tuple[sheet.SheetSpec | None, dict[int, np.ndarray], str]:
+    """Which sheet size is in the frame. Returns (spec, that size's tags,
+    reason); ``spec`` is None exactly when ``reason`` is non-empty.
+
+    A size counts as present at SHEET_MIN_TAGS of its own quartet, so a lone
+    stray detection is ignored rather than being read as a second sheet."""
+    by_size: dict[str, dict[int, np.ndarray]] = {}
+    for tid, corners in found.items():
+        by_size.setdefault(sheet.SIZE_FOR_TAG[tid].name, {})[tid] = corners
+    present = sorted(n for n, t in by_size.items() if len(t) >= SHEET_MIN_TAGS)
+    if len(present) > 1:
+        return None, {}, f"two different sheet sizes in frame ({' and '.join(present)}): one sheet per photo"
+    if not present:
+        seen = ", ".join(str(i) for i in sorted(found)) or "none"
+        return None, {}, (
+            "no known sheet size found: the four corner squares were not read "
+            f"(corner squares seen: {seen}). Sheet cut off, out of focus, or not a trace sheet."
+        )
+    spec = sheet.SIZES[present[0]]
+    return spec, by_size[present[0]], ""
+
+
+def rectify(img: np.ndarray, tags: dict[int, np.ndarray], spec: sheet.SheetSpec) -> np.ndarray:
+    """The photo warped into that size's sheet frame at PX_PER_MM."""
     src = np.concatenate([tags[i] for i in sorted(tags)])
-    dst = np.concatenate([sheet.tag_corners(i) for i in sorted(tags)]) * PX_PER_MM
+    dst = np.concatenate([spec.tag_corners(i) for i in sorted(tags)]) * PX_PER_MM
     H, _mask = cv2.findHomography(src, dst, 0)
-    size = (int(round(sheet.PAGE_W * PX_PER_MM)), int(round(sheet.PAGE_H * PX_PER_MM)))
+    size = (int(round(spec.page_w * PX_PER_MM)), int(round(spec.page_h * PX_PER_MM)))
     return cv2.warpPerspective(img, H, size, flags=cv2.INTER_LINEAR, borderValue=(255, 255, 255))
 
 
-def field_crop(rect_gray: np.ndarray) -> tuple[np.ndarray, tuple[int, int]]:
+def field_crop(rect_gray: np.ndarray, spec: sheet.SheetSpec) -> tuple[np.ndarray, tuple[int, int]]:
     """The trace field, inside its border, tags whited out. Returns the crop
     and its (x, y) origin in rectified pixels."""
-    x0, y0, x1, y1 = sheet.field_rect()
+    x0, y0, x1, y1 = spec.field_rect()
     px0, py0 = int(round((x0 + FIELD_INSET) * PX_PER_MM)), int(round((y0 + FIELD_INSET) * PX_PER_MM))
     px1, py1 = int(round((x1 - FIELD_INSET) * PX_PER_MM)), int(round((y1 - FIELD_INSET) * PX_PER_MM))
     crop = rect_gray[py0:py1, px0:px1].copy()
-    for mx0, my0, mx1, my1 in sheet.tag_masks():
+    for mx0, my0, mx1, my1 in spec.tag_masks():
         ax0 = int(round((mx0 - MASK_PAD) * PX_PER_MM)) - px0
         ay0 = int(round((my0 - MASK_PAD) * PX_PER_MM)) - py0
         ax1 = int(round((mx1 + MASK_PAD) * PX_PER_MM)) - px0
@@ -287,9 +348,15 @@ def _align_to_min_rect(pts_mm: np.ndarray) -> tuple[np.ndarray, float, float, np
         ang += 90.0
         rw, rh = rh, rw
     M = cv2.getRotationMatrix2D((cx, cy), ang, 1.0)
-    rot = (M[:, :2] @ pts_mm.T).T + M[:, 2]
-    rot -= rot.min(axis=0)
-    M[:, 2] -= (M[:, :2] @ pts_mm.T).T.min(axis=0)
+    raw = (M[:, :2] @ pts_mm.T).T + M[:, 2]
+    shift = raw.min(axis=0)
+    rot = raw - shift
+    # M must fold in the SAME shift that was just applied to ``raw`` (not
+    # M[:, :2] @ pts_mm.T alone, which drops the rotation's own translation
+    # term and left the returned M's inverse not actually undoing the
+    # alignment -- this is what sent the preview's pocket overlay tens of
+    # mm from the tool).
+    M[:, 2] -= shift
     return rot, float(rw), float(rh), M
 
 
@@ -305,14 +372,14 @@ def _write_dxf(pts_mm: np.ndarray, path: Path) -> None:
     ex.write(str(path))
 
 
-def _write_preview(rect: np.ndarray, trace_mm: np.ndarray, pocket_sheet_mm: np.ndarray, text: str, path: Path) -> None:
+def _write_preview(rect: np.ndarray, trace_mm: np.ndarray, pocket_sheet_mm: np.ndarray, text: str, path: Path, spec: sheet.SheetSpec) -> None:
     s = PREVIEW_PX_PER_MM / PX_PER_MM
     img = cv2.resize(rect, None, fx=s, fy=s, interpolation=cv2.INTER_AREA)
     if img.ndim == 2:
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
     cv2.polylines(img, [np.round(trace_mm * PREVIEW_PX_PER_MM).astype(np.int32)], True, TRACE_COLOUR, 2, cv2.LINE_AA)
     cv2.polylines(img, [np.round(pocket_sheet_mm * PREVIEW_PX_PER_MM).astype(np.int32)], True, POCKET_COLOUR, 2, cv2.LINE_AA)
-    x0, y0, _x1, _y1 = sheet.field_rect()
+    x0, y0, _x1, _y1 = spec.field_rect()
     org = (int((x0 + 4) * PREVIEW_PX_PER_MM), int((y0 + 12) * PREVIEW_PX_PER_MM))
     cv2.putText(img, text, org, cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 4, cv2.LINE_AA)
     cv2.putText(img, text, org, cv2.FONT_HERSHEY_SIMPLEX, 0.7, POCKET_COLOUR, 2, cv2.LINE_AA)
@@ -377,9 +444,11 @@ def ingest(
     out_dir: Path = CAPTURES,
     csv_path: Path | None = TOOL_LIST,
 ) -> Result:
-    """One capture. ``print_scale`` corrects a sheet printed at other than
-    100% (see ``DEFAULT_PRINT_SCALE``). ``out_dir`` and ``csv_path`` exist so
-    a test can point the writes anywhere; ``csv_path=None`` skips the row."""
+    """One capture. The paper size is NOT an argument: the ArUco quartet in
+    the photo names it (see ``identify``). ``print_scale`` corrects a sheet
+    printed at other than 100% (see ``DEFAULT_PRINT_SCALE``). ``out_dir`` and
+    ``csv_path`` exist so a test can point the writes anywhere;
+    ``csv_path=None`` skips the row."""
     if source == "camera":
         raise NotImplementedError("v2: machine Z-plate camera")
     if source != "trace":
@@ -398,36 +467,43 @@ def ingest(
         return _reject(f"could not read image {image_path}")
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    tags = detect_tags(gray)
+    found = detect_tags(gray)
+    spec, tags, why = identify(found)
+    if spec is None:
+        return _reject(why)
     if len(tags) < MIN_TAGS:
-        return _reject(f"{len(tags)} of {len(sheet.TAG_IDS)} tags found (need {MIN_TAGS}): tag covered, sheet cut off, or out of focus")
+        return _reject(
+            f"{len(tags)} of 4 corner squares found on the {spec.name} sheet (need {MIN_TAGS}): "
+            "square covered, sheet cut off, or out of focus",
+            size=spec.name,
+        )
 
-    rect = rectify(gray, tags)
-    crop, origin = field_crop(rect)
+    rect = rectify(gray, tags, spec)
+    crop, origin = field_crop(rect, spec)
     binary = threshold(crop)
 
     contours, hierarchy = cv2.findContours(binary, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE)
     if hierarchy is None or len(contours) == 0:
-        return _reject("no trace found in the field")
+        return _reject("no trace found in the field", spec.name)
     hier = hierarchy[0]
     min_area_px = MIN_TRACE_MM2 * PX_PER_MM ** 2
     tops = [(cv2.contourArea(c), i) for i, c in enumerate(contours) if hier[i][3] == -1 and cv2.contourArea(c) >= min_area_px]
     if not tops:
-        return _reject("no trace found in the field")
+        return _reject("no trace found in the field", spec.name)
     tops.sort(reverse=True)
     area_out, idx = tops[0]
     if len(tops) > 1 and tops[1][0] > SECOND_FRAC * area_out:
-        return _reject(f"two traces in the field (second is {tops[1][0] / area_out:.0%} of the largest): one tool per sheet")
+        return _reject(f"two traces in the field (second is {tops[1][0] / area_out:.0%} of the largest): one tool per sheet", spec.name)
 
     outer = contours[idx]
     bx, by, bw, bh = cv2.boundingRect(outer)
     if bx <= 0 or by <= 0 or bx + bw >= crop.shape[1] or by + bh >= crop.shape[0]:
-        return _reject("trace touches the field edge: the tool ran off the field")
+        return _reject(f"trace touches the edge of the {spec.name} window: the tool ran off the field, take a bigger sheet", spec.name)
 
     holes = [(cv2.contourArea(contours[j]), j) for j in range(len(contours)) if hier[j][3] == idx]
     hole_area, hole_idx = max(holes) if holes else (0.0, -1)
     if hole_area < HOLE_FRAC * area_out:
-        return _reject("trace is not a closed loop: the line does not meet itself")
+        return _reject("trace is not a closed loop: the line does not meet itself", spec.name)
 
     p_out = cv2.arcLength(outer, True)
     p_hole = cv2.arcLength(contours[hole_idx], True)
@@ -449,14 +525,22 @@ def ingest(
     stroke_mm_true = stroke_mm * print_scale
     tool_sheet = _offset_polygon(trace_mm_true, -(stroke_mm_true / 2 + PEN_R))
     if len(tool_sheet) < 3:
-        return _reject("trace collapsed under the collar inset: nothing that small is a tool")
+        return _reject("trace collapsed under the collar inset: nothing that small is a tool", spec.name)
     tool_local, L, W, M = _align_to_min_rect(tool_sheet)       # true mm from here on
-    pocket_local = _offset_polygon(tool_local, FOAM_CLEAR)
-    pocket_local -= pocket_local.min(axis=0)
+    pocket_local_raw = _offset_polygon(tool_local, FOAM_CLEAR)
+    pocket_min = pocket_local_raw.min(axis=0)
+    pocket_local = pocket_local_raw - pocket_min
     # the pocket back in the sheet's NOMINAL frame, for the preview only -- the
-    # preview is drawn on ``rect``, which is still in that nominal frame
+    # preview is drawn on ``rect``, which is still in that nominal frame.
+    # ``pocket_local + pocket_min`` undoes the zeroing above to get back
+    # ``pocket_local_raw`` (still in the tool_local frame, i.e. what
+    # ``Minv`` actually maps from) -- unlike ``tool_local.min(axis=0) -
+    # FOAM_CLEAR``, which only approximates that offset when the tool's
+    # bbox extremes have axis-aligned outward normals, false for a
+    # concave outline like a jaw notch (this is what put the pocket
+    # overlay nowhere near the tool in the preview).
     Minv = cv2.invertAffineTransform(M)
-    pocket_true = (Minv[:, :2] @ (pocket_local + (tool_local.min(axis=0) - FOAM_CLEAR)).T).T + Minv[:, 2]
+    pocket_true = (Minv[:, :2] @ (pocket_local + pocket_min).T).T + Minv[:, 2]
     pocket_sheet = pocket_true / print_scale
 
     dxf_path = out_dir / f"{tag}.dxf"
@@ -464,8 +548,8 @@ def ingest(
     _write_dxf(pocket_local, dxf_path)
     _write_preview(
         rect, trace_mm, pocket_sheet,
-        f"{tag}  L {L:.1f}  W {W:.1f}  H<={height_class:g}  line {stroke_mm_true:.2f}  {len(tags)} tags  print_scale {print_scale:.3f}",
-        preview_path,
+        f"{tag}  {spec.name}  L {L:.1f}  W {W:.1f}  H<={height_class:g}  line {stroke_mm_true:.2f}  {len(tags)} tags  print_scale {print_scale:.3f}",
+        preview_path, spec,
     )
     if csv_path is not None:
         try:
@@ -473,7 +557,7 @@ def ingest(
         except ValueError:
             rel = str(dxf_path)
         upsert_row(csv_path, tag, height_class, rel, L, W)
-    return Result(ok=True, reason="", dxf_path=dxf_path, preview_path=preview_path, L=L, W=W)
+    return Result(ok=True, reason="", dxf_path=dxf_path, preview_path=preview_path, L=L, W=W, size=spec.name)
 
 
 if __name__ == "__main__":

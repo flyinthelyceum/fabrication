@@ -7,6 +7,11 @@ shape is drawn on it the way the collar would draw it, the page is warped
 as a phone held off-axis would see it, and the ingest has to give the shape
 back.
 
+    0. The whole SHEET FAMILY, one size at a time: the size's own PDF is
+       rasterised, a 50 x 100 stadium is drawn in its window, the page is
+       warped as a phone would see it, and the ingest has to name the paper
+       (from its ArUco quartet, never from an argument) and give the stadium
+       back within 0.3mm. Six sizes, six quartets, one code path.
     1. A 50 x 100 stadium. The collar's axis runs PEN_R outside the tool, so
        the drawn line's CENTRELINE is the stadium offset by PEN_R (a 64 x 114
        stadium), 1mm wide. Perspective of about 20 degrees plus a small
@@ -18,8 +23,9 @@ back.
        same image ingested with the default print_scale=1.0 comes back about
        6% large, proving the failure ``print_scale`` fixes is real.
     3. Reject paths: two tags covered (one covered still rectifies, and the
-       test says so), an open arc, two stadiums. Each rejects with its
-       reason and writes nothing.
+       test says so), an open arc, two stadiums, two sheet SIZES in one frame,
+       and a frame with no known quartet at all. Each rejects with its reason
+       and writes nothing.
     4. Tray: the stadium's DXF as a CAPTURED row (T999, D2) in a COPY of the
        tool list, never the real one; trays.plan lays it out and the pocket's
        box is the pocket loop's box.
@@ -52,13 +58,17 @@ STROKE_MM = 1.0
 TOL_MM = 0.3
 
 
-def sheet_png() -> np.ndarray:
-    png = HERE / "trace_sheet.png"
+def sheet_png(spec: sheet.SheetSpec = sheet.LETTER, tmp: Path | None = None) -> np.ndarray:
+    """One size's page, rasterised at DPI. The committed PNG beside this file
+    is used when it is there; otherwise the PDF is regenerated into ``tmp``."""
+    png = HERE / f"trace_sheet_{spec.slug}.png"
     if not png.exists():
-        sheet.draw_sheet(HERE / "trace_sheet.pdf", png)
+        out = tmp or HERE
+        sheet.draw_sheet(spec, out / f"trace_sheet_{spec.slug}.pdf", out / f"trace_sheet_{spec.slug}.png")
+        png = out / f"trace_sheet_{spec.slug}.png"
     img = cv2.imread(str(png), cv2.IMREAD_COLOR)
     assert img is not None, png
-    assert abs(img.shape[1] / sheet.PAGE_W - PX) < 0.05, (img.shape, PX)
+    assert abs(img.shape[1] / spec.page_w - PX) < 0.05, (img.shape, PX)
     return img
 
 
@@ -76,9 +86,20 @@ def stadium(cx: float, cy: float, l: float, w: float, n: int = 90) -> np.ndarray
     return np.array(pts)
 
 
+DRAW_SHIFT = 3
+"""Fractional bits OpenCV's ``shift`` gives the drawn polyline: eighths of a
+pixel. Rounding the stroke to whole pixels instead put up to half a pixel of
+error into the caps of every synthetic stadium, and after the warp and the
+rectification that showed up as a scatter of about 0.35mm in the recovered L,
+which is the tolerance itself. It is the rasteriser's error, not the
+pipeline's: the same stadium moved 3mm on the same sheet moved the error from
+-0.34 to -0.12. Sub-pixel placement takes the whole family inside 0.23mm."""
+
+
 def draw_stroke(img: np.ndarray, pts_mm: np.ndarray, closed: bool = True) -> None:
-    px = np.round(pts_mm * PX).astype(np.int32)
-    cv2.polylines(img, [px], closed, (40, 40, 40), max(int(round(STROKE_MM * PX)), 1), cv2.LINE_AA)
+    px = np.round(pts_mm * PX * (1 << DRAW_SHIFT)).astype(np.int32)
+    cv2.polylines(img, [px], closed, (40, 40, 40), max(int(round(STROKE_MM * PX)), 1),
+                  cv2.LINE_AA, shift=DRAW_SHIFT)
 
 
 def phone_warp(img: np.ndarray, seed: int = 1) -> np.ndarray:
@@ -102,13 +123,13 @@ def phone_warp(img: np.ndarray, seed: int = 1) -> np.ndarray:
     return out
 
 
-def field_centre() -> tuple[float, float]:
-    x0, y0, x1, y1 = sheet.field_rect()
+def field_centre(spec: sheet.SheetSpec = sheet.LETTER) -> tuple[float, float]:
+    x0, y0, x1, y1 = spec.field_rect()
     return ((x0 + x1) / 2, (y0 + y1) / 2)
 
 
-def make_case(name: str, tmp: Path, draw) -> Path:
-    img = sheet_png()
+def make_case(name: str, tmp: Path, draw, spec: sheet.SheetSpec = sheet.LETTER) -> Path:
+    img = sheet_png(spec, tmp)
     draw(img)
     p = tmp / f"{name}.png"
     cv2.imwrite(str(p), phone_warp(img))
@@ -118,6 +139,32 @@ def make_case(name: str, tmp: Path, draw) -> Path:
 def assert_nothing_written(out: Path) -> None:
     files = [p for p in out.rglob("*") if p.is_file()]
     assert not files, f"a rejection wrote files: {files}"
+
+
+def test_constants() -> None:
+    """The two numbers the sheet and the ingest both have to agree on. They
+    live in ``trace_sheet`` (the paper's geometry) and are mirrored in
+    ``capture_ingest`` (the pipeline's); a silent divergence would move the
+    crop or the collar offset on every size at once."""
+    assert ci.FIELD_INSET == sheet.TRACE_INSET, (ci.FIELD_INSET, sheet.TRACE_INSET)
+    assert ci.PEN_R == sheet.COLLAR_OD / 2, (ci.PEN_R, sheet.COLLAR_OD)
+    print(f"  crop inset {ci.FIELD_INSET}mm and collar radius {ci.PEN_R}mm agree across both modules")
+
+
+def test_family(tmp: Path) -> None:
+    """Every size in the family, end to end. Nothing tells the ingest which
+    paper it is looking at: the quartet does."""
+    for spec in sheet.SIZES.values():
+        cx, cy = field_centre(spec)
+        centreline = stadium(cx, cy, TOOL_L + 2 * ci.PEN_R, TOOL_W + 2 * ci.PEN_R)
+        img_path = make_case(f"family_{spec.slug}", tmp, lambda im: draw_stroke(im, centreline), spec)
+        r = ci.ingest(img_path, "T999", 20, out_dir=tmp / f"captures_{spec.slug}", csv_path=None)
+        assert r.ok, f"{spec.name}: {r.reason}"
+        assert r.size == spec.name, f"{spec.name}: identified as {r.size}"
+        assert abs(r.L - TOOL_L) <= TOL_MM, f"{spec.name}: L {r.L:.3f} vs {TOOL_L} (tol {TOL_MM})"
+        assert abs(r.W - TOOL_W) <= TOL_MM, f"{spec.name}: W {r.W:.3f} vs {TOOL_W} (tol {TOL_MM})"
+        print(f"  {spec.name:<7} tags {spec.tag_ids[0]}-{spec.tag_ids[3]}, window "
+              f"{spec.field_w:.0f} x {spec.field_h:.0f}: identified {r.size}, L {r.L:.3f} W {r.W:.3f}")
 
 
 def test_synthetic_stadium(tmp: Path) -> tuple[Path, ci.Result]:
@@ -193,13 +240,25 @@ def test_rejects(tmp: Path) -> None:
 
     def cover(im, ids):
         for tid in ids:
-            x0, y0, x1, y1 = sheet.tag_masks()[tid]
+            x0, y0, x1, y1 = sheet.LETTER.tag_mask(tid)
             cv2.rectangle(im, (int(x0 * PX), int(y0 * PX)), (int(x1 * PX), int(y1 * PX)), (200, 190, 180), -1)
 
+    def stamp_other_size(im, spec, ids):
+        """Two of ANOTHER size's corner squares in the frame: the corner of a
+        second sheet caught at the edge of the photo. Drawn inside the LETTER
+        window, which is the only clear paper big enough to hold them."""
+        for j, tid in enumerate(ids):
+            m = cv2.cvtColor(sheet.marker_image(tid, int(round(spec.tag_mm * PX))), cv2.COLOR_GRAY2BGR)
+            x = int((cx - 60 + j * 45) * PX)
+            y = int((cy - 60) * PX)
+            im[y:y + m.shape[0], x:x + m.shape[1]] = m
+
     cases = [
-        ("two_tags_covered", lambda im: (draw_stroke(im, centreline), cover(im, (1, 2))), "tags found"),
+        ("two_tags_covered", lambda im: (draw_stroke(im, centreline), cover(im, (1, 2))), "corner squares found"),
         ("open_arc", lambda im: draw_stroke(im, centreline[: int(len(centreline) * 0.7)], closed=False), "not a closed loop"),
         ("two_stadiums", lambda im: (draw_stroke(im, stadium(cx - 50, cy, 60, 40)), draw_stroke(im, stadium(cx + 50, cy, 60, 40))), "two traces"),
+        ("two_sheet_sizes", lambda im: (draw_stroke(im, centreline), stamp_other_size(im, sheet.SIZES["TABLOID"], (8, 9))), "two different sheet sizes in frame"),
+        ("no_known_quartet", lambda im: (draw_stroke(im, centreline), cover(im, (0, 1, 2, 3))), "no known sheet size found"),
     ]
     for name, draw, expect in cases:
         img_path = make_case(name, tmp, draw)
@@ -266,6 +325,10 @@ def test_tray(tmp: Path, dxf_path: Path) -> None:
 def main() -> int:
     tmp = Path(tempfile.mkdtemp(prefix="capture_test_"))
     print(f"scratch: {tmp}")
+    print("0a. the two shared constants")
+    test_constants()
+    print("0b. the sheet family: every size, identified from its own quartet")
+    test_family(tmp)
     print("1. synthetic stadium, 20 deg perspective + 6 deg roll")
     dxf_path, r = test_synthetic_stadium(tmp)
     print("2. print scale: a 94% print, corrected vs. uncorrected")
