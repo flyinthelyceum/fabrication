@@ -195,11 +195,12 @@ def components(d: Datums = DATUMS) -> list[Component]:
     # which is exactly the kind of neighbour the interference check exists for.
     out.append(Component(mast_base.NAME, "steel", mast_base.place(d=d)))
 
-    # 9. the two stock rack comb rails, seated in the housings the dividers
-    # already cut. Front and rear, both on the deck; see the module docstring
-    # for why there is no top rail.
-    for label, part in stock_rails.placed_all(d):
-        out.append(Component(label, "carcass", part))
+    # 9. the stock comb, hanging from the cap's underside housing and butting
+    # both dividers, and one HALF blank as a reference solid standing in its
+    # deck groove and through the comb's slot, so both cuts are checked as
+    # housings. Ruling 11, 2026-09-03: no bottom rail.
+    for label, group, part in stock_rails.placed_all(d):
+        out.append(Component(label, group, part))
 
     # 10. the brain-band sealed/signal partition, its tongue in the housing
     # the spine's rear face already cuts, butting the deck, the cap and the
@@ -372,7 +373,8 @@ def joints(d: Datums = DATUMS) -> dict[frozenset[str], Joint]:
         )
     )
 
-    # -- the stock rails are housed in both dividers and stand on the deck --
+    # -- the stock comb is housed in the cap and butts both dividers; the
+    # reference blank is housed in the deck's groove and the comb's slot ----
     for a, b, kind, axis, lo, hi, note in stock_rails.joint_table(d):
         js.append(Joint(a, b, kind, axis, lo, hi, note))
 
@@ -835,13 +837,15 @@ def main() -> None:
         f"{len(trays.tiles(plan))} print tiles"
     )
 
-    print("\nstock bay: two comb rails on the deck")
+    print("\nstock bay: one comb under the cap, grooves in the deck")
     print(
-        f"  {len(stock_rails.RAILS)} x {stock_rails.rail_length(d):.1f} x "
-        f"{stock_rails.RAIL_H:.0f} x {stock_rails.RAIL_T:.0f}, "
-        f"{stock_rails.slot_count(d)} slots {stock_rails.SLOT_W:.1f} wide at "
-        f"{stock_rails.pitch(d):.1f} pitch, tooth {stock_rails.tooth_w(d):.1f}; "
-        f"a blank stands at z {stock_rails.blank_stand_z(d):.1f}"
+        f"  comb {stock_rails.rail_length(d):.1f} x {stock_rails.blank_h():.0f} x "
+        f"{stock_rails.RAIL_T:.0f} ({stock_rails.RAIL_H:.0f} showing), "
+        f"{stock_rails.slot_count(d)} slots {stock_rails.SLOT_W:.1f} wide, "
+        f"{stock_rails.slot_depth(d):.1f} deep at {stock_rails.pitch(d):.1f} pitch, "
+        f"tooth {stock_rails.tooth_w(d):.1f}; {stock_rails.slot_count(d)} deck grooves "
+        f"{stock_rails.GROOVE_D:.0f} deep; a blank's top at z "
+        f"{stock_rails.blank_top_z(d):.1f}, {stock_rails.comb_engage(d):.1f} into the comb"
     )
 
     print("\nbrain band: the sealed/signal partition")

@@ -1,96 +1,119 @@
-"""Stock rack rails: the two comb rails that index HALF blanks on edge.
+"""Stock rack: one comb under the cap, nine grooves in the deck.
 
-WHAT THEY ARE
-=============
+WHAT IT IS
+==========
 
-Two birch bars, ``T`` thick and ``RACK_RAIL_H`` tall, spanning the stock bay
-between the lungs/stock divider and the stock/hands divider. Each seats in
-the housings ``bay_walls._stock_face`` already cuts: a blind pocket
-``DADO_W`` wide, ``DADO_D`` deep and ``RACK_RAIL_H`` tall in each divider's
-bay face, standing on ``deck_top`` at each of ``bay_walls.rack_rail_y``.
-The rail is the member those pockets were cut for, so its section is the
-pocket's section and its length is the clear bay plus a tongue each end.
+RULING 11, 2026-09-03, rewrote this part. The rack that indexes HALF blanks on
+edge in the stock bay is two things, and only one of them is a part:
 
-Along the top edge each rail carries the comb: one slot per HALF blank at
-``Station.sheet_pitch``, sized for a blank of the carcass sheet plus a
-clearance each side. ``Datums.stock_capacity`` is the slot count, which is
-the same arithmetic ``check.py`` prints in its header, and this module
-asserts the two agree rather than deriving a second number.
+  * the TOP COMB, one birch bar ``RAIL_T`` thick and ``RAIL_H`` tall, spanning
+    the stock bay's clear width between the two dividers, its top edge tongued
+    ``TONGUE_D`` up into a housing ``top_cap`` cuts in the cap's underside.
+    Its lower edge carries the comb: one slot per blank at
+    ``Station.sheet_pitch``, open at the bottom, so a blank's top passes
+    through it. Its front face is the STOCK header, the face C17 V-carves.
+  * nine GROOVES, ``GROOVE_D`` deep, milled into ``base_deck``'s top face at
+    the same pitch, open at the front, so a blank drops in at deck level and
+    slides out FORWARD. There is no bottom rail. ``base_deck`` cuts them to
+    this module's lines (``slot_x_station``, ``groove_y``), so the deck and
+    the comb cannot drift apart.
 
-WHERE THEY SIT, AND WHY THAT IS NOT "TOP AND BOTTOM"
+This module emits the comb and owns every number of the rack. The deck and
+the cap read from here rather than the other way round, which is why it
+imports nothing from either.
+
+WHY THE COMB HANGS FROM THE CAP AND NOT THE DIVIDERS
 ====================================================
 
-The housings bay_walls cuts are BOTH at deck level: one at a quarter of the
-blank's depth in from the open front, one at three quarters, so a 600 blank
-is carried inboard of both its ends. They are a FRONT rail and a REAR rail.
-There is no housing under the top cap, so there is no top rail in this model
-and the C02 brief's "top rail front face is the STOCK header" has no face to
-land on. ``callout_face`` returns the front rail's operator-facing face,
-which is the nearest thing that exists; it sits on the deck, 141mm behind
-the deck's front edge, and it is not a header. Adding a top pair means a
-housing pair in ``bay_walls._stock_face``, which this part does not own.
+The ruling left the housing to "top_cap or the dividers as the geometry
+needs". The geometry decided. The cap's tie screw runs down each divider's
+centreline with its first fastener ``SCREW_END_INSET`` from the open front,
+and a divider housing on the comb's line would put a ``DADO_D`` pocket floor
+inside a millimetre of that screw's clearance hole. So the comb's ENDS butt
+the dividers' stock faces and its TOP edge is housed in the cap, the member
+it hangs from anyway. Its length is therefore the bay's clear width exactly,
+and the deck-level housings ``bay_walls`` used to cut are gone.
 
 CUTS: APERTURE VERSUS JOINERY
 =============================
 
-The slots are apertures. A blank stands in one; nothing seats against its
-floor corners, so the floor is a full capsule, ``corner_r = SLOT_W / 2``,
-declared on the call. The rail's two ends are joinery: a square tongue that
-seats in a square-cornered pocket, so the end outline stays square and the
-dogbones live in the divider, where bay_walls already drops a ``relief`` on
-each of the pocket's four inside corners. Nothing here rounds a tongue.
+The slots are apertures: a blank passes through one and nothing seats in its
+closed end, so that end is a full capsule, ``corner_r = SLOT_R``, declared on
+the call. The comb's two end faces and its top tongue are joinery: square,
+uncut; the dogbones live in the cap's housing, where ``top_cap`` drops a
+relief on each corner its trench makes with the dividers' housings. The deck
+grooves are apertures in the same sense (a blank's edge rides in one, nothing
+seats against the end) and get a capsule rear end; the front end runs off the
+deck's edge.
 
-WHAT THE CHECK KNOWS THAT THE BRIEF DID NOT
-===========================================
+THE HEIGHT CHECK, AS RULED
+==========================
 
-Every number below is read from params, house, carcass or bay_walls. Drawn
-from those numbers the comb has no teeth and the blank does not stand under
-the cap, and ``check_stock_rails`` says so instead of rounding either away.
-See its docstring. Those are rulings, not measurements, and they are Jared's.
+A 600 blank in a 5mm groove tops out ``sheet_slot[1] - GROOVE_D`` above
+deck_top, against a cap underside ``bay_h`` above it. The comb, ``RAIL_H``
+tall under the cap, holds the blank's top ``comb_engage`` deep, and its slot
+runs ``slot_depth`` up from its bottom edge: the engagement, one clearance,
+and the capsule's own radius, so the blank's flat top never rides up into the
+round. ``check_stock_rails`` measures all of this off the solids, and the
+assembly carries one blank as a reference solid so the deck groove and the
+comb slot are checked as housings rather than trusted.
 
 PANEL CONVENTION
 ================
 
-Flat like a panel: origin at the rail's lower-left corner as the operator
-sees it, +X along the bay, +Y up, +Z through the thickness. Local Z = T is
-the operator-facing face, so the DXF's CUT layer is the face the callout is
-carved into. ``plane`` stands it up with local +Z toward the open front.
+Flat like a panel: origin at the comb's lower-left corner as the operator
+sees it, +X along the bay, +Y up, +Z through the thickness. Local Z = T is the
+operator-facing face, so the DXF's CUT layer is the face the callout is carved
+into. ``plane`` stands it up with local +Z toward the open front.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from math import sqrt
 
-from build123d import Axis, Compound, Face, Part, Plane
+from build123d import Align, Axis, Box, Compound, Face, GeomType, Location, Part, Plane
 
 from lib.house import GRID, on_grid
 from stations.cnc_shapeoko.carcass import (
-    DADO_D,
-    DADO_W,
     DATUMS,
     HOUSE_ENGAGE,
-    STOCK_HEADROOM,
+    ROUTER_D,
     T,
     Datums,
     export_part,
     panel,
     through_slot,
 )
-from stations.cnc_shapeoko.parts.bay_walls import RACK_RAIL_H, rack_rail_y
 
 __all__ = [
-    "RailSpec",
-    "RAILS",
+    "LABEL",
+    "BLANK_LABEL",
+    "CALLOUT",
+    "RAIL_H",
+    "RAIL_T",
+    "TONGUE_D",
     "SLOT_W",
-    "SLOT_D",
+    "SLOT_R",
+    "GROOVE_D",
     "pitch",
     "slot_count",
-    "slot_centres",
     "rail_length",
+    "blank_h",
+    "tooth_w",
+    "end_land",
+    "slot_centres",
+    "slot_x_station",
+    "comb_y",
+    "comb_z",
+    "blank_top_z",
+    "comb_engage",
+    "slot_depth",
+    "spine_w",
+    "groove_y",
     "plane",
     "build",
     "place",
+    "blank_ref",
     "placed_all",
     "joint_table",
     "callout_face",
@@ -101,76 +124,78 @@ D: Datums = DATUMS
 
 
 # ================================================================ parameters
-# Everything specific to the two rails. No dimension literal appears below
-# this block; each value names where it came from.
+# Everything specific to the rack. No dimension literal appears below this
+# block; each value names where it came from.
 
-RAIL_H = RACK_RAIL_H
-"""Rail height. SOURCE: bay_walls.RACK_RAIL_H, the housing's height. The rail
-is the member that housing was cut for, so it is the same number."""
+LABEL = "stock_rail_top"
+"""The comb's name in the assembly and on its exports."""
+
+BLANK_LABEL = "stock_blank_ref"
+"""The reference blank the assembly carries in slot 0."""
+
+CALLOUT = "STOCK"
+"""What C17 V-carves into ``callout_face``. SOURCE: brief v8, the STOCK header."""
+
+RAIL_H = GRID * 2
+"""Visible height of the comb under the cap: the header. Two grid modules.
+SOURCE: bay_walls.RACK_RAIL_H before ruling 11 (2026-09-03); the ruling moved
+the comb to the cap and kept the section. CONFIDENCE: spec."""
 
 RAIL_T = T
-"""Rail thickness. SOURCE: carcass.T. The housing is DADO_W = T + DADO_FIT wide,
-which is the house fit for a T member."""
+"""Comb thickness. SOURCE: carcass.T. The cap's housing is DADO_W = T + DADO_FIT
+wide, the house fit for a T member."""
 
-TONGUE_D = DADO_D
-"""How far each end enters its divider. SOURCE: carcass.DADO_D, the depth
-bay_walls cuts the housing with (``groove(depth=DADO_D)``)."""
+TONGUE_D = HOUSE_ENGAGE
+"""How far the comb's top edge enters the cap's underside housing. SOURCE:
+carcass.HOUSE_ENGAGE, the house third-of-thickness every housed edge uses."""
 
 BLANK_T = T
 """The blank the comb is sized for. SOURCE: house.CARCASS_T via carcass.T;
-C02 brief 2026-09-03 sizes the slots for 18mm blanks. CONFIDENCE: spec."""
+ruling 11 sizes the slots for an 18mm blank. CONFIDENCE: spec."""
 
 SLOT_CLEAR = 1.0
-"""Clearance each side of a blank in its slot. SOURCE: C02 brief 2026-09-03,
-"plus 1mm clearance each side". CONFIDENCE: spec."""
+"""Clearance each side of a blank in its slot, and over its top. SOURCE: ruling
+11, 2026-09-03, "18 blank + 1/side". CONFIDENCE: spec."""
 
 SLOT_W = BLANK_T + 2 * SLOT_CLEAR
-"""Slot width across the bay."""
+"""Slot width across the bay, and the deck groove's width."""
 
 SLOT_R = SLOT_W / 2
-"""Capsule radius of the slot floor: the aperture rule, roundest available.
-SOURCE: carcass.through_slot's own docstring."""
+"""Capsule radius of a slot's closed end and a groove's rear end: the aperture
+rule, roundest available. SOURCE: carcass.through_slot's own docstring."""
 
-SLOT_D = STOCK_HEADROOM
-"""Slot depth from the rail's top edge, DERIVED not chosen: carcass.STOCK_HEADROOM
-is the lift the bay pays for so a blank clears its slot, and a slot deeper
-than the lift cannot be exited. SOURCE: carcass.STOCK_HEADROOM. What is left
-under the slot floor, RAIL_H - SLOT_D, is the rail's spine."""
+GROOVE_D = 5.0
+"""Depth of the grooves base_deck mills for a blank's lower edge. SOURCE: ruling
+11, 2026-09-03, "5mm-deep grooves". CONFIDENCE: spec."""
 
-SLOT_OVERSHOOT = SLOT_W
-"""How far the slot cutter runs past the rail's top edge so its own rounded
-top end is fully out of the material. One slot width, which exceeds the
+GROOVE_REAR_LAND = GRID
+"""Birch between a groove's rear end and the spine housing's line. One module,
+so the housing floor is never undercut by a groove. SOURCE: house grid.
+CONFIDENCE: choice."""
+
+COMB_INSET = GRID
+"""Comb front face set back from the open front. One module: the cap's housing
+keeps a front wall, so a blank dragged out forward cannot drag the header with
+it, and the header sits in the cap's shadow line rather than proud of the
+dividers' raw edges. SOURCE: house grid; the ruling names no inset.
+CONFIDENCE: choice."""
+
+RULED_PITCH = GRID * 2
+RULED_COUNT = 9
+"""What ruling 11 says the rack holds: 40mm pitch, 9 blanks. Held here so the
+derived count is checked against the ruling rather than trusted."""
+
+SPINE_MIN = ROUTER_D
+"""Least birch between a slot's capsule tip and the tongue: one cutter diameter,
+the same floor bay_walls.LOUVRE_RIB_MIN uses. CONFIDENCE: choice."""
+
+OVERSHOOT = SLOT_W
+"""How far the slot cutter runs past the comb's bottom edge so its own rounded
+open end is fully out of the material. One slot width, which exceeds the
 capsule radius. SOURCE: geometry of through_slot's capsule."""
 
 EPS = 1e-6
 """Comparison tolerance, the same figure assembly.BAND_EPS uses."""
-
-CALLOUT_RAIL = "front"
-"""Which rail's operator-facing face carries the STOCK callout (C17 V-carves
-it). SOURCE: C02 brief 2026-09-03 names the front face of a rail. See the
-module docstring: this face is on the deck, not at the bay's head."""
-
-
-# ================================================================ rail table
-
-
-@dataclass(frozen=True)
-class RailSpec:
-    """One of the two rails: its name and which of ``rack_rail_y``'s entries
-    it seats at."""
-
-    name: str
-    index: int
-
-    @property
-    def label(self) -> str:
-        return f"stock_rail_{self.name}"
-
-
-RAILS: tuple[RailSpec, ...] = (
-    RailSpec("front", 0),
-    RailSpec("rear", 1),
-)
 
 
 # ================================================================ derivations
@@ -182,13 +207,19 @@ def pitch(d: Datums = D) -> float:
 
 
 def slot_count(d: Datums = D) -> int:
-    """Slots per rail: the bay's HALF-blank capacity, from Datums."""
+    """Slots in the comb, grooves in the deck: the bay's HALF-blank capacity,
+    from Datums, the same arithmetic check.py prints in its header."""
     return d.stock_capacity
 
 
 def rail_length(d: Datums = D) -> float:
-    """Blank length: the clear bay plus a tongue into each divider."""
-    return d.stock_clear_w + 2 * TONGUE_D
+    """The comb's length: the clear bay, divider face to divider face."""
+    return d.stock_clear_w
+
+
+def blank_h() -> float:
+    """The comb's flat blank height: the header plus its tongue into the cap."""
+    return RAIL_H + TONGUE_D
 
 
 def tooth_w(d: Datums = D) -> float:
@@ -204,44 +235,72 @@ def end_land(d: Datums = D) -> float:
 
 
 def slot_centres(d: Datums = D) -> list[float]:
-    """Rail-local X of each slot centre, comb centred in the clear span."""
+    """Comb-local X of each slot centre, comb centred in the clear span."""
     n = slot_count(d)
-    x0 = TONGUE_D + end_land(d) + SLOT_R
+    x0 = end_land(d) + SLOT_R
     return [x0 + i * pitch(d) for i in range(n)]
 
 
-def slot_floor(d: Datums = D) -> float:
-    """Rail-local Y of the slot floor's lowest point."""
-    return RAIL_H - SLOT_D
+def slot_x_station(d: Datums = D) -> list[float]:
+    """Station X of each slot centre: the rack's pitch line, which the deck
+    grooves are cut to."""
+    return [d.stock_x[0] + x for x in slot_centres(d)]
 
 
-def blank_rise() -> float:
-    """How far above the capsule's lowest point a blank's bottom corners
-    bear: a flat edge on a round floor touches at +/- BLANK_T / 2."""
-    return SLOT_R - sqrt(SLOT_R**2 - (BLANK_T / 2) ** 2)
+def comb_y(d: Datums = D) -> tuple[float, float]:
+    """Station Y span of the comb: front face to rear face."""
+    return (d.y_front + COMB_INSET, d.y_front + COMB_INSET + RAIL_T)
 
 
-def blank_stand_z(d: Datums = D) -> float:
-    """Station Z of a blank's bottom edge when it stands in a slot."""
-    return d.deck_top + slot_floor(d) + blank_rise()
+def comb_z(d: Datums = D) -> tuple[float, float]:
+    """Station Z span of the comb's visible height: bottom edge to the cap's
+    underside. The tongue continues TONGUE_D above."""
+    return (d.top_z[0] - RAIL_H, d.top_z[0])
 
 
-def y_centre(spec: RailSpec, d: Datums = D) -> float:
-    """Station Y of the rail's centreline: the housing's, from bay_walls."""
-    return rack_rail_y(d)[spec.index]
+def blank_top_z(d: Datums = D) -> float:
+    """Station Z of a blank's top edge when it stands in its deck groove."""
+    return d.deck_top - GROOVE_D + d.s.sheet_slot[1]
 
 
-def x_start(d: Datums = D) -> float:
-    """Station X of the rail's left end, inside the lungs/stock divider."""
-    return d.stock_x[0] - TONGUE_D
+def comb_engage(d: Datums = D) -> float:
+    """How far a standing blank's top reaches up into the comb."""
+    return blank_top_z(d) - comb_z(d)[0]
 
 
-def plane(spec: RailSpec, d: Datums = D) -> Plane:
-    """The rail's frame in station space: local +X along the bay, local +Y
-    up from deck_top, local +Z toward the open front. Local Z = 0 is the rail's
-    rear face, at the housing's rear wall."""
+def slot_depth(d: Datums = D) -> float:
+    """Slot depth from the comb's bottom edge, DERIVED not chosen: the blank's
+    engagement, one clearance over it, and the capsule's own radius, so the
+    straight run of the slot ends a clearance above the blank's flat top and
+    the round never bears on it."""
+    return comb_engage(d) + SLOT_CLEAR + SLOT_R
+
+
+def spine_w(d: Datums = D) -> float:
+    """Birch between a slot's capsule tip and the top of the header, below the
+    tongue: the comb's spine."""
+    return RAIL_H - slot_depth(d)
+
+
+def blank_lift(d: Datums = D) -> float:
+    """How far a blank can rise inside its slot before its top corners meet the
+    capsule: the clearance plus the rise a flat 18 edge gets on a round of
+    SLOT_R. Reported, not judged: the blank leaves forward by ruling."""
+    return SLOT_CLEAR + (SLOT_R - sqrt(SLOT_R**2 - (BLANK_T / 2) ** 2))
+
+
+def groove_y(d: Datums = D) -> tuple[float, float]:
+    """Station Y span of a deck groove: open at the front edge, capsule tip one
+    land ahead of the spine's line."""
+    return (d.y_front, d.y_spine - GROOVE_REAR_LAND)
+
+
+def plane(d: Datums = D) -> Plane:
+    """The comb's frame in station space: local +X along the bay, local +Y up
+    from the comb's bottom edge, local +Z toward the open front. Local Z = 0 is
+    the rear face."""
     return Plane(
-        origin=(x_start(d), y_centre(spec, d) + RAIL_T / 2, d.deck_top),
+        origin=(d.stock_x[0], comb_y(d)[1], comb_z(d)[0]),
         x_dir=(1, 0, 0),
         z_dir=(0, -1, 0),
     )
@@ -251,14 +310,15 @@ def plane(spec: RailSpec, d: Datums = D) -> Plane:
 
 
 def build(d: Datums = D) -> Part:
-    """One rail, flat in its own frame. Both rails are the same part."""
-    p = panel(rail_length(d), RAIL_H, RAIL_T)
-    length = SLOT_D + SLOT_OVERSHOOT
-    cy = slot_floor(d) + length / 2
+    """The comb, flat in its own frame."""
+    p = panel(rail_length(d), blank_h(), RAIL_T)
+    depth = slot_depth(d)
+    length = depth + OVERSHOOT
+    cy = depth - length / 2          # runs from -OVERSHOOT up to the slot's tip
     cutters = None
     for cx in slot_centres(d):
-        # APERTURE: a blank stands in it, nothing seats in its corners, so the
-        # floor is a full capsule. Declared here, on the call.
+        # APERTURE: a blank passes through it, nothing seats in its closed end,
+        # so the end is a full capsule. Declared here, on the call.
         c = through_slot(
             (cx, cy), length, SLOT_W, thickness=RAIL_T, angle=90.0, corner_r=SLOT_R
         )
@@ -268,16 +328,29 @@ def build(d: Datums = D) -> Part:
     return p
 
 
-def place(spec: RailSpec, flat: Part | None = None, d: Datums = D) -> Part:
-    """A rail in station coordinates, seated in its housings."""
+def place(flat: Part | None = None, d: Datums = D) -> Part:
+    """The comb in station coordinates, hanging from the cap."""
     flat = build(d) if flat is None else flat
-    return plane(spec, d) * flat
+    return plane(d) * flat
 
 
-def placed_all(d: Datums = D) -> list[tuple[str, Part]]:
-    """Both rails, labelled, stood up."""
-    flat = build(d)
-    return [(spec.label, place(spec, flat, d)) for spec in RAILS]
+def blank_ref(d: Datums = D, index: int = 0) -> Part:
+    """The HALF blank the rack is for, standing in slot ``index`` flush with the
+    open front, as a reference solid: lower edge in its deck groove, top edge
+    through the comb's slot. Station coordinates."""
+    depth, height = d.s.sheet_slot
+    cx = slot_x_station(d)[index]
+    return Box(
+        BLANK_T, depth, height, align=(Align.CENTER, Align.MIN, Align.MIN)
+    ).moved(Location((cx, d.y_front, d.deck_top - GROOVE_D)))
+
+
+def placed_all(d: Datums = D) -> list[tuple[str, str, Part]]:
+    """(label, group, part): the comb, and one blank as a reference solid."""
+    return [
+        (LABEL, "carcass", place(d=d)),
+        (BLANK_LABEL, "reference", blank_ref(d)),
+    ]
 
 
 def joint_table(d: Datums = D) -> list[tuple]:
@@ -285,140 +358,154 @@ def joint_table(d: Datums = D) -> list[tuple]:
 
     Tuples rather than ``assembly.Joint`` so this module never imports the
     assembly that imports it; the same shape ``drawers.joint_table`` uses.
-    Each rail is housed in both dividers along X and bears on the deck."""
-    out: list[tuple] = []
-    left_face = d.wall_x[1] + d.t        # lungs/stock divider, its stock face
-    right_face = d.wall_x[2]             # stock/hands divider, its stock face
-    for spec in RAILS:
-        out.append(
-            ("lungs_stock", spec.label, "housing", "x",
-             left_face - HOUSE_ENGAGE, left_face,
-             "rail's left tongue in the divider's blind housing")
-        )
-        out.append(
-            ("stock_hands", spec.label, "housing", "x",
-             right_face, right_face + HOUSE_ENGAGE,
-             "rail's right tongue in the divider's blind housing")
-        )
-        out.append(
-            ("base_deck", spec.label, "bearing", None, 0.0, 0.0,
-             "rail stands on the deck between the dividers")
-        )
-    return out
+    The comb is housed in the cap along Z and butts both dividers; the
+    reference blank is housed in the deck's groove and in the comb's slot, so
+    a missing or short cut on either shows up as a housing fault."""
+    z_cap = d.top_z[0]
+    z_comb = comb_z(d)[0]
+    return [
+        ("top_cap", LABEL, "housing", "z", z_cap, z_cap + TONGUE_D,
+         "comb's top tongue up into the cap's underside housing"),
+        ("lungs_stock", LABEL, "butt", None, 0.0, 0.0,
+         "comb's left end butts the divider's stock face; the cap locates it"),
+        ("stock_hands", LABEL, "butt", None, 0.0, 0.0,
+         "comb's right end butts the divider's stock face; the cap locates it"),
+        ("base_deck", BLANK_LABEL, "housing", "z", d.deck_top - GROOVE_D, d.deck_top,
+         "a blank's lower edge in its deck groove"),
+        (LABEL, BLANK_LABEL, "housing", "z", z_comb, z_comb + slot_depth(d),
+         "a blank's top edge through the comb's slot"),
+    ]
 
 
 def callout_face(d: Datums = D) -> Face:
-    """The operator-facing face of the callout rail, in station coordinates:
-    the face C17 V-carves STOCK into. Its outward normal is -Y."""
-    spec = next(s for s in RAILS if s.name == CALLOUT_RAIL)
-    return place(spec, d=d).faces().sort_by(Axis.Y)[0]
+    """The comb's operator-facing face, in station coordinates: the header C17
+    V-carves STOCK into. Its outward normal is -Y."""
+    return place(d=d).faces().filter_by(Axis.Y).sort_by(Axis.Y)[0]
 
 
 # ================================================================ checks
 
 
 def check_stock_rails(d: Datums = D) -> list[str]:
-    """What the rails have to be true for.
-
-    Two of these fail on the numbers as they stand, and both are rulings for
-    Jared rather than anything this module can decide:
-
-    1. TEETH. A slot for an 18mm blank with 1mm a side is 20mm wide, and the
-       pitch is 20mm, so the comb has 0mm of birch between slots. Either the
-       pitch is two grid modules (a 20 tooth, 9 blanks) or the slot is for
-       thinner stock than the carcass sheet.
-
-    2. HEADROOM. bay_h budgets the blank plus STOCK_HEADROOM to lift it clear
-       of the slot, and the rail keeps RAIL_H - SLOT_D of spine under the slot
-       floor. Standing on that spine a 600 blank's top is already above the
-       cap's underside. Either the rail is shorter, the spine is thinner, or
-       the blank leaves forward along its slot and never lifts.
-    """
+    """What the rack has to be true for, measured off the numbers and the
+    solid. The deck groove and the cap housing are checked in the assembly,
+    against the reference blank and the comb; see ``joint_table``."""
+    s = d.s
     notes: list[str] = []
     n = slot_count(d)
     p = pitch(d)
 
-    # -- the brief's own assertion: 19 at 20 -------------------------------
-    if n != d.stock_capacity:
-        notes.append(f"slot count {n} has drifted off Datums.stock_capacity {d.stock_capacity}")
-    if not on_grid(p) or abs(p - GRID) > EPS:
-        notes.append(f"slot pitch {p:.1f}mm is not the {GRID:.0f}mm bench grid")
-    if n * p > d.stock_clear_w + EPS:
+    # -- the ruling, held against the derivation ------------------------------
+    if abs(p - RULED_PITCH) > EPS or not on_grid(p):
         notes.append(
-            f"{n} slots at {p:.1f}mm need {n * p:.1f}mm and the bay is "
-            f"{d.stock_clear_w:.1f}mm clear"
+            f"sheet_pitch is {p:.1f}, not the {RULED_PITCH:.0f} ruling 11 set "
+            "(two grid modules)"
+        )
+    if n != RULED_COUNT:
+        notes.append(
+            f"the bay holds {n} blanks at {p:.0f} pitch in {d.stock_clear_w:.1f} "
+            f"clear; ruling 11 said {RULED_COUNT}. The ruling was written for "
+            "the bay as it stood; re-rule before cutting."
         )
 
-    # -- the comb has to have teeth ----------------------------------------
-    if tooth_w(d) <= EPS:
+    # -- the comb has teeth, and lands ----------------------------------------
+    tw = tooth_w(d)
+    if tw < ROUTER_D:
         notes.append(
-            f"the comb has no teeth: a {SLOT_W:.1f}mm slot ({BLANK_T:.0f}mm blank "
-            f"plus {SLOT_CLEAR:.1f}mm a side) at {p:.1f}mm pitch leaves "
-            f"{tooth_w(d):.1f}mm of birch between slots and {end_land(d):.2f}mm at "
-            f"each end. {n} blanks at this pitch was arithmetic, never geometry. "
-            "RULING WANTED: pitch of two grid modules (a 20mm tooth, "
-            f"{int(d.stock_clear_w // (2 * GRID))} blanks) or a slot for thinner "
-            "stock than the carcass sheet."
+            f"the comb has no teeth: a {SLOT_W:.1f}mm slot at {p:.1f}mm pitch "
+            f"leaves {tw:.1f}mm of birch between slots, under one cutter"
+        )
+    if end_land(d) < ROUTER_D:
+        notes.append(
+            f"the outermost slot leaves {end_land(d):.2f}mm to the divider face, "
+            "under one cutter"
+        )
+    if spine_w(d) < SPINE_MIN:
+        notes.append(
+            f"a {slot_depth(d):.1f}mm slot in a {RAIL_H:.0f}mm comb leaves a "
+            f"{spine_w(d):.1f}mm spine, under the {SPINE_MIN:.2f}mm floor"
         )
 
-    # -- the rail seats in the housing bay_walls cut -----------------------
-    if abs(RAIL_H - RACK_RAIL_H) > EPS:
-        notes.append(f"rail height {RAIL_H:.1f} is not the housing's {RACK_RAIL_H:.1f}")
-    if RAIL_T > DADO_W:
-        notes.append(f"rail {RAIL_T:.1f} thick will not enter a {DADO_W:.1f} housing")
-    if SLOT_D >= RAIL_H:
-        notes.append(f"slot depth {SLOT_D:.1f} leaves no spine under a {RAIL_H:.1f} rail")
-    if slot_floor(d) < TONGUE_D:
-        notes.append("slot floor is lower than the tongue; the comb undercuts its own joint")
-
-    # -- a blank has to stand under the cap, and leave -----------------------
-    blank_h = d.s.sheet_slot[1]
+    # -- a blank stands in the groove, reaches the comb, and clears the cap --
+    top = blank_top_z(d)
     ceiling = d.top_z[0]
-    top = blank_stand_z(d) + blank_h
-    if top > ceiling + EPS:
+    if top > ceiling - EPS:
         notes.append(
-            f"a {blank_h:.0f}mm blank standing in the slot reaches z {top:.1f}, "
-            f"{top - ceiling:.1f}mm above the cap's underside at {ceiling:.1f}: "
-            f"the rail keeps {slot_floor(d):.0f}mm of spine under the slot floor and "
-            f"the capsule floor lifts the blank another {blank_rise():.1f}mm, while "
-            f"bay_h budgets the blank plus {STOCK_HEADROOM:.0f}mm of headroom and "
-            f"nothing for a {RAIL_H:.0f}mm rail. RULING WANTED: shorter rail, "
-            "thinner spine, or the blank slides out forward and never lifts."
+            f"a {s.sheet_slot[1]:.0f}mm blank in a {GROOVE_D:.0f}mm groove reaches "
+            f"z {top:.1f}, at or above the cap's underside at {ceiling:.1f}"
         )
-    elif ceiling - top < SLOT_D - EPS:
+    if comb_engage(d) <= 0:
         notes.append(
-            f"a blank stands with {ceiling - top:.1f}mm over it and needs "
-            f"{SLOT_D:.0f}mm to lift clear of its slot: it comes out forward along "
-            "the slot, not up"
+            f"the comb's bottom edge at z {comb_z(d)[0]:.1f} hangs above a blank's "
+            f"top at {top:.1f}: it indexes nothing"
+        )
+    if GROOVE_D >= d.t:
+        notes.append(f"a {GROOVE_D:.0f}mm groove goes through a {d.t:.0f}mm deck")
+    gy0, gy1 = groove_y(d)
+    if gy1 <= gy0 or gy1 > d.y_spine - EPS:
+        notes.append(
+            f"deck groove y {gy0:.1f}..{gy1:.1f} runs into the spine's line at "
+            f"{d.y_spine:.1f}"
         )
 
-    # -- geometry as built ---------------------------------------------------
+    # -- geometry as built ----------------------------------------------------
     flat = build(d)
     bb = flat.bounding_box()
-    if abs(bb.size.X - rail_length(d)) > EPS or abs(bb.size.Y - RAIL_H) > EPS:
+    if (
+        abs(bb.size.X - rail_length(d)) > EPS
+        or abs(bb.size.Y - blank_h()) > EPS
+        or abs(bb.size.Z - RAIL_T) > EPS
+    ):
         notes.append(
-            f"flat rail is {bb.size.X:.2f} x {bb.size.Y:.2f}, not "
-            f"{rail_length(d):.2f} x {RAIL_H:.2f}"
+            f"flat comb is {bb.size.X:.2f} x {bb.size.Y:.2f} x {bb.size.Z:.2f}, not "
+            f"{rail_length(d):.2f} x {blank_h():.2f} x {RAIL_T:.2f}"
         )
     # the two ends are joinery: square, uncut, the full section
     for x in (bb.min.X, bb.max.X):
         ends = [f for f in flat.faces() if abs(f.center().X - x) < EPS]
-        if len(ends) != 1 or abs(ends[0].area - RAIL_H * RAIL_T) > EPS:
-            notes.append(f"the tongue at x {x:.1f} is not one square {RAIL_H:.0f} x {RAIL_T:.0f} face")
-
-    for spec in RAILS:
-        pb = place(spec, flat, d).bounding_box()
-        x0, x1 = d.stock_x
-        if abs(pb.min.X - (x0 - TONGUE_D)) > EPS or abs(pb.max.X - (x1 + TONGUE_D)) > EPS:
+        if len(ends) != 1 or abs(ends[0].area - blank_h() * RAIL_T) > EPS:
             notes.append(
-                f"{spec.label} spans x {pb.min.X:.2f}..{pb.max.X:.2f}, not the housings' "
-                f"{x0 - TONGUE_D:.2f}..{x1 + TONGUE_D:.2f}"
+                f"the end at x {x:.1f} is not one square {blank_h():.0f} x "
+                f"{RAIL_T:.0f} face"
             )
-        yc = y_centre(spec, d)
-        if abs(pb.min.Y - (yc - RAIL_T / 2)) > EPS or abs(pb.max.Y - (yc + RAIL_T / 2)) > EPS:
-            notes.append(f"{spec.label} is not centred on its housing at y {yc:.1f}")
-        if abs(pb.min.Z - d.deck_top) > EPS or abs(pb.max.Z - (d.deck_top + RAIL_H)) > EPS:
-            notes.append(f"{spec.label} does not stand on deck_top inside its housing's height")
+    # the top edge is joinery too: one flat face, the tongue
+    tops = [f for f in flat.faces() if abs(f.center().Y - bb.max.Y) < EPS]
+    if len(tops) != 1 or abs(tops[0].area - rail_length(d) * RAIL_T) > EPS:
+        notes.append("the comb's top edge is not one uncut tongue face")
+    # every slot ends in a capsule: one cylindrical face per slot, SLOT_R
+    rounds = flat.faces().filter_by(GeomType.CYLINDER)
+    if len(rounds) < n:
+        notes.append(
+            f"{len(rounds)} cylindrical faces for {n} slots: a slot end is not a "
+            "capsule"
+        )
+    # the slot's straight run ends a clearance above the blank's top
+    tip = comb_z(d)[0] + slot_depth(d)
+    if tip - SLOT_R < top + SLOT_CLEAR - EPS:
+        notes.append(
+            f"the slot's straight run ends at z {tip - SLOT_R:.1f}, under a blank's "
+            f"top at {top:.1f} plus {SLOT_CLEAR:.0f} clearance"
+        )
+
+    up = place(flat, d)
+    pb = up.bounding_box()
+    x0, x1 = d.stock_x
+    if abs(pb.min.X - x0) > EPS or abs(pb.max.X - x1) > EPS:
+        notes.append(
+            f"comb spans x {pb.min.X:.2f}..{pb.max.X:.2f}, not the clear bay's "
+            f"{x0:.2f}..{x1:.2f}"
+        )
+    cy0, cy1 = comb_y(d)
+    if abs(pb.min.Y - cy0) > EPS or abs(pb.max.Y - cy1) > EPS:
+        notes.append(f"comb sits at y {pb.min.Y:.1f}..{pb.max.Y:.1f}, not {cy0:.1f}..{cy1:.1f}")
+    if abs(pb.min.Z - comb_z(d)[0]) > EPS or abs(pb.max.Z - (ceiling + TONGUE_D)) > EPS:
+        notes.append(
+            f"comb spans z {pb.min.Z:.1f}..{pb.max.Z:.1f}, not the cap's underside "
+            f"less {RAIL_H:.0f} up to its housing at {ceiling + TONGUE_D:.1f}"
+        )
+    cf = callout_face(d)
+    if abs(cf.center().Y - cy0) > EPS:
+        notes.append("the callout face is not the comb's front face")
 
     return notes
 
@@ -430,55 +517,60 @@ if __name__ == "__main__":
     flat = build(d)
     n = slot_count(d)
 
-    print("STOCK RAILS: two comb rails, one part")
+    print("STOCK RACK: one comb under the cap, grooves in the deck")
     print(
-        f"  blank {rail_length(d):.1f} x {RAIL_H:.0f} x {RAIL_T:.0f}, "
-        f"{TONGUE_D:.0f}mm tongue each end into the dividers' housings"
+        f"  comb blank {rail_length(d):.1f} x {blank_h():.0f} x {RAIL_T:.0f}, "
+        f"{RAIL_H:.0f} showing under the cap, {TONGUE_D:.0f}mm tongue into it"
     )
     print(
-        f"  comb: {n} slots {SLOT_W:.1f} wide, {SLOT_D:.0f} deep, capsule floor r {SLOT_R:.1f}, "
-        f"at {pitch(d):.1f} pitch; tooth {tooth_w(d):.1f}, end land {end_land(d):.2f}"
+        f"  comb: {n} slots {SLOT_W:.1f} wide, {slot_depth(d):.1f} deep, capsule tip "
+        f"r {SLOT_R:.1f}, at {pitch(d):.1f} pitch; tooth {tooth_w(d):.1f}, end land "
+        f"{end_land(d):.2f}, spine {spine_w(d):.1f}"
+    )
+    gy0, gy1 = groove_y(d)
+    print(
+        f"  deck: {n} grooves {SLOT_W:.1f} wide, {GROOVE_D:.0f} deep, "
+        f"y {gy0:.0f}..{gy1:.1f}, at station x "
+        f"{', '.join(f'{x:.2f}' for x in slot_x_station(d))}"
     )
     print(
-        f"  a {d.s.sheet_slot[1]:.0f} blank stands at z {blank_stand_z(d):.1f}, "
-        f"top at {blank_stand_z(d) + d.s.sheet_slot[1]:.1f} under a cap at {d.top_z[0]:.1f}"
+        f"  a {d.s.sheet_slot[1]:.0f} blank stands at z {d.deck_top - GROOVE_D:.1f}, "
+        f"top at {blank_top_z(d):.1f}, {comb_engage(d):.1f} into the comb, "
+        f"{d.top_z[0] - blank_top_z(d):.1f} under the cap; it can lift "
+        f"{blank_lift(d):.1f} before the capsule stops it"
     )
 
-    written: list[str] = []
     placed = []
-    for spec in RAILS:
-        up = place(spec, flat, d)
-        placed.append(up)
-        pb = up.bounding_box()
+    for label, group, part in placed_all(d):
+        placed.append(part)
+        pb = part.bounding_box()
         print(
-            f"\n  {spec.label}"
+            f"\n  {label} ({group})"
             f"\n    placed  x {pb.min.X:.1f}..{pb.max.X:.1f}   y {pb.min.Y:.1f}..{pb.max.Y:.1f}"
-            f"   z {pb.min.Z:.1f}..{pb.max.Z:.1f}   volume {up.volume / 1000:.0f} cm3"
+            f"   z {pb.min.Z:.1f}..{pb.max.Z:.1f}   volume {part.volume / 1000:.0f} cm3"
         )
-        for p_ in export_part(flat, spec.label):
-            written.append(str(p_))
 
     cf = callout_face(d)
     print(
-        f"\n  callout face ({CALLOUT_RAIL} rail, -Y): centre "
+        f"\n  callout face ({CALLOUT}, -Y): centre "
         f"({cf.center().X:.1f}, {cf.center().Y:.1f}, {cf.center().Z:.1f}), "
         f"{cf.area / 100:.0f}cm2"
     )
 
     ab = Compound(children=placed).bounding_box()
     print(
-        f"\n  both rails placed: x {ab.min.X:.1f}..{ab.max.X:.1f}  "
+        f"\n  comb and blank placed: x {ab.min.X:.1f}..{ab.max.X:.1f}  "
         f"y {ab.min.Y:.1f}..{ab.max.Y:.1f}  z {ab.min.Z:.1f}..{ab.max.Z:.1f}"
     )
 
     print("\n  wrote:")
-    for p_ in written:
+    for p_ in export_part(flat, LABEL):
         print(f"    {p_}")
 
     found = check_stock_rails(d)
     if found:
-        print(f"\n{len(found)} stock rail note(s):")
+        print(f"\n{len(found)} stock rack note(s):")
         for n_ in found:
             print(f"  - {n_}")
     else:
-        print("\nno stock rail constraint violations")
+        print("\nno stock rack constraint violations")

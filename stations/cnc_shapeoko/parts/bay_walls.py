@@ -20,7 +20,9 @@ WHAT THIS PART OWNS
     dividers) its tongue into the spine's front-face housing
   * the extractor carriage slide mounts, on the two faces of the lungs bay
   * the drawer slide mounts, on the two faces of the hands bay
-  * the stock rack rail housings, which set the rack's pitch line
+  * nothing on the stock faces. The stock comb butts them and hangs from the
+    cap (ruling 11, 2026-09-03); ``stock_rails`` owns the rack's pitch line
+    and ``top_cap`` and ``base_deck`` cut to it
   * the hose port through the left end wall
   * the VFD louvre through the left end wall, over the brain band
   * the clearance holes that fasten the spine's two ends to the end walls
@@ -106,7 +108,6 @@ from build123d import Compound, Location, Part
 from lib.house import GRID
 from stations.cnc_shapeoko.carcass import (
     DADO_D,
-    DADO_W,
     DATUMS,
     ISOLATOR_H,
     RABBET_D,
@@ -120,7 +121,6 @@ from stations.cnc_shapeoko.carcass import (
     Datums,
     bore,
     export_part,
-    groove,
     gusset_prism,
     gussets_over,
     panel,
@@ -193,13 +193,9 @@ of ``bay_h`` rather than heights, so the drawers re-proportion if the bay
 changes instead of leaving a gap at the top."""
 
 # ---- stock bay ------------------------------------------------------------
-RACK_RAIL_H = GRID * 2
-"""Height of the comb rail that carries the slot pitch. Two grid modules: tall
-enough to hold a 600 blank upright, short enough to lift one out over."""
-
-RACK_RAIL_FRACS = (0.25, 0.75)
-"""Where the two comb rails sit along the blank's own depth. Quarter points, so
-a HALF blank is supported inboard of both its ends."""
+# No parameters. The deck-level comb-rail housings (RACK_RAIL_H, RACK_RAIL_FRACS)
+# went with ruling 11, 2026-09-03: the comb hangs from the cap and its ends butt
+# the dividers, so the stock faces are plain. See ``stock_rails``.
 
 # ---- hose port ------------------------------------------------------------
 HOSE_PORT_CLEAR = 4.0
@@ -351,33 +347,13 @@ def _hands_face(side: str, d: Datums = D, skip: tuple[int, ...] = ()) -> Part | 
     return cutters
 
 
-def rack_rail_y(d: Datums = D) -> tuple[float, ...]:
-    """Panel-local X of each stock rack comb rail.
-
-    The blanks stand at the open front, because the front face is the one with
-    no door and the rack is meant to be read from across the room."""
-    depth = d.s.sheet_slot[0]
-    return tuple(depth * f for f in RACK_RAIL_FRACS)
-
-
-def _stock_face(side: str, d: Datums = D) -> Part:
-    """Stock rack: a housing for each comb rail's end, sitting on the deck.
-
-    The rails carry ``sheet_pitch``. The wall carries where the rails go, which
-    is the rack's pitch line."""
-    y0 = TONGUE_D
-    y1 = TONGUE_D + RACK_RAIL_H
-    cutters = None
-    for x in rack_rail_y(d):
-        c = groove(
-            (x, y0), (x, y1), width=DADO_W, depth=DADO_D, side=side
-        )
-        # A round cutter cannot cut the four inside corners of a blind housing.
-        for cx in (x - DADO_W / 2, x + DADO_W / 2):
-            for cy in (y0, y1):
-                c += relief(cx, cy, r=ROUTER_D / 2, depth=DADO_D, side=side)
-        cutters = c if cutters is None else cutters + c
-    return cutters
+def _stock_face(side: str, d: Datums = D) -> Part | None:
+    """Stock rack: nothing. The comb butts this face and hangs from the cap's
+    underside housing (ruling 11, 2026-09-03); the cap's tie screw runs down
+    the divider's centreline too close to the open front for a housing here.
+    Kept as the stock face's feature slot so the build loop reads all three
+    bays the same way."""
+    return None
 
 
 def _spine_screws(d: Datums = D) -> Part:
@@ -632,7 +608,7 @@ def placed_all(d: Datums = D) -> list[Part]:
 #
 # What is already cut in a panel, as circles in panel-local XY, so a new feature
 # can be asked whether it lands on an old one. Built from the SAME helpers the
-# build cuts with -- ``screw_positions``, ``rack_rail_y``, ``drawer_openings`` --
+# build cuts with -- ``screw_positions``, ``drawer_openings`` --
 # so a feature that moves cannot move here without moving there.
 
 
@@ -671,13 +647,6 @@ def _wall_features(
             y = TONGUE_D + floor + SLIDE_MEMBER_H / 2
             for x in slide_xs:
                 out.append((f"drawer {k} slide mount", x, y, slide_r))
-
-    if spec.side_of("stock") is not None:
-        # A comb-rail housing is a groove, not a hole; a circle on its centreline
-        # at half the dado width is the right keep-out for a bolt beside it.
-        for x in rack_rail_y(d):
-            y0, y1 = TONGUE_D, TONGUE_D + RACK_RAIL_H
-            out.append(("stock rack rail housing", x, (y0 + y1) / 2, DADO_W / 2))
 
     if spec.is_end:
         x = d.y_spine + T / 2
@@ -750,12 +719,8 @@ def check_bay_walls(d: Datums = D) -> list[str]:
         if TONGUE_D + floor + SLIDE_MEMBER_H > blank_size(WALLS[2], d)[1]:
             notes.append(f"drawer {k} slide runs off the top of the wall")
 
-    # -- stock rack
-    if s.sheet_slot[0] > d.front_bay_d:
-        notes.append(
-            f"a HALF blank is {s.sheet_slot[0]:.0f}mm deep into a "
-            f"{d.front_bay_d:.0f}mm bay, so the rack rails fall outside the wall"
-        )
+    # -- stock rack: the bay has to stay a rack; the comb and grooves are
+    # stock_rails', the deck's and the cap's to check
     if d.stock_capacity < 1:
         notes.append(
             f"stock bay is {d.stock_clear_w:.0f}mm clear and holds no blanks at "

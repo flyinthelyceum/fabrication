@@ -48,14 +48,25 @@ brain intake    the bottom of the VFD chimney. A slotted field through the deck
                 this field into the brain band, and leaves through the top cap.
                 The plinth is therefore not decorative: it is the intake plenum.
 
-No reliefs are cut on the intake slots or the grille. A dogbone earns its place
-where a mating part has to seat; a radiused corner on an air slot is just a
-radiused corner.
+stock grooves   nine blind grooves in the TOP face of the stock bay, one per
+                HALF blank, at the rack's pitch line. Ruling 11, 2026-09-03:
+                there is no bottom comb rail; the blank's lower edge drops into
+                a groove at deck level and slides out FORWARD. So each groove
+                runs off the front edge and ends in a capsule one land ahead of
+                the spine housing. Every number is ``stock_rails``' (pitch line,
+                width, depth, run); this part only cuts. The front plinth rail's
+                screw line crosses the grooves, and its heads are counterbored
+                below the groove floor; ``check_base_deck`` holds that.
+
+No reliefs are cut on the intake slots, the grille or the stock grooves. A
+dogbone earns its place where a mating part has to seat; a radiused corner on
+an air slot is just a radiused corner, and a blank's edge rides in a groove
+without ever seating against its end.
 """
 
 from __future__ import annotations
 
-from build123d import Part, Plane
+from build123d import Align, Box, Cylinder, Location, Part, Plane
 
 from lib.house import GRID
 from stations.cnc_shapeoko.carcass import (
@@ -74,6 +85,7 @@ from stations.cnc_shapeoko.carcass import (
     screw_positions,
     through_slot,
 )
+from stations.cnc_shapeoko.parts import stock_rails
 
 __all__ = [
     "build",
@@ -193,6 +205,14 @@ INTAKE_Y = (
 air to its left, the spine housing is the front land, and the rear leveller row
 is the last thing before the rear rail."""
 
+STOCK_GROOVE_X = tuple(stock_rails.slot_x_station(D))
+STOCK_GROOVE_Y = stock_rails.groove_y(D)
+STOCK_GROOVE_W = stock_rails.SLOT_W
+STOCK_GROOVE_D = stock_rails.GROOVE_D
+"""The stock grooves, read from the rack module that owns them: station X of
+each centreline (which is deck-local X), the run from the front edge to the
+capsule tip, the width a blank plus its clearance wants, and the ruled depth."""
+
 
 def _housing_cx(i: int) -> float:
     """Centreline of the housing for vertical panel ``i``.
@@ -241,6 +261,31 @@ def rail_grille_area() -> float:
         * INTAKE_SLOT_W
         * (PLINTH_H - 2 * INTAKE_MARGIN)
     )
+
+
+def _stock_groove(cx: float) -> Part:
+    """Cutter for one stock groove: a blind capsule in the TOP face, open at the
+    front edge, round at the rear.
+
+    Built from a Box and a Cylinder rather than ``through_slot`` because it is
+    blind, STOCK_GROOVE_D deep, and ``through_slot`` cuts through. Same primitive
+    family, same aperture reading: the round end is the capsule, and the front
+    end runs OVERSHOOT off the blank so it breaks out clean.
+    """
+    y0, y1 = STOCK_GROOVE_Y
+    r = STOCK_GROOVE_W / 2
+    z0 = T - STOCK_GROOVE_D
+    h = STOCK_GROOVE_D + OVERSHOOT       # up and out of the top face
+    run = Box(
+        STOCK_GROOVE_W,
+        (y1 - r) - (y0 - OVERSHOOT),
+        h,
+        align=(Align.CENTER, Align.MIN, Align.MIN),
+    ).moved(Location((cx, y0 - OVERSHOOT, z0)))
+    end = Cylinder(r, h, align=(Align.CENTER, Align.CENTER, Align.MIN)).moved(
+        Location((cx, y1 - r, z0))
+    )
+    return run + end
 
 
 def _slot_field(span: tuple[float, float]) -> list[float]:
@@ -324,6 +369,12 @@ def build_deck() -> Part:
             corner_r=INTAKE_SLOT_W / 2,   # aperture: capsule, nothing seats here
             angle=90.0,
         )
+
+    # The stock rack's lower half: a blind groove per blank, at the comb's
+    # pitch line. APERTURE: a blank's edge rides in it, nothing seats at its
+    # end, so the rear end is a capsule.
+    for cx in STOCK_GROOVE_X:
+        p -= _stock_groove(cx)
 
     return p
 
@@ -525,6 +576,35 @@ def check_base_deck() -> list[str]:
             "kick left to stand at"
         )
 
+    # The stock grooves against what shares the deck's top face with them.
+    gx0, gx1 = D.stock_x
+    r = STOCK_GROOVE_W / 2
+    for cx in STOCK_GROOVE_X:
+        if cx - r < gx0 + DADO_W / 2 or cx + r > gx1 - DADO_W / 2:
+            notes.append(
+                f"stock groove at x={cx:.1f} runs into a divider housing; the "
+                f"stock bay is {gx1 - gx0:.0f}mm clear and the pitch line does "
+                "not fit it"
+            )
+    if STOCK_GROOVE_Y[1] + r > SPINE_HOUSING_FRONT:
+        notes.append(
+            f"stock grooves end at y={STOCK_GROOVE_Y[1]:.1f}, past the spine "
+            f"housing's front wall at {SPINE_HOUSING_FRONT:.1f}"
+        )
+    if STOCK_GROOVE_D >= DECK_SCREW_CBORE_DEPTH:
+        notes.append(
+            f"stock grooves are {STOCK_GROOVE_D:.0f}mm deep and the front plinth "
+            f"rail's screw heads finish {DECK_SCREW_CBORE_DEPTH:.1f}mm down: a "
+            "head would stand in a groove floor"
+        )
+    for cx in Y_RAIL_CX:
+        for gx in STOCK_GROOVE_X:
+            if abs(gx - cx) < r + T / 2:
+                notes.append(
+                    f"stock groove at x={gx:.1f} sits over the cross rail at "
+                    f"x={cx:.0f}, where the deck is screwed down through it"
+                )
+
     return notes
 
 
@@ -583,6 +663,11 @@ if __name__ == "__main__":
     print(
         f"  deck screws per X rail: {len(screw_positions(X_RAIL_LEN))}, "
         f"per cross rail: {len(screw_positions(Y_RAIL_SPAN[1] - Y_RAIL_SPAN[0]))}"
+    )
+    print(
+        f"  stock grooves: {len(STOCK_GROOVE_X)} x {STOCK_GROOVE_W:.0f} wide, "
+        f"{STOCK_GROOVE_D:.0f} deep, y {STOCK_GROOVE_Y[0]:.0f}..{STOCK_GROOVE_Y[1]:.1f}, "
+        f"at x {', '.join(f'{x:.1f}' for x in STOCK_GROOVE_X)}"
     )
 
     written = []

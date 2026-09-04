@@ -909,7 +909,11 @@ class Station:
     panel_t: float = PANEL_T
     stock_module: float = STOCK_MODULE
     sheet_slot: tuple[float, float] = (600.0, 600.0)   # HALF blank on edge
-    sheet_pitch: float = 20.0                          # slot spacing in the rack
+    sheet_pitch: float = GRID * 2   # slot spacing in the rack. RULING 11,
+                                    # 2026-09-03: two grid modules. At one
+                                    # module an 18mm blank plus 1mm a side is
+                                    # a 20mm slot at 20mm pitch, and the comb
+                                    # has no teeth; 9 blanks in the bay, not 19.
     laser_blank: tuple[float, float] = QUARTER
 
     # ---- extraction -------------------------------------------------------

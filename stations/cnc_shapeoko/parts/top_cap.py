@@ -82,6 +82,12 @@ UNDERSIDE, plus a row of plain clearance holes on the housed panel's centreline:
                        blind at the rear with a dogbone at each corner
     spine              centred dado on y_spine + t/2, running the FULL blank
                        width x 0..x_right, through at both ends
+    stock comb         centred dado on the comb's line (``stock_rails.comb_y``),
+                       running from one divider's housing centreline to the
+                       other so it merges into both, a blind dogbone at each
+                       of the four corners the T-junctions make. The comb
+                       hangs from this housing and butts the dividers
+                       (ruling 11, 2026-09-03); no tie screws, it is glued.
 
 ONE OPEN ITEM, AND IT IS NOT THIS PART'S TO SETTLE.  ``bay_walls`` cuts the end
 walls 1150 deep (full depth, so the brain band gets side walls) while
@@ -111,11 +117,12 @@ Nothing here is measured off the drawing.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import hypot
 
 from build123d import Part
 
 from lib.house import GRID
-from stations.cnc_shapeoko.parts import console_plate
+from stations.cnc_shapeoko.parts import console_plate, stock_rails
 from stations.cnc_shapeoko.carcass import (
     DADO_D,
     DADO_W,
@@ -135,6 +142,7 @@ from stations.cnc_shapeoko.carcass import (
     panel,
     relief,
     screw_line,
+    screw_positions,
     snap_up,
     through_slot,
     to_local,
@@ -465,6 +473,32 @@ def wall_housings(d: Datums = DATUMS) -> list[_Housing]:
     return out
 
 
+def comb_housing(d: Datums = DATUMS) -> tuple[float, float, float]:
+    """(y centreline, x start, x end) of the stock comb's housing.
+
+    The run is from the lungs/stock divider's housing centreline to the
+    stock/hands divider's, so the dado breaks into both housings rather than
+    stopping DADO_FIT/2 short of them. The comb itself is the clear bay long
+    and butts the dividers' faces; the housing carries the comb, the
+    dividers carry nothing of it."""
+    hs = wall_housings(d)
+    y0, y1 = stock_rails.comb_y(d)
+    return ((y0 + y1) / 2, hs[1].mid_x, hs[2].mid_x)
+
+
+def comb_housing_reliefs(d: Datums = DATUMS) -> list[tuple[float, float]]:
+    """The four inside corners where the comb's dado meets the two dividers'
+    housings: the comb's square end corners seat there, so each gets a blind
+    dogbone the way the dividers' own blind ends do."""
+    hs = wall_housings(d)
+    yc, _x0, _x1 = comb_housing(d)
+    out: list[tuple[float, float]] = []
+    for xe in (hs[1].x1, hs[2].x0):
+        for ye in (yc - DADO_W / 2, yc + DADO_W / 2):
+            out.append((xe, ye))
+    return out
+
+
 def spine_housing(d: Datums = DATUMS) -> tuple[float, float, float]:
     """(y centreline, x start, x end) of the spine's housing.
 
@@ -543,6 +577,14 @@ def build(d: Datums = DATUMS) -> Part:
     sx0, sx1 = spine_screw_span(d)
     p -= screw_line((sx0, yc), (sx1, yc), thickness=t, cbore_d=SCREW_CBORE)
 
+    # -- housing for the stock comb (ruling 11) -----------------------------
+    # JOINERY: the comb's top tongue seats here, so the trench keeps square
+    # corners and each T-junction with a divider housing gets a blind dogbone.
+    yc, x0, x1 = comb_housing(d)
+    p -= groove((x0, yc), (x1, yc), thickness=t, side="back")
+    for xe, ye in comb_housing_reliefs(d):
+        p -= relief(xe, ye, thickness=t, depth=DADO_D, side="back")
+
     # -- tie for the console cheek (C12) ------------------------------------
     # The cheek butts the cap's underside with no housing: it stands on the
     # console's floor rib, not the deck, so it is a partial-height panel and
@@ -609,6 +651,31 @@ def check_top_cap(d: Datums = DATUMS) -> list[str]:
             "ceiling. The cap is touching the machine frame, which is the one "
             "thing it must not do."
         )
+
+    # -- the stock comb's housing: ahead of the spine, clear of the tie screws
+    yc, x0, x1 = comb_housing(d)
+    if yc + DADO_W / 2 > d.y_spine - DADO_W / 2 or yc - DADO_W / 2 < 0:
+        notes.append(
+            f"stock comb housing at y {yc - DADO_W / 2:.1f}..{yc + DADO_W / 2:.1f} "
+            f"is not between the blank's front edge and the spine's housing"
+        )
+    # The divider's first tie screw sits SCREW_END_INSET from the front, on the
+    # comb's line. The screw hole is through and the dogbone is a blind pocket
+    # cut from the same face, so nothing meets inside the panel; what has to
+    # survive is the wall between two cuts in the trench floor, one cutter
+    # radius of it. (bay_walls.FEATURE_WEB asks a full diameter, for two blind
+    # features cut from OPPOSITE faces of one panel. Not this case.)
+    for hs in wall_housings(d)[1:3]:
+        for p_ in screw_positions(hs.y1 - hs.y0):
+            sy = hs.y0 + p_
+            for xe, ye in comb_housing_reliefs(d):
+                gap = hypot(xe - hs.screw_x, ye - sy) - ROUTER_D / 2 - SCREW_CLEAR_D / 2
+                if gap < ROUTER_D / 2:
+                    notes.append(
+                        f"a comb housing dogbone at ({xe:.1f}, {ye:.1f}) leaves "
+                        f"{gap:.1f}mm to the divider tie screw at ({hs.screw_x:.1f}, "
+                        f"{sy:.1f}), under a cutter radius"
+                    )
 
     v = vent_field(d)
     if v.count < VENT_MIN_SLOTS:
