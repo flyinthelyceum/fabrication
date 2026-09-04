@@ -88,6 +88,7 @@ from stations.cnc_shapeoko.parts import (
     stock_rails,
     top_cap,
     trays,
+    vfd_mount,
 )
 
 __all__ = [
@@ -126,7 +127,7 @@ class Component:
     """One placed solid in the assembly."""
 
     label: str
-    group: str          # carcass | plinth | drawer | tray | steel
+    group: str          # carcass | plinth | drawer | tray | steel | reference
     part: Part
 
     @property
@@ -203,6 +204,13 @@ def components(d: Datums = DATUMS) -> list[Component]:
     out.append(
         Component(brain_partition.PART_NAME, "carcass", brain_partition.place(d=d))
     )
+
+    # 11. the VFD's standoff plate on the spine's rear face, standing on the
+    # deck, and the drive itself as a reference solid so every later brain-band
+    # layout collides with it here rather than in the shop. Not birch, not cut;
+    # in the assembly for the same reason the mast plate is.
+    out.append(Component(vfd_mount.PART_NAME, "carcass", vfd_mount.place(d=d)))
+    out.append(Component(vfd_mount.KEEPOUT_NAME, "reference", vfd_mount.build_keepout(d)))
 
     return out
 
@@ -346,6 +354,21 @@ def joints(d: Datums = DATUMS) -> dict[frozenset[str], Joint]:
     js.append(
         Joint("top_cap", mast_base.NAME, "bearing", None, note=
               "steel plate flat against the cap's underside, bolted through")
+    )
+
+    # -- the VFD plate lies flat on the spine and stands on the deck; the
+    # drive hangs on the plate. Three faces, no volume.
+    js.append(
+        Joint("spine_panel", vfd_mount.PART_NAME, "butt", None, note=
+              "plate flat on the spine's rear face, screwed through; the spine cuts nothing")
+    )
+    js.append(
+        Joint("base_deck", vfd_mount.PART_NAME, "butt", None, note=
+              "plate stands on the deck's top face; the deck cuts no housing")
+    )
+    js.append(
+        Joint(vfd_mount.PART_NAME, vfd_mount.KEEPOUT_NAME, "bearing", None, note=
+              "the drive's back hangs flat on the plate's rear face")
     )
 
     # The leg joint declares nothing here. It is not a joint between two CARCASS
@@ -614,7 +637,38 @@ def check_assembly(comps: list[Component] | None = None, d: Datums = DATUMS) -> 
             "this carcass is meant to share any."
         )
 
+    # The drive's standoff is air by ruling: nothing may stand between its
+    # vented face and the louvre. Checked here because only the assembly can
+    # see every part that might.
+    for c in standoff_intruders(comps, d):
+        notes.append(
+            f"{c.label} stands in the VFD's standoff slab, between the vented "
+            f"face and the louvre; that {d.s.vfd_panel_standoff:.0f}mm is the "
+            "only clearance the drive gets inside the box"
+        )
+
     return notes
+
+
+def standoff_intruders(
+    comps: list[Component] | None = None, d: Datums = DATUMS
+) -> list[Component]:
+    """Every part sharing more than ``NOISE_VOL`` with the VFD's standoff
+    slab, the air between the drive's vented face and the end wall's louvre."""
+    comps = components(d) if comps is None else comps
+    slab = vfd_mount.standoff_slab(d)
+    sb = slab.bounding_box()
+    hits: list[Component] = []
+    for c in comps:
+        if not _bboxes_touch(c.bbox, sb):
+            continue
+        try:
+            shared = c.part & slab
+        except Exception:
+            continue
+        if shared is not None and shared.volume > NOISE_VOL:
+            hits.append(c)
+    return hits
 
 
 def export(comp: Compound, out_dir: Path | None = None) -> Path:
@@ -734,6 +788,21 @@ def main() -> None:
         f"x {d.brain_split_x:.1f}, tongue {brain_partition.TONGUE:.0f} into the spine, "
         f"rear edge at y {d.y_rear - brain_partition.DOOR_LANDING:.1f} for the door; "
         f"transit z {tz0:.0f}..{tz1:.0f}, {brain_partition.TRANSIT_D:.0f} deep, the only opening"
+    )
+
+    print("\nbrain band: the drive and its plate")
+    pw, ph = vfd_mount.plate_size(d)
+    kb = vfd_mount.build_keepout(d).bounding_box()
+    print(
+        f"  {vfd_mount.PART_NAME}: {pw:.1f} x {ph:.1f} x {vfd_mount.PLATE_T:.0f} on the "
+        f"spine's rear face at x {vfd_mount.plate_x(d)[0]:.1f}, standing on the deck; "
+        f"2 x {vfd_mount.INSERT_PILOT_D:.3f} insert pilots at {vfd_mount.MOUNT_PITCH:.0f} pitch"
+    )
+    print(
+        f"  {vfd_mount.KEEPOUT_NAME}: x {kb.min.X:.1f}..{kb.max.X:.1f}  "
+        f"y {kb.min.Y:.1f}..{kb.max.Y:.1f}  z {kb.min.Z:.1f}..{kb.max.Z:.1f}; vented face "
+        f"{vfd_mount.standoff(d):.1f} off the end wall's inner face, "
+        f"{len(standoff_intruders(comps, d))} part(s) in the standoff slab"
     )
 
     print("\nleg joint: bolt axes, station coordinates")

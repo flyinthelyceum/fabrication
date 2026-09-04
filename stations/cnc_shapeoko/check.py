@@ -58,6 +58,7 @@ from stations.cnc_shapeoko.parts import (
     stock_rails,
     top_cap,
     trays,
+    vfd_mount,
 )
 
 # A note is STANDING when it says so itself. These phrases are written into the
@@ -90,7 +91,6 @@ UNMODELLED = (
     "console_plate",
     "lungs_door",
     "mains_backplate",
-    "vfd_mount",
     "signal_mounts",
     "stock_wash",
 )
@@ -131,6 +131,7 @@ def collect() -> list[tuple[str, str, str]]:
         ("mast_base", mast_base.check_mast_base(d)),
         ("stock_rails", stock_rails.check_stock_rails(d)),
         ("brain_partition", brain_partition.check_brain_partition(d)),
+        ("vfd_mount", vfd_mount.check_vfd_mount(d)),
         ("leg_joint", leg_joint.check_leg_joint(d)),
         ("assembly", check_assembly(comps, d)),
         ("machine", check_machine(comps, d)),
