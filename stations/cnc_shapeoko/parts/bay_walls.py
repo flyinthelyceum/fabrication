@@ -101,7 +101,6 @@ from stations.cnc_shapeoko.carcass import (
     DADO_D,
     DADO_W,
     DATUMS,
-    GROWTH_SLIDE_MEMBER_H,
     ISOLATOR_H,
     RABBET_D,
     ROUTER_D,
@@ -695,14 +694,6 @@ def check_bay_walls(d: Datums = D) -> list[str]:
             f"{over:.0f}mm, taking the {d.top_gap:.0f}mm reveal to "
             f"{d.top_gap - over:.0f}mm. Ways out: a shorter slide member, "
             "spending the service gap, or letting the carcass grow."
-        )
-
-    grow = GROWTH_SLIDE_MEMBER_H + ISOLATOR_H + s.growth_spec["env"][2] + SERVICE_GAP
-    if grow > d.bay_h:
-        notes.append(
-            f"GROWTH LOST: {s.growth_spec['name']} on the {GROWTH_SLIDE_MEMBER_H:.0f}mm "
-            f"member the conversion assumes wants {grow:.0f}mm into a "
-            f"{d.bay_h:.0f}mm bay. The third conversion step no longer buys the swap."
         )
 
     # -- lungs bay width, once the acoustic lining and the slides are in

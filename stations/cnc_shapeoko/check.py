@@ -8,11 +8,14 @@ the machine. This runs all of them and sorts what comes back into two piles,
 because they are not the same kind of thing:
 
   BLOCKING   geometry that is wrong. Two parts in the same material, a part
-             reaching into the machine's own steel, the growth path lost, a part
-             overflowing its bay. Cutting against any of these wastes sheet.
+             reaching into the machine's own steel, a part overflowing its bay.
+             Cutting against any of these wastes sheet.
 
   TODO       a part the design needs and the model does not have yet. Does not
              stop you cutting the parts that DO exist; does stop final assembly.
+             Fed by UNMODELLED below, which names every such part explicitly.
+             A green gate can only see the parts that are modelled, so the
+             closing line counts the ones that are not.
 
   MEASURE    waiting on Jared and a tape. Not a modelling error.
 
@@ -26,7 +29,9 @@ CLASSIFICATION IS A STOPGAP. It matches phrases that are written deliberately
 into the check messages, which means renaming a message silently reclassifies
 it. Anything unmatched falls to BLOCKING, so drift fails loud rather than quiet.
 The real fix is for each check to return its own severity instead of a bare
-string; that refactor touches nine modules and has not been done.
+string; that refactor touches nine modules and has not been done. It is
+deliberately NOT done here either (C01, 2026-09-03): the UNMODELLED list is the
+honest stopgap and the severity refactor is its own task.
 """
 
 from __future__ import annotations
@@ -67,7 +72,27 @@ STANDING_MARKS = (
 )
 
 TODO_MARKS = (
-    "what is missing is a part",
+    "UNMODELLED:",
+)
+
+# Every part the build plan (C02..C18) still owes the model. Each task deletes
+# its own name when its part lands in assembly.py, so the closing line's count
+# falls to zero only when final assembly is actually modelled. Never let this
+# list drift from the plan: a part missing from here is a part the gate cannot
+# see and will not count.
+UNMODELLED = (
+    "rear_door",
+    "stock_rails",
+    "lungs_carriage",
+    "brain_partition",
+    "exhaust_plenum",
+    "console_plate",
+    "lungs_door",
+    "mains_backplate",
+    "vfd_mount",
+    "signal_mounts",
+    "stock_wash",
+    "mast_base",
 )
 
 MEASURE_MARKS = (
@@ -93,18 +118,9 @@ def collect() -> list[tuple[str, str, str]]:
     d = DATUMS
     comps = components(d)
 
-    # The growth extractor's own bay footprint, GROWTH config: params.py owns
-    # no placement geometry, so this is computed here and handed in.
-    growth_lungs_x = (d.wall_x_growth[0] + d.t, d.wall_x_growth[1])
-    growth_lungs_y = (0.0, d.front_bay_d)
-
     sources: list[tuple[str, list[str]]] = [
         ("params", params.check()),
         ("earthing", params.check_earthing()),
-        (
-            "growth path",
-            params.check_growth_path(bay_x=growth_lungs_x, bay_y=growth_lungs_y),
-        ),
         ("carcass", check_carcass(d)),
         ("base_deck", base_deck.check_base_deck()),
         ("bay_walls", bay_walls.check_bay_walls(d)),
@@ -115,6 +131,11 @@ def collect() -> list[tuple[str, str, str]]:
         ("leg_joint", leg_joint.check_leg_joint(d)),
         ("assembly", check_assembly(comps, d)),
         ("machine", check_machine(comps, d)),
+        (
+            "unmodelled",
+            [f"UNMODELLED: {name} is a part this plan builds and the model "
+             "does not have yet" for name in UNMODELLED],
+        ),
     ]
 
     out: list[tuple[str, str, str]] = []
@@ -160,7 +181,9 @@ def main() -> int:
         todo = sum(1 for r in rows if r[0] == "TODO")
         print(
             "SAFE TO CUT as modelled. The measurements above still gate the real "
-            f"sheet, and {todo} part(s) remain unmodelled for final assembly."
+            f"sheet, and {todo} part(s) remain unmodelled for final assembly: "
+            + ", ".join(UNMODELLED)
+            + "."
         )
     return 1 if blocking else 0
 

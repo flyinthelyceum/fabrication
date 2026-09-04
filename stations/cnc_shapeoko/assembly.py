@@ -674,7 +674,7 @@ def main() -> None:
     st = leg_joint.floor_state(d)
     print(
         f"  {len(bs)} x {leg_joint.BOLT_THREAD} through the legs' own "
-        f"{d.s.leg_holes.hole_d:.0f}mm holes into {leg_joint.INSERT_PART}"
+        f"{d.s.leg_holes.hole_d:.1f}mm holes into {leg_joint.INSERT_PART}"
     )
     print(
         f"  plinth {'ON THE FLOOR' if st.on_floor else 'OFF THE FLOOR, the carcass HANGS'}"

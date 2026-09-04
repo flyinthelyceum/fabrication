@@ -44,7 +44,7 @@ Y splits into two bands at the spine panel:
 X splits the front band into three bays between four vertical panels:
 
     wall 0   left end wall           x 0 .. T
-    LUNGS    CT 36 EI on slides      clear width bay_lungs_w
+    LUNGS    CT 15 HEPA on slides    clear width bay_lungs_w
     wall 1   lungs/stock divider
     STOCK    HALF blanks on edge     clear width = WHATEVER IS LEFT
     wall 2   stock/hands divider
@@ -158,7 +158,6 @@ __all__ = [
     "SERVICE_GAP",
     "TOP_GAP_MIN",
     "STOCK_HEADROOM",
-    "GROWTH_SLIDE_MEMBER_H",
     "Datums",
     "DATUMS",
     "snap_up",
@@ -248,15 +247,6 @@ SERVICE_GAP = GRID      # clearance above the tallest thing in any bay
 TOP_GAP_MIN = GRID      # the carcass never touches the machine frame
 
 STOCK_HEADROOM = GRID   # lift a HALF blank clear of its slot to get it out
-GROWTH_SLIDE_MEMBER_H = 25.0
-"""Cabinet-member height the CT 36 conversion assumes.
-
-The fitted CT 15 rides an Accuride 3832 class member at 45mm and has height to
-spare. The growth unit does not: at 45mm its stack wants 676mm into a bay that
-the machine's own clearance caps near 664. A 25mm low-profile member is the
-third and last step of the conversion, and it is named here so the promise is
-costed rather than assumed.
-"""
 
 
 # ---------------------------------------------------------------- grid
@@ -306,22 +296,6 @@ class Datums:
         """
         x0 = self.x_left
         x1 = x0 + self.t + self.s.bay_lungs_w
-        x3 = self.x_right - self.t
-        x2 = x3 - self.s.bay_hands_w - self.t
-        return (x0, x1, x2, x3)
-
-    @property
-    def wall_x_growth(self) -> tuple[float, float, float, float]:
-        """The same four panels, positioned for the GROWTH extractor.
-
-        Only index 1, the lungs/stock divider, differs. The deck and the top cap
-        carry dado stations at BOTH positions from day one, the unused one
-        filled with a removable birch spline, so converting to the growth unit
-        moves one panel into a slot that is already cut instead of recutting the
-        two largest panels in the station.
-        """
-        x0 = self.x_left
-        x1 = x0 + self.t + self.s.bay_lungs_w_growth
         x3 = self.x_right - self.t
         x2 = x3 - self.s.bay_hands_w - self.t
         return (x0, x1, x2, x3)
@@ -423,34 +397,23 @@ class Datums:
         )
 
     @property
-    def growth_stack_h(self) -> float:
-        """The lungs stack under the GROWTH extractor, standing on the
-        low-profile slide member the conversion assumes."""
-        return (
-            GROWTH_SLIDE_MEMBER_H
-            + ISOLATOR_H
-            + self.s.growth_spec["env"][2]
-            + SERVICE_GAP
-        )
-
-    @property
     def bay_h(self) -> float:
         """Clear height of every bay.
 
-        NOT set by the fitted extractor, which is the trap this property exists
-        to avoid. A CT 15 on its carriage is 488mm and sizing the bay off it
-        would leave a 600mm HALF blank unable to stand on edge in the stock
-        rack, which is the whole point of the stock bay. Two things are taller
-        than the fitted unit and both are expensive to discover late: the blank,
-        and the growth extractor the station promises to accept.
+        NOT set by the fitted extractor alone, which is the trap this property
+        exists to avoid. A CT 15 on its carriage is 488mm and sizing the bay off
+        it would leave a 600mm HALF blank unable to stand on edge in the stock
+        rack, which is the whole point of the stock bay.
 
         Bay height is therefore the tallest of what the rack needs and what the
-        growth path needs, and the fitted extractor simply sits in it with room.
+        lungs stack needs, and today the rack wins. (Until 2026-09-03 the second
+        term was the withdrawn CT 36 EI's stack; the fitted stack is shorter, so
+        the number did not move.)
         """
         return snap_up(
             max(
                 self.s.sheet_slot[1] + STOCK_HEADROOM,
-                self.growth_stack_h,
+                self.lungs_stack_h,
             )
         )
 
@@ -1283,28 +1246,16 @@ def check_carcass(d: Datums = DATUMS) -> list[str]:
             "one cannot be paid for out of this panel."
         )
 
-    if (d.s.growth_station_wanted
-            and abs(d.wall_x_growth[1] - d.wall_x[1]) < GRID - 1e-9):
-        notes.append(
-            f"the growth divider station is {d.wall_x_growth[1] - d.wall_x[1]:.0f}mm "
-            "from the fitted one, under one grid module. Two dado stations that "
-            "close together share material and neither is sound."
-        )
-
-    # The BAY CLEAR WIDTHS are what the grid governs, and lungs_w_for already
-    # snaps those up. The divider's absolute x is clear width plus an 18mm end
+    # The BAY CLEAR WIDTH is what the grid governs, and bay_lungs_w already
+    # snaps it up. The divider's absolute x is clear width plus an 18mm end
     # wall and lands off-grid by construction, which is fine: it is a dado in a
     # carcass, not a fence indexed off a bench dog.
-    for label, w in (
-        ("fitted", d.s.bay_lungs_w),
-        ("growth", d.s.bay_lungs_w_growth),
-    ):
-        if not on_grid(w):
-            notes.append(
-                f"the {label} lungs bay is {w:.1f}mm clear, off the "
-                f"{GRID:.0f}mm grid. The rack pitch and the lining lay-up both "
-                "assume a bay that divides by the grid."
-            )
+    if not on_grid(d.s.bay_lungs_w):
+        notes.append(
+            f"the lungs bay is {d.s.bay_lungs_w:.1f}mm clear, off the "
+            f"{GRID:.0f}mm grid. The rack pitch and the lining lay-up both "
+            "assume a bay that divides by the grid."
+        )
 
     if s.vfd_box[2] + SERVICE_GAP > d.bay_h:
         notes.append(
@@ -1373,13 +1324,9 @@ if __name__ == "__main__":
     )
     print(
         f"  bay {d.bay_h:.0f} = max(blank {d.s.sheet_slot[1]:.0f}+"
-        f"{STOCK_HEADROOM:.0f}, growth stack {d.growth_stack_h:.0f}); "
-        f"fitted stack {d.lungs_stack_h:.0f}"
+        f"{STOCK_HEADROOM:.0f}, lungs stack {d.lungs_stack_h:.0f})"
     )
-    print(
-        f"  divider stations x {d.wall_x[1]:.0f} fitted, "
-        f"{d.wall_x_growth[1]:.0f} growth"
-    )
+    print(f"  divider station x {d.wall_x[1]:.0f}")
     print(
         f"  blanks: deck {d.deck_size[0]:.0f}x{d.deck_size[1]:.0f}  "
         f"spine {d.spine_size[0]:.0f}x{d.spine_size[1]:.0f}  "

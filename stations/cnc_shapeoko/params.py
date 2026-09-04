@@ -162,8 +162,10 @@ SOURCES = {
 
 # ---------------------------------------------------------------- extractors
 #
-# The station is built around ONE of these and has to be able to grow into the
-# other. Jared ordered the CT 15 HEPA; the CT 36 EI is the v2 growth path.
+# The station is built around ONE of these. Jared ordered the CT 15 HEPA. The
+# CT 36 EI was the v2 unit until 2026-09-03, when the measured z_beam left it
+# 39mm short on hose-bend headroom; its row is gone and the surrender is a
+# standing note in check() that never clears.
 #
 # THIS TABLE IS WHY THE REGISTRY EXISTS. The brief carried an envelope tagged
 # "CT48 E" that was in fact the CT 36's to within 4mm on height, and a real CT 48
@@ -174,8 +176,8 @@ SOURCES = {
 #   CT 15      457 x 308 x 429    15 L    130 CFM   fitted, CALIPERED
 #              (the spec table's 470 x 320 x 435 also had W and D the wrong way
 #               round, which is why the row below is now the caliper's)
-#   CT 26 EI   630 x 365 x 540    26 L              would also fit
-#   CT 36 EI   630 x 365 x 596    36 L              the growth path
+#   CT 26 EI   630 x 365 x 540    26 L              never fitted
+#   CT 36 EI   630 x 365 x 596    36 L              WITHDRAWN 2026-09-03
 #   CT 48 EI   740 x 406 x 1005   48 L              will not fit, ever
 #
 EXTRACTORS = {
@@ -191,16 +193,6 @@ EXTRACTORS = {
                                         # festoolusa accessory page; see
                                         # SOURCES["ct15_main_filter"]
         "url": "https://www.festoolusa.com/products/dust-extractors/dust-extractors-for-cleaning/578441---ct-15-hepa-us",
-    },
-    "CT36EI": {
-        "name": "Festool CT 36 EI HEPA CLEANTEC",
-        "env": (630.0, 365.0, 596.0),   # festoolusa spec table. Height is body
-                                        # only; the carry handle is not in it.
-        "capacity_l": 36,
-        "airflow_cfm": None,            # not read off the spec table yet
-        "bag": "Festool SC FIS-CT 36/5, part 496186",
-        "main_filter": "Festool HEPA-HF-CT 26/36/48 PTFE, part 205412",
-        "url": "https://www.festoolusa.com/products/dust-extractors/workshop-dust-extractors/577872---ct-36-ei-hepa-us",
     },
 }
 
@@ -401,8 +393,8 @@ CONFIDENCE = {
     "vfd_box": "measured",   # 2026-09-02 calipers
     "vfd_fan": "measured",   # 2026-09-02 calipers, two square fans, left face
     "extractor_env": "calipered",   # the fitted CT 15 row is calipered
-                                 # (2026-09-02); the CT 36 row is festoolusa's
-                                 # spec table and is no longer fitted or growth
+                                 # (2026-09-02); the CT 36 EI row was deleted
+                                 # with the withdrawn v2 path, 2026-09-03
     "vfd_panel_standoff": "assumption",     # see the field. A traded clearance.
     "vfd_louvre_free_ratio": "assumption",  # nobody publishes one
     "lungs_lining_t": "medium",  # MLV plus open-cell foam, lay-up not yet bought
@@ -805,21 +797,17 @@ class Station:
 
     # ---- extractor selection ----------------------------------------------
     extractor: str = "CT15"
-    """The unit that was ORDERED and that v1 is built around."""
-
-    extractor_growth: str = "CT15"
-    """The unit v2 has to accept without a redesign.
+    """The unit that was ORDERED and that v1 is built around. It is also the
+    only unit the station will ever take.
 
     RULED by Jared 2026-09-03: "maximize the space we have and we'll live with
-    what we must." This read CT36EI and that promise is WITHDRAWN. It was not
-    given up to a choice in the carcass, it was taken by the tape: floor to the
-    underside of the frame beam is 33-1/16in, not the 920.75mm the old derivation
-    implied, and a CT 36 EI wants its 596mm body plus a 144mm hose bend under a
-    ceiling 39mm short of carrying both. No divider move recovers a ceiling.
-
-    Growth now equals fitted, so check_growth_path tests the CT 15 against its own
-    bay and passes. The surrender is recorded as a standing note in check() so a
-    passing gate is never read as the CT 36 still fitting."""
+    what we must." The v2 promise to accept a CT 36 EI without a redesign is
+    WITHDRAWN. It was not given up to a choice in the carcass, it was taken by
+    the tape: floor to the underside of the frame beam is 33-1/16in, not the
+    920.75mm the old derivation implied, and a CT 36 EI wants its 596mm body
+    plus a 144mm hose bend under a ceiling 39mm short of carrying both. No
+    divider move recovers a ceiling. The surrender is a standing note in
+    check() that never clears."""
 
     # ---- bays -------------------------------------------------------------
     bay_brain_d: float = 250.0      # rear band, full width
@@ -982,28 +970,12 @@ class Station:
         """HALF blanks the station rack holds on edge."""
         return int(self.bay_stock_w // self.sheet_pitch)
 
-    # ---- the fitted extractor, and the one v2 has to accept ---------------
+    # ---- the fitted extractor ---------------------------------------------
 
     @property
     def spec(self) -> dict:
         """The EXTRACTORS row for the unit that is actually going in."""
         return EXTRACTORS[self.extractor]
-
-    @property
-    def growth_station_wanted(self) -> bool:
-        """Whether a SECOND divider dado is a real station or a duplicate.
-
-        False once growth equals fitted, which is where Jared's 2026-09-03 ruling
-        left it. The deck and the top cap still subtract the growth groove, and
-        that stays sound because the two positions coincide exactly and a boolean
-        subtract of the same volume twice is one dado, not two. What is NOT sound
-        is telling a reader there are two stations."""
-        return self.extractor_growth != self.extractor
-
-    @property
-    def growth_spec(self) -> dict:
-        """The EXTRACTORS row v2 has to accept without a redesign."""
-        return EXTRACTORS[self.extractor_growth]
 
     @property
     def extractor_env(self) -> tuple[float, float, float]:
@@ -1026,26 +998,14 @@ class Station:
         acoustic lining, slide member and hand clearance, both sides."""
         return 2 * (self.lungs_lining_t + self.lungs_slide_t + self.lungs_side_clear)
 
-    def lungs_w_for(self, key: str) -> float:
-        """Clear lungs width that housing EXTRACTORS[key] needs, on the grid.
-
-        Snapped UP: the bay is allowed to be generous, never short. This is the
-        one bay dimension the fitted unit sets, which is what makes the growth
-        path a divider move rather than a rebuild."""
-        need = EXTRACTORS[key]["env"][1] + self.lungs_allowance()
-        return _snap_up(need)
-
     @property
     def bay_lungs_w(self) -> float:
-        """Clear width of the lungs bay, set by the FITTED extractor."""
-        return self.lungs_w_for(self.extractor)
+        """Clear width of the lungs bay, set by the fitted extractor, on the grid.
 
-    @property
-    def bay_lungs_w_growth(self) -> float:
-        """What the lungs bay becomes under the growth extractor. The difference
-        between this and bay_lungs_w is the whole cost of the conversion, and it
-        comes out of stock."""
-        return self.lungs_w_for(self.extractor_growth)
+        Snapped UP: the bay is allowed to be generous, never short. This is the
+        one bay dimension the fitted unit sets."""
+        need = self.spec["env"][1] + self.lungs_allowance()
+        return _snap_up(need)
 
     # ---- the clearance envelope, which replaced clear_h --------------------
 
@@ -1224,17 +1184,16 @@ def check(s: Station = STATION) -> list[str]:
             "z_beam. Everything above the gussets moves with it."
         )
 
-    if s.extractor_growth == s.extractor:
-        problems.append(
-            "EXTRACTOR GROWTH SURRENDERED, standing note. The station is sized "
-            f"for the {EXTRACTORS[s.extractor]['name']} and for nothing "
-            "larger. The "
-            "CT 36 EI growth path was withdrawn by Jared 2026-09-03 after the "
-            "measured z_beam left it 39mm short on hose-bend headroom, which no "
-            "divider move recovers. This note never clears; it is here so a "
-            "passing growth check is never read as the CT 36 EI still fitting. "
-            "Swapping up later is a new carcass, not a conversion."
-        )
+    problems.append(
+        "EXTRACTOR GROWTH SURRENDERED, standing note. The station is sized "
+        f"for the {EXTRACTORS[s.extractor]['name']} and for nothing "
+        "larger. The "
+        "CT 36 EI growth path was withdrawn by Jared 2026-09-03 after the "
+        "measured z_beam left it 39mm short on hose-bend headroom, which no "
+        "divider move recovers. This note never clears; it is here so a "
+        "passing gate is never read as the CT 36 EI still fitting. "
+        "Swapping up later is a new carcass, not a conversion."
+    )
 
     if CONFIDENCE.get("gusset_count") == "low":
         problems.append(
@@ -1429,88 +1388,11 @@ def check_earthing(s: Station = STATION) -> list[str]:
     return problems
 
 
-def check_growth_path(
-    s: Station = STATION,
-    bay_x: tuple[float, float] | None = None,
-    bay_y: tuple[float, float] | None = None,
-) -> list[str]:
-    """Can the station still take the growth extractor without a redesign.
-
-    The promise made on 2026-09-02 is that swapping a CT 15 for a CT 36 costs a
-    divider move and a slide member, not a new carcass. That promise is only
-    worth anything if it is tested, so this asserts every dimension that would
-    be EXPENSIVE to revisit against the growth unit, not the fitted one.
-
-    Anything this reports is a dimension where the growth path has quietly been
-    lost and the model is still claiming it.
-
-    ``bay_x``/``bay_y`` are the growth lungs bay's own footprint, in station
-    coordinates -- carcass.py owns that geometry, not this module, so a caller
-    with a ``Datums`` passes it in. Without it this falls back to
-    ``clear_h_min``, the worst ceiling anywhere, which is what this function
-    used before the gussets became an envelope rather than a scalar and is
-    still correct, just pessimistic off-corner.
-    """
-    g = s.growth_spec
-    env = g["env"]
-    problems: list[str] = []
-    ceiling = s.clear_z_over(bay_x, bay_y) if bay_x and bay_y else s.clear_h_min
-
-    if env[0] > s.front_bay_d():
-        problems.append(
-            f"GROWTH LOST: {g['name']} is {env[0]:.0f}mm long into a "
-            f"{s.front_bay_d():.0f}mm front bay. Bay depth is expensive to change, "
-            "so this has to be sized for the growth unit from the start."
-        )
-
-    if env[2] > ceiling:
-        problems.append(
-            f"GROWTH LOST: {g['name']} is {env[2]:.0f}mm tall into "
-            f"{ceiling:.0f}mm of clearance over its own bay. No divider move "
-            "recovers this."
-        )
-
-    if ceiling - env[2] < s.hose_bend_r():
-        problems.append(
-            f"GROWTH LOST: {ceiling - env[2]:.0f}mm of headroom over "
-            f"{g['name']} against a {s.hose_bend_r():.0f}mm hose bend radius"
-        )
-
-    grow_w = s.bay_lungs_w_growth
-    if grow_w + s.bay_hands_w >= s.leg_x_inner:
-        problems.append(
-            f"GROWTH LOST: lungs {grow_w:.0f}mm plus hands {s.bay_hands_w:.0f}mm "
-            f"leaves nothing for stock inside {s.leg_x_inner:.0f}mm"
-        )
-
-    return problems
-
-
-def conversion_steps(s: Station = STATION) -> list[str]:
-    """The named cost of going from the fitted extractor to the growth one.
-
-    If this list ever grows past a divider, a rack and a slide member, the
-    growth path has stopped being cheap and the claim in the brief is stale.
-    """
-    delta = s.bay_lungs_w_growth - s.bay_lungs_w
-    return [
-        f"set extractor = {s.extractor_growth!r} in params. One line.",
-        f"move the lungs/stock divider {delta:.0f}mm right, into the second dado "
-        "station already cut in the deck and the top cap. Lift the birch spline "
-        "out of it and drop it into the vacated one.",
-        f"recut the stock rack: it loses {delta:.0f}mm of width and the blanks "
-        "it holds drop accordingly.",
-        f"swap the lungs slide member for one no taller than the growth stack "
-        "allows, and change the bag to " + s.growth_spec["bag"] + ".",
-    ]
-
-
 if __name__ == "__main__":
     s = STATION
     print(f"fitted:  {s.spec['name']}  {s.extractor_env[0]:.0f} x "
           f"{s.extractor_env[1]:.0f} x {s.extractor_env[2]:.0f}")
-    print(f"growth:  {s.growth_spec['name']}  lungs bay would go "
-          f"{s.bay_lungs_w:.0f} -> {s.bay_lungs_w_growth:.0f}mm")
+    print(f"lungs bay {s.bay_lungs_w:.0f}mm clear")
     print(f"front bays {s.front_bays():.0f}mm into {s.leg_x_inner:.0f}mm, "
           f"slack {s.slack():.0f}mm")
     print(f"station rack holds {s.stock_capacity()} HALF blanks on edge")
@@ -1520,16 +1402,6 @@ if __name__ == "__main__":
         f"{s.leg_x_inner - s.gusset_x_intrude:.1f}  y {s.gusset_y_intrude:.1f}.."
         f"{s.leg_y_inner - s.gusset_y_intrude:.1f}"
     )
-
-    grown = check_growth_path(s)
-    if grown:
-        print(f"\n{len(grown)} GROWTH PATH failure(s):")
-        for p in grown:
-            print(f"  - {p}")
-    else:
-        print("\ngrowth path intact. Conversion to the CT 36:")
-        for i, step in enumerate(conversion_steps(s), 1):
-            print(f"  {i}. {step}")
 
     found = check(s)
     if found:

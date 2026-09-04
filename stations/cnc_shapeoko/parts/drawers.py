@@ -51,8 +51,9 @@ open face: the recess is the slide's, not a styling choice, and it is what the
 fingers reach into over the pull.
 
 HEIGHT is the opening less one ``SERVICE_GAP``, snapped DOWN to the grid. The
-snap is what makes three boxes out of a bay whose thirds are 293.3, 220.0 and
-146.7mm: 260, 200 and 120, each with more than a service gap of air over it.
+snap is what makes three boxes out of a bay whose 4:3:2 shares are 275.6,
+206.7 and 137.8mm: 240, 180 and 100, each with more than a service gap of air
+over it.
 A drawer that used every millimetre of its opening would bind on a bay that is
 600mm of birch away from being square.
 
