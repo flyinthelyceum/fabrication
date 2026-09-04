@@ -43,6 +43,14 @@ and ``check_drawers`` measures the result against the constraint. Building to
 the constraint directly would put every box on the floor of the band with the
 whole of plywood's thickness tolerance still to spend.
 
+Since C12 (2026-09-03) a box can also be NARROWED: every drawer whose opening
+crosses ``console_plate.CONSOLE_BAND`` gives up ``console_plate.CONSOLE_KEEPOUT``
+on its RIGHT side to the console's chase, by Jared's ruling that the console's
+device depth comes out of the overlapped drawers' width and not out of moving
+the plate. ``narrowing`` reads which and how much off that module; the box's
+left side and both side clearances stay where they were, and its right-hand
+slide moves inboard onto the chase's cheek. The others stay 373.
+
 DEPTH is ``SLIDE_LEN``. A side-mount pair wants its two members the same length
 and flush, so the box is exactly as deep as the slide and its front face lands
 at ``SLIDE_FRONT_INSET``, which is where ``bay_walls`` starts the cabinet
@@ -148,6 +156,7 @@ from stations.cnc_shapeoko.carcass import (
     snap_dn,
     through_slot,
 )
+from stations.cnc_shapeoko.parts import console_plate
 from stations.cnc_shapeoko.parts.bay_walls import (
     SLIDE_BORE_D,
     SLIDE_BORE_DEPTH,
@@ -165,6 +174,7 @@ __all__ = [
     "BACK_DROP",
     "BOTTOM_GROOVE_Z",
     "ENGRAVE_D",
+    "narrowing",
     "box_size",
     "box_origin",
     "interior",
@@ -269,6 +279,14 @@ class DrawerSpec:
     def name(self) -> str:
         return f"drawer{self.number}_{self.callout.lower()}"
 
+    def outside(self, d: Datums | None = None) -> tuple[float, float, float]:
+        """Outside (w, depth, h), narrowing included. What the slides see."""
+        return box_size(self, D if d is None else d)
+
+    def inside(self, d: Datums | None = None) -> tuple[float, float, float]:
+        """Clear (w, depth, h) inside the box. What a tray is cut to."""
+        return interior(self, D if d is None else d)
+
 
 DRAWERS: tuple[DrawerSpec, ...] = (
     DrawerSpec(1, "D1", "CUTTERS", "endmills, V-bits and the ER-16 collets", 2),
@@ -285,13 +303,22 @@ def opening(spec: DrawerSpec, d: Datums = D) -> tuple[float, float]:
     return drawer_openings(d)[spec.opening]
 
 
+def narrowing(spec: DrawerSpec, d: Datums = D) -> float:
+    """How much this box gives up on its right side to the console's chase:
+    ``CONSOLE_KEEPOUT`` when its opening crosses the console band, else 0."""
+    if spec.opening in console_plate.narrowed_openings(d):
+        return console_plate.CONSOLE_KEEPOUT
+    return 0.0
+
+
 def box_size(spec: DrawerSpec, d: Datums = D) -> tuple[float, float, float]:
     """Outside (width, depth, height) of one box.
 
-    Width from the slide maker's build recommendation, depth from the slide's
-    length, height from the opening less a service gap, snapped down to grid.
+    Width from the slide maker's build recommendation less whatever the
+    console takes, depth from the slide's length, height from the opening less
+    a service gap, snapped down to grid.
     """
-    w = d.s.bay_hands_w - d.s.drawer_slide_build_under
+    w = d.s.bay_hands_w - d.s.drawer_slide_build_under - narrowing(spec, d)
     depth = SLIDE_LEN
     h = snap_dn(opening(spec, d)[1] - TOP_CLEAR)
     return (w, depth, h)
@@ -300,20 +327,22 @@ def box_size(spec: DrawerSpec, d: Datums = D) -> tuple[float, float, float]:
 def box_origin(spec: DrawerSpec, d: Datums = D) -> tuple[float, float, float]:
     """Station coordinates of the box's lower, left, front corner.
 
-    Centred across the hands bay so the two side clearances are equal, set back
-    by ``SLIDE_FRONT_INSET`` so the box front is flush with the front end of
-    the cabinet member, and standing on its opening's floor.
+    One side clearance off the divider so the two clearances are equal -- the
+    right-hand one is measured to the console cheek when the box is narrowed,
+    to the end wall when it is not -- set back by ``SLIDE_FRONT_INSET`` so the
+    box front is flush with the front end of the cabinet member, and standing
+    on its opening's floor.
     """
-    w, _depth, _h = box_size(spec, d)
-    x0 = d.hands_x[0] + (d.s.bay_hands_w - w) / 2
+    x0 = d.hands_x[0] + d.s.drawer_slide_build_under / 2
     y0 = SLIDE_FRONT_INSET
     z0 = d.deck_top + opening(spec, d)[0]
     return (x0, y0, z0)
 
 
 def side_clearance(spec: DrawerSpec, d: Datums = D) -> float:
-    """Air between one side of the box and the bay wall it faces."""
-    return (d.s.bay_hands_w - box_size(spec, d)[0]) / 2
+    """Air between one side of the box and the face its slide mounts to: the
+    bay wall, or the console cheek on a narrowed box's right side."""
+    return (d.s.bay_hands_w - narrowing(spec, d) - box_size(spec, d)[0]) / 2
 
 
 def interior(spec: DrawerSpec, d: Datums = D) -> tuple[float, float, float]:
@@ -746,6 +775,7 @@ if __name__ == "__main__":
         print(
             f"  {spec.number} {spec.callout:<12} {w:6.1f} x {dep:6.1f} x {h:6.1f} "
             f"outside   inside {iw:6.1f} x {idep:6.1f} x {ih:5.1f}"
+            + (f"   narrowed {narrowing(spec, d):.1f} for the console" if narrowing(spec, d) else "")
         )
         print(
             f"      opening {clear_h:6.1f} tall at z {d.deck_top + floor:6.1f}   "

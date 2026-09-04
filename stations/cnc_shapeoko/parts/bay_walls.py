@@ -27,6 +27,13 @@ WHAT THIS PART OWNS
   * the leg-bolt inserts in the two end walls' OUTER faces, which is the joint
     that holds the whole station to the machine. ``leg_joint`` owns where they
     go and what hole they want; this panel is where they land.
+  * the console's inset in the right end wall: the through-aperture, the
+    outer-face rabbet, the lip-screw pilots and the chase rib's screw holes.
+    ``console_plate`` owns all of it and hands it over as one station-
+    coordinate cutter, the same way ``leg_joint`` hands over the inserts. The
+    right end wall also gives up the slide rows of every drawer the console
+    narrows: those rows move to the console cheek, which ``console_plate``
+    drills at the same heights.
 
 
 TWO PLACES THIS PART DEPARTS FROM ``Datums.wall_size``, ON PURPOSE
@@ -123,7 +130,7 @@ from stations.cnc_shapeoko.carcass import (
     through_slot,
     to_local,
 )
-from stations.cnc_shapeoko.parts import leg_joint
+from stations.cnc_shapeoko.parts import console_plate, leg_joint
 
 __all__ = [
     "WallSpec",
@@ -331,10 +338,14 @@ def drawer_openings(d: Datums = D) -> list[tuple[float, float]]:
     return out
 
 
-def _hands_face(side: str, d: Datums = D) -> Part:
-    """Drawers: one slide row per opening."""
+def _hands_face(side: str, d: Datums = D, skip: tuple[int, ...] = ()) -> Part | None:
+    """Drawers: one slide row per opening, less the openings in ``skip`` --
+    the right end wall's rows for the drawers the console narrows, which the
+    console cheek carries instead."""
     cutters = None
-    for floor, _height in drawer_openings(d):
+    for k, (floor, _height) in enumerate(drawer_openings(d)):
+        if k in skip:
+            continue
         row = _slide_row(TONGUE_D + floor + SLIDE_MEMBER_H / 2, side, d)
         cutters = row if cutters is None else cutters + row
     return cutters
@@ -567,11 +578,22 @@ def build(i: int = 0, d: Datums = D) -> Part:
         ("hands", _hands_face),
     ):
         side = spec.side_of(bay)
-        if side is not None:
-            p -= feature(side, d)
+        if side is None:
+            continue
+        if bay == "hands" and spec.index == 3:
+            cut = _hands_face(side, d, skip=console_plate.narrowed_openings(d))
+        else:
+            cut = feature(side, d)
+        if cut is not None:
+            p -= cut
 
     if spec.is_end:
         p -= _spine_screws(d)
+
+    if spec.index == 3:
+        # the console's inset and the chase rib's screws, one cutter from the
+        # module that owns the plate, brought into this frame like the inserts
+        p -= _wall_local(console_plate.wall_cutter(d), spec.index, d)
 
     if spec.index == 0:
         p -= _hose_port(d)
@@ -642,7 +664,10 @@ def _wall_features(
             out.append(("lungs slide mount", x, TONGUE_D + EXTRACTOR_SLIDE_Z, slide_r))
 
     if spec.side_of("hands") is not None:
+        skip = console_plate.narrowed_openings(d) if spec.index == 3 else ()
         for k, (floor, _h) in enumerate(drawer_openings(d)):
+            if k in skip:
+                continue
             y = TONGUE_D + floor + SLIDE_MEMBER_H / 2
             for x in slide_xs:
                 out.append((f"drawer {k} slide mount", x, y, slide_r))

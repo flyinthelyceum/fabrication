@@ -115,6 +115,7 @@ from dataclasses import dataclass
 from build123d import Part
 
 from lib.house import GRID
+from stations.cnc_shapeoko.parts import console_plate
 from stations.cnc_shapeoko.carcass import (
     DADO_D,
     DADO_W,
@@ -541,6 +542,16 @@ def build(d: Datums = DATUMS) -> Part:
     p -= groove((x0 - t, yc), (x1 + t, yc), thickness=t, side="back")
     sx0, sx1 = spine_screw_span(d)
     p -= screw_line((sx0, yc), (sx1, yc), thickness=t, cbore_d=SCREW_CBORE)
+
+    # -- tie for the console cheek (C12) ------------------------------------
+    # The cheek butts the cap's underside with no housing: it stands on the
+    # console's floor rib, not the deck, so it is a partial-height panel and
+    # a housing would be the only thing locating a top edge that has a rib
+    # locating its bottom. The tie screws follow the same rule as the spine's,
+    # on the cheek's centreline, front edge to the spine.
+    cx0, cx1 = console_plate.cheek_x(d)
+    cy0, cy1 = console_plate.chase_y(d)
+    p -= screw_line(((cx0 + cx1) / 2, cy0), ((cx0 + cx1) / 2, cy1), thickness=t, cbore_d=SCREW_CBORE)
 
     # -- the chimney exhaust ------------------------------------------------
     v = vent_field(d)

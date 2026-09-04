@@ -81,6 +81,7 @@ from stations.cnc_shapeoko.parts import (
     base_deck,
     bay_walls,
     brain_partition,
+    console_plate,
     drawers,
     leg_joint,
     lungs_carriage,
@@ -227,6 +228,14 @@ def components(d: Datums = DATUMS) -> list[Component]:
     # sensor's body on the lip. The tray is what the receptacle box, the
     # plenum and the lungs door are finally compared against as a solid.
     for label, group, part in lungs_carriage.placed_all(d):
+        out.append(Component(label, group, part))
+
+    # 14. the console (C12): the plate flush in the right end wall, the cheek
+    # and rib that wall its chase off from the narrowed drawers, the clear
+    # reveal over the chase's front, the three panes in their pockets, and two
+    # reference solids -- the chase air the drawers are checked against and
+    # the E-stop module's allocation inside it.
+    for label, group, part in console_plate.placed_all(d):
         out.append(Component(label, group, part))
 
     return out
@@ -395,6 +404,12 @@ def joints(d: Datums = DATUMS) -> dict[frozenset[str], Joint]:
 
     # -- inside the lungs carriage: two housings per cheek, the rest faces.
     for a, b, kind, axis, lo, hi, note in lungs_carriage.joint_table(d):
+        js.append(Joint(a, b, kind, axis, lo, hi, note))
+
+    # -- the console: plate and panes housed, everything else in the chase
+    # meets on faces. The keep-out has NO joint with any drawer on purpose:
+    # a drawer in the chase is a collision.
+    for a, b, kind, axis, lo, hi, note in console_plate.joint_table(d):
         js.append(Joint(a, b, kind, axis, lo, hi, note))
 
     # The leg joint declares nothing here. It is not a joint between two CARCASS
@@ -603,9 +618,10 @@ def envelope(comps: list[Component] | None = None, d: Datums = DATUMS) -> list[F
     # slide maker's side clearance, and the slide's own length. Both rooms are
     # the vendor's numbers, not the cabinet's, which is the point of reporting
     # them here rather than inside the part.
-    room_w = s.bay_hands_w - 2 * s.drawer_slide_side_clear
     for spec in drawers.DRAWERS:
         w, dep, _h = drawers.box_size(spec, d)
+        # a narrowed box's room is the bay less the console's keep-out
+        room_w = s.bay_hands_w - drawers.narrowing(spec, d) - 2 * s.drawer_slide_side_clear
         fits.append(Fit(f"{spec.name} width", w, room_w, "X"))
         fits.append(Fit(f"{spec.name} depth", dep, bay_walls.SLIDE_LEN, "Y"))
 
@@ -801,12 +817,14 @@ def main() -> None:
         w, dep, h = drawers.box_size(spec, d)
         floor, clear_h = drawers.opening(spec, d)
         iw, idep, ih = drawers.interior(spec, d)
+        nar = drawers.narrowing(spec, d)
         print(
             f"  {spec.number} {spec.callout:<12} {w:6.1f} x {dep:6.1f} x "
             f"{h:6.1f} outside   inside {iw:6.1f} x {idep:6.1f} x {ih:5.1f}   "
             f"floor z {d.deck_top + floor:6.1f}   "
             f"{drawers.side_clearance(spec, d):.1f}mm per side on a "
             f"{bay_walls.SLIDE_LEN:.0f}mm slide"
+            + (f"   NARROWED by {nar:.1f} for the console, right slide on the cheek" if nar else "")
         )
     plan = trays.plan(trays.TRAY_V1, d)
     miss = trays.skipped(trays.TRAY_V1)
@@ -883,6 +901,34 @@ def main() -> None:
         f"{lungs_carriage.FOOT_H:.0f}; {d.top_z[0] - ez1:.0f}mm under the cap; "
         f"{lungs_carriage.DP_NAME} on the lip's rear face, 2 x o{lungs_carriage.DP_HOLE_D} "
         f"at {lungs_carriage.DP_HOLE_PITCH:.0f} pitch"
+    )
+
+    print("\nconsole: the plate in the right end wall, and its chase")
+    (cy0, cy1), (cz0, cz1) = console_plate.console_band(d)
+    pw, ph = console_plate.plate_size(d)
+    kx0, kx1 = console_plate.chase_x(d)
+    eb = console_plate.build_estop_env(d).bounding_box()
+    print(
+        f"  {console_plate.PART_NAME}: {pw:.0f} x {ph:.0f} x {d.t:.0f} flush in the right end "
+        f"wall, band y {cy0:.0f}..{cy1:.0f} z {cz0:.0f}..{cz1:.0f}; {len(console_plate.DEVICES)} "
+        f"devices, chase {console_plate.CHASE:.0f} set by {console_plate.CHASE_DRIVER.label} "
+        f"({console_plate.CHASE_DRIVER.behind[2]:.0f} + {console_plate.CHASE_MARGIN:.0f})"
+    )
+    print(
+        f"  {console_plate.KEEPOUT_NAME}: x {kx0:.1f}..{kx1:.1f}  y {cy0:.0f}..{cy1:.0f}  "
+        f"z {cz0:.0f}..{cz1:.0f} (reference); {console_plate.ESTOP_ENV_NAME}: "
+        f"x {eb.min.X:.1f}..{eb.max.X:.1f}  y {eb.min.Y:.1f}..{eb.max.Y:.1f}  "
+        f"z {eb.min.Z:.1f}..{eb.max.Z:.1f} (ALLOCATION, not measured)"
+    )
+    worst = min(console_plate.leg_bolt_clearance(d), key=lambda t: t[1])
+    print(
+        f"  nearest leg bolt axis: {worst[0]} at {worst[1]:.1f}mm "
+        f"(land {console_plate.LEG_LAND:.0f}); drawers narrowed by "
+        f"{console_plate.CONSOLE_KEEPOUT:.1f}: "
+        + ", ".join(
+            f"{sp.name} -> {drawers.box_size(sp, d)[0]:.1f} outside, {drawers.interior(sp, d)[0]:.1f} inside"
+            for sp in drawers.DRAWERS if drawers.narrowing(sp, d)
+        )
     )
 
     print("\nleg joint: bolt axes, station coordinates")
