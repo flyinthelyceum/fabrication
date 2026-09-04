@@ -93,6 +93,71 @@ SOURCES = {
                   "by tool_list.csv, which carries oal 27.5 on all three ER16 "
                   "collets. NOT calipered: Jared's calipers supersede this. "
                   "Read by parts/trays.py, which owns the socket that uses it.",
+    # ---- catalog capture 2026-09-03 (C00): parts in hand, by SKU. Datasheet
+    # first, Amazon listing second, calipers last (Jared's skus ruling). Every
+    # value below is read off the maker's page or the listing it names; anything
+    # the sources do not state is None and CONFIDENCE says MEASURE.
+    "UPTJ14": "https://www.amazon.com/dp/B0FV7H7CP3 -- the UPERFECT listing "
+              "whose item details read Model Number UPTJ14. Its text gives "
+              "0.23in thin and 1.4lbs; its VESA image gives 75*75 mm, M4*4 mm, "
+              "2 pcs; its port image and a review place the two USB-C and the "
+              "mini HDMI on the RIGHT edge facing the screen, buttons and "
+              "headphone jack on the LEFT. uperfect.com publishes no UPTJ14 page "
+              "(its BE156PF, 355 x 223 x 11, 72% sRGB, is a different panel and "
+              "was NOT used). Outline W x H and port offsets are not published.",
+    "PL183": "https://www.amazon.com/dp/B09Z2FB8V4 -- PENGLIN listing, Model "
+             "Number PL183, 5-pack. Text: panel thickness 2.0-10mm. Its PRODUCT "
+             "SIZE drawing: 29.7 overall, flange 2.2 thick, 26 x 31 flange, "
+             "round 24 cutout, two 3.5 holes on a 19 x 24 diagonal. thepenglin.com "
+             "carries no drawings, only links back to Amazon.",
+    "PL229": "https://www.amazon.com/s?k=PENGLIN+PL229 -- UNRESOLVED 2026-09-03. "
+             "No PENGLIN listing found on amazon.com or thepenglin.com carries "
+             "Model Number PL229; the model numbers the listings do carry are "
+             "PL163N, PL171, PL183, PL204, PL207, PL219, PL259, PL370, PL385, "
+             "PL410. Read the number off the part or the order and re-run the "
+             "capture; until then every PL229 value is None.",
+    "45-682-292": "https://www.ergodirect.com/attachments/doc/e3df7e14535acb3b8540cb5b4845df8fa258d971/drawing-ergotron-lx-pro-desk-monitor-arm.pdf"
+                  " -- Ergotron DIM-LXproArm dimensional illustrations rev "
+                  "11/12/2024, plus the ErgoDirect spec table at "
+                  "https://www.ergodirect.com/20192-ergotron-45-682-292-lx-pro-desk-mount-single-monitor-arm-black.html"
+                  " (desk 0.4-2.4in, under-surface 2.8in clear, 8.3 lbs) and "
+                  "Ergotron's LX Pro spec statement "
+                  "https://media.ergotron.com/reserved/resources/specs-lx-pro-series-ea-orig.pdf"
+                  " (VESA MIS-D 100/75, 4-22 lbs, lift 13in). ergotron.com "
+                  "itself returns 403 to a fetch.",
+    "motion_controller_env": "https://carbide3d.com/files/pdf/shapeoko51pro_assembly_3.pdf"
+                  " -- the 5.1 Pro assembly guide, section 12.1: the controller "
+                  "mounts to the BACK RIGHT table leg with the leg kit's Mounting "
+                  "Hardware. It carries NO envelope and NO hole pattern, and "
+                  "neither does https://shop.carbide3d.com/products/carbide-motion-pcb ."
+                  " LEAD, not evidence: a community user measured 13.25 x 6.75 x "
+                  "3.5in with the USB port standing 0.3125in proud, "
+                  "https://community.carbide3d.com/t/5-pro-electronics-box-dimensions/59644"
+                  " . Not a datasheet, so the value stays None until calipered.",
+    "motion_controller_mount": "https://carbide3d.com/files/pdf/shapeoko51pro_assembly_3.pdf"
+                  " -- same guide, same page: the photo shows two screws into "
+                  "the leg's own holes and a slotted back on the enclosure. "
+                  "Pattern not dimensioned anywhere Carbide publishes.",
+    "ct15_exhaust": "https://www.festoolusa.com/-/media/tts/fcp/festool-usa/downloads/manuals/10696789_d_ct_15_25_e_us.pdf"
+                  " -- CT 15 E / CT 25 E manual (festoolusa serves it empty to "
+                  "a script; the Wayback copy at "
+                  "http://web.archive.org/web/20240204235125/https://www.festoolusa.com/-/media/tts/fcp/festool-usa/downloads/manuals/10696789_d_ct_15_25_e_us.pdf"
+                  " reads). Fig. 1 item [1-8] Exhaust opening: a grille on the "
+                  "RIGHT side face of the head, beside the rear locking clip "
+                  "[1-7]; section 9.3: open the grille and the D27/32 hose "
+                  "inserts. No dimension or position is given.",
+    "ct15_inlet": "https://www.festoolusa.com/-/media/tts/fcp/festool-usa/downloads/manuals/10696789_d_ct_15_25_e_us.pdf"
+                  " -- same manual, fig. 3 'Connect the suction hose'. Not "
+                  "dimensioned. Hose D 27/32 mm x 3.5 m per the data table.",
+    "ct15_plug_lead": "https://www.festoolusa.com/-/media/tts/fcp/festool-usa/downloads/manuals/10696789_d_ct_15_25_e_us.pdf"
+                  " -- data table: mains power cable length 5.5 m (18 ft). The "
+                  "product page says 5 m; the manual's figure is kept and the "
+                  "disagreement written here. Cable holder is [1-2] on the head; "
+                  "the exit point is not dimensioned.",
+    "ct15_main_filter": "https://www.festoolusa.com/accessories/dust-extraction/filters-and-filter-bags/main-filter/204201---hepa-hf-ct-minimidi-2"
+                  " -- Main Filter HEPA-HF-CT COMP, order no. 204201, listed for "
+                  "CT MINI/MIDI (I) from 2019 and for CT 15 and CT 25. Manual "
+                  "9.5 calls it the filter drawer [1-6].",
 }
 
 # ---------------------------------------------------------------- extractors
@@ -122,6 +187,9 @@ EXTRACTORS = {
         "capacity_l": 15,
         "airflow_cfm": 130.0,           # festoolusa: "130 CFM (3 700 l/min)"
         "bag": "Festool SC-FIS-CT MINI/MIDI-2/5/CT15, part 204308",
+        "main_filter": "Festool HEPA-HF-CT COMP (MINI/MIDI-2/CT15), part 204201",
+                                        # festoolusa accessory page; see
+                                        # SOURCES["ct15_main_filter"]
         "url": "https://www.festoolusa.com/products/dust-extractors/dust-extractors-for-cleaning/578441---ct-15-hepa-us",
     },
     "CT36EI": {
@@ -131,14 +199,183 @@ EXTRACTORS = {
         "capacity_l": 36,
         "airflow_cfm": None,            # not read off the spec table yet
         "bag": "Festool SC FIS-CT 36/5, part 496186",
+        "main_filter": "Festool HEPA-HF-CT 26/36/48 PTFE, part 205412",
         "url": "https://www.festoolusa.com/products/dust-extractors/workshop-dust-extractors/577872---ct-36-ei-hepa-us",
     },
 }
 
 MAIN_FILTER = "Festool HEPA-HF-CT 26/36/48 PTFE, part 205412"
-"""One filter covers the 26, 36 and 48. It does NOT cover the CT 15, whose main
-filter has not been read off a spec table yet. Tagged so the gap is visible when
-the consumable line gets ordered."""
+"""The 26/36/48 filter, kept for anything that still imports the name. It does
+NOT cover the CT 15: that unit's filter is part 204201 and lives on its own
+EXTRACTORS row as ``main_filter`` (read 2026-09-03 off the festoolusa accessory
+page, SOURCES["ct15_main_filter"]). ``Station.consumables`` reads the row, never
+this constant, so the fitted unit can no longer be quoted the wrong filter."""
+
+
+# ---------------------------------------------------------------- catalog
+#
+# Parts IN HAND, captured by SKU on 2026-09-03 (C00). Jared's ruling: datasheet
+# first, Amazon listing second, calipers last. Each block is one part; each
+# value is either read off the page SOURCES names for that key or is None,
+# and a None is a measurement handed to J02, never a guess. ``catalog_measure``
+# lists the Nones and check() reports each one as MEASURE THIS.
+#
+# Units: mm, kg. Tuples are (W, H) or (W, D) as the comment says.
+
+UPTJ14 = {
+    "name": "UPERFECT UPTJ14 15.6in touchscreen",
+    "env": None,                    # outside W x H. MEASURE: the listing
+                                    # publishes no plan dimension, only thin.
+    "thickness": 5.842,             # listing: "0.23in thin" (chassis, kickstand
+                                    # folded)
+    "weight_kg": 0.635,             # listing: "1.4lbs"
+    "vesa": (75.0, 75.0),           # listing VESA image: "VESA Size 75*75 mm"
+    "vesa_screw": "M4 x 4mm",       # same image: "Screw Size M4*4 mm/2 Pcs"
+    "vesa_holes": 2,                # TWO holes on one horizontal 75mm line,
+                                    # not four; the image shows the pair and a
+                                    # review says the same. The arm's 4-hole
+                                    # plate lands on two screws.
+    "vesa_offset": None,            # MEASURE: where the pattern sits on the
+                                    # back relative to the outline.
+    "usb_c_count": 2,               # listing text and port image
+    "usb_c_side": "RIGHT edge facing the screen; buttons and headphone jack "
+                  "on the LEFT edge",      # listing port image, corroborated
+                                    # by a review on the same listing
+    "usb_c_offset": None,           # MEASURE: port centre from the bottom
+                                    # edge and from the back face.
+    "hdmi": "mini HDMI, same edge as the USB-C pair, outboard of them",
+}
+
+PL183 = {
+    "name": "PENGLIN PL183 USB-C 3.1 female-female panel-mount coupler, D-type",
+    "cutout": "round",              # listing PRODUCT SIZE drawing
+    "cutout_d": 24.0,               # same drawing: 24 circle
+    "mount_hole_d": 3.5,            # same drawing: 2 x 3.5
+    "mount_hole_pitch": (19.0, 24.0),   # holes diagonally opposed, 19 across
+                                    # by 24 up, the Neutrik D-shape footprint
+    "flange": (26.0, 31.0),         # W x H, same drawing
+    "flange_t": 2.2,                # same drawing
+    "overall_l": 29.7,              # same drawing, flange face to rear of body
+    "body_behind_flange": 27.5,     # 29.7 - 2.2; subtract the panel to get
+                                    # depth behind the panel
+    "panel_t_range": (2.0, 10.0),   # listing text: "Panel thickness 2.0-10mm"
+    "cable_behind": None,           # MEASURE: the mating USB-C plug's straight
+                                    # length behind the body is not on the sheet
+}
+
+PL229 = {
+    "name": "PENGLIN PL229 -- identity UNRESOLVED, see SOURCES",
+    "cutout": None,                 # MEASURE, all of it: no listing carries
+    "cutout_d": None,               # this model number. Read it off the part
+    "flange": None,                 # or the order, then re-run the capture.
+    "flange_t": None,
+    "body_behind_flange": None,
+    "panel_t_range": None,
+}
+
+LX_PRO_ARM = {                      # Ergotron 45-682-292, the SOURCES key
+    "name": "Ergotron LX Pro desk arm, matte black, 45-682-292",
+    "vesa": ((75.0, 75.0), (100.0, 100.0)),     # MIS-D 100/75, spec statement
+    "load_kg": (1.8, 10.0),         # 4-22 lbs, spec statement
+    "reach": 656.0,                 # drawing: 25.8in pole axis to plate, fully
+                                    # extended. Spec rounds it to "<= 25in".
+    "lift": 330.0,                  # 13in, spec statement
+    "desk_t_range": (10.0, 60.0),   # ErgoDirect: 0.4-2.4in. Drawing: the
+                                    # 2-piece clamp has three positions, <=10,
+                                    # 12-35 and 37-60.
+    "under_clear_d": 71.0,          # drawing: 2.8in the clamp reaches under
+                                    # the edge; ErgoDirect: "<= 2.8in (70mm)
+                                    # deep to be clear of obstacles"
+    "clamp_base_footprint": (115.0, 87.0),   # W x D on the surface, drawing
+                                    # top view 4.5 x 3.4in
+    "clamp_drop_below": 137.0,      # drawing: 5.4in below the surface
+    "pole_above": 135.0,            # drawing: 5.3in base to top of the 5in pole
+    "pole_d": 30.0,                 # drawing: 1.2in
+    "weight_kg": 3.76,              # ErgoDirect: 8.3 lbs
+    "clamp_plate_holes": None,      # MEASURE: the vertical clamp plate carries
+                                    # a hole field (drawing shows it, no
+                                    # numbers). J04's leg-pattern fit-check
+                                    # needs it.
+    "grommet": "not included; 98-728-292 is the grommet base",
+}
+
+motion_controller_env = None        # W x H x D. MEASURE. Carbide publishes no
+                                    # envelope; the forum lead in SOURCES is not
+                                    # a datasheet and does not drive design.
+motion_controller_mount = None      # foot / slot pattern. MEASURE. The guide
+                                    # says BACK RIGHT leg, leg kit hardware,
+                                    # and stops there.
+
+ct15_exhaust = None                 # position and size of grille [1-8] on the
+                                    # RIGHT side face of the head. MEASURE.
+ct15_inlet = None                   # hose inlet position on the container.
+                                    # MEASURE.
+ct15_plug_lead = {
+    "length": 5500.0,               # manual data table: 5.5 m (18 ft)
+    "exit": None,                   # MEASURE: where the lead leaves the head
+}
+
+CATALOG = {
+    "UPTJ14": UPTJ14,
+    "PL183": PL183,
+    "PL229": PL229,
+    "45-682-292": LX_PRO_ARM,
+    "motion_controller_env": motion_controller_env,
+    "motion_controller_mount": motion_controller_mount,
+    "ct15_exhaust": ct15_exhaust,
+    "ct15_inlet": ct15_inlet,
+    "ct15_plug_lead": ct15_plug_lead,
+}
+
+
+def catalog_measure() -> list[str]:
+    """Dotted names of every catalog value that is still None.
+
+    One name per measurement J02 owes. check() turns each into a MEASURE note,
+    so the gate lists exactly these and nothing sourced hides among them."""
+    out: list[str] = []
+    for key, val in CATALOG.items():
+        if val is None:
+            out.append(key)
+        elif isinstance(val, dict):
+            out.extend(f"{key}.{k}" for k, v in val.items() if v is None)
+    return out
+
+
+# What each open catalog value is FOR, so the tape is pointed at the right
+# thing. Keyed like catalog_measure() names them.
+CATALOG_MEASURE_HINTS = {
+    "UPTJ14.env": "Outside W x H of the chassis, kickstand folded: sizes the "
+                  "console aperture and the drawer keep-out.",
+    "UPTJ14.vesa_offset": "Centre of the two-hole 75mm pattern from the "
+                  "outline: where the arm plate puts the screen.",
+    "UPTJ14.usb_c_offset": "USB-C centres from the bottom edge and the back "
+                  "face on the RIGHT edge: the cable exit and its bend room.",
+    "PL183.cable_behind": "Straight length of the mating USB-C plug behind "
+                  "the body: depth the console plate needs behind the panel.",
+    "PL229.cutout": "Whole block. First read the model number off the part or "
+                  "the order; no listing on amazon.com or thepenglin.com "
+                  "carries PL229.",
+    "PL229.cutout_d": "Cutout diameter, if round.",
+    "PL229.flange": "Flange W x H.",
+    "PL229.flange_t": "Flange thickness.",
+    "PL229.body_behind_flange": "Body length behind the flange face.",
+    "PL229.panel_t_range": "Panel thickness the thread or clip accepts.",
+    "45-682-292.clamp_plate_holes": "Hole field on the 2-piece clamp's "
+                  "vertical plate: what J04 lands on the leg's 40x40 pattern "
+                  "or the Carbide bracket.",
+    "motion_controller_env": "Controller enclosure W x H x D and the USB "
+                  "stand-proud: the brain band's keep-out. Forum lead 336.6 x "
+                  "171.5 x 88.9 is not a datasheet.",
+    "motion_controller_mount": "Slot/foot pattern on the enclosure back: "
+                  "matches or does not match the leg's 40x40.",
+    "ct15_exhaust": "Grille [1-8] on the RIGHT side of the head: centre and "
+                  "W x H, for the lungs bay's exhaust path and lining cut.",
+    "ct15_inlet": "Hose inlet centre on the container: where the D36 hose "
+                  "leaves the bay toward the hose port.",
+    "ct15_plug_lead.exit": "Where the mains lead leaves the head: the "
+                  "station socket's side.",
+}
 
 # Confidence tags carried from the brief's parameter table, so a reader of the
 # model knows which numbers are load-bearing guesses.
@@ -163,8 +400,9 @@ CONFIDENCE = {
                              # in, but nothing in the model reads it any more.
     "vfd_box": "measured",   # 2026-09-02 calipers
     "vfd_fan": "measured",   # 2026-09-02 calipers, two square fans, left face
-    "extractor_env": "high",     # festoolusa spec table for whichever row is
-                                 # selected; the CT 15 row is calipered instead
+    "extractor_env": "calipered",   # the fitted CT 15 row is calipered
+                                 # (2026-09-02); the CT 36 row is festoolusa's
+                                 # spec table and is no longer fitted or growth
     "vfd_panel_standoff": "assumption",     # see the field. A traded clearance.
     "vfd_louvre_free_ratio": "assumption",  # nobody publishes one
     "lungs_lining_t": "medium",  # MLV plus open-cell foam, lay-up not yet bought
@@ -197,6 +435,25 @@ CONFIDENCE = {
     "vfd_vent_clear": "high",    # carbide 65mm spindle doc, 30cm
     "vfd_mount_pitch": "high",   # carbide 65mm spindle doc
     "mini_pc_env": "medium",     # NUC 13 Pro tall chassis, as the class of thing
+    # ---- catalog capture 2026-09-03 (C00). "datasheet" = read off the maker's
+    # page or the listing SOURCES names. A dotted key is one value inside that
+    # block that the sources do not state; it is None and reads MEASURE.
+    "UPTJ14": "datasheet",
+    "UPTJ14.env": "MEASURE",
+    "UPTJ14.vesa_offset": "MEASURE",
+    "UPTJ14.usb_c_offset": "MEASURE",
+    "PL183": "datasheet",
+    "PL183.cable_behind": "MEASURE",
+    "PL229": "MEASURE",          # the whole block: no listing carries PL229
+    "45-682-292": "datasheet",
+    "45-682-292.clamp_plate_holes": "MEASURE",
+    "motion_controller_env": "MEASURE",     # forum lead only, not a datasheet
+    "motion_controller_mount": "MEASURE",
+    "ct15_exhaust": "MEASURE",
+    "ct15_inlet": "MEASURE",
+    "ct15_plug_lead": "datasheet",
+    "ct15_plug_lead.exit": "MEASURE",
+    "ct15_main_filter": "datasheet",
 }
 
 
@@ -760,7 +1017,7 @@ class Station:
     @property
     def consumables(self) -> dict:
         """Bag and filter for whatever is fitted. Bags are per size."""
-        return {"filter_bag": self.spec["bag"], "main_filter": MAIN_FILTER}
+        return {"filter_bag": self.spec["bag"], "main_filter": self.spec["main_filter"]}
 
     # ---- lungs bay width, derived rather than estimated -------------------
 
@@ -1093,6 +1350,16 @@ def check(s: Station = STATION) -> list[str]:
         problems.append(
             "a HALF blank will not stand on edge under the table. "
             "The station rack holds ready-use stock only."
+        )
+
+    # Catalog capture (C00): one MEASURE note per value the datasheets and
+    # listings do not state. Each clears when its None becomes a number.
+    for name in catalog_measure():
+        hint = CATALOG_MEASURE_HINTS.get(name, "")
+        problems.append(
+            f"catalog {name} is None, MEASURE THIS. {hint} CONFIDENCE reads "
+            f"{CONFIDENCE.get(name, CONFIDENCE.get(name.split('.')[0]))}; "
+            "see SOURCES."
         )
 
     return problems
