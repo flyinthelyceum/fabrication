@@ -1127,11 +1127,13 @@ def rear_leg_flanges(d: Datums = D) -> list[tuple[str, Part]]:
     h = s.leg_holes
     if h.front_flange_inboard is False:
         return []
-    w = h.flange_w if h.flange_w is not None else h.span_h + h.hole_d / 2
+    # from the HEEL, one wall outside the inner face, so the toe stands
+    # flange_reach into the opening (MEASURED 2026-09-04: 84.0 outside)
+    w = h.flange_reach if h.flange_reach is not None else h.span_h + h.hole_d / 2
     t = s.leg_wall_t
     out: list[tuple[str, Part]] = []
-    for label, x0 in (("rear left leg, Y flange", d.x_left), ("rear right leg, Y flange", d.x_right - w)):
-        plate = Box(w, t, s.table_h, align=(Align.MIN, Align.MIN, Align.MIN)).moved(
+    for label, x0 in (("rear left leg, Y flange", d.x_left - t), ("rear right leg, Y flange", d.x_right - w)):
+        plate = Box(w + t, t, s.table_h, align=(Align.MIN, Align.MIN, Align.MIN)).moved(
             Location((x0, d.y_rear, 0.0))
         )
         out.append((label, plate))

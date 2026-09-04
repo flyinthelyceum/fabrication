@@ -711,6 +711,27 @@ def check_drawers(d: Datums = D) -> list[str]:
             label=f"{n}_front",
         )
 
+    # Every box pulls out through the front plane, and a front leg's Y flange
+    # is a plate across that plane at each corner (MEASURED 2026-09-04,
+    # inboard). A box whose X span overlaps the plate's does not pass it at
+    # any point of its travel, so this is an interval test, not a sweep.
+    # ``machine`` is imported here because it imports the assembly that
+    # imports this part.
+    from stations.cnc_shapeoko.machine import front_leg_flanges
+
+    for flabel, flange in front_leg_flanges(d):
+        fb = flange.bounding_box()
+        for spec in DRAWERS:
+            x0, _y0, _z0 = box_origin(spec, d)
+            w = box_size(spec, d)[0]
+            over = min(x0 + w, fb.max.X) - max(x0, fb.min.X)
+            if over > 0.0:
+                notes.append(
+                    f"{spec.name} spans x {x0:.1f}..{x0 + w:.1f} and the {flabel} "
+                    f"stands across the front plane at x {fb.min.X:.1f}..{fb.max.X:.1f}: "
+                    f"the box overlaps the steel by {over:.1f}mm. The drawer does not pull out."
+                )
+
     # The bottom drawer stands on the deck's own face, because bay_walls put
     # its slide row at the bottom of the bay and the box hangs level with it.
     bottom = min(DRAWERS, key=lambda s2: opening(s2, d)[0])

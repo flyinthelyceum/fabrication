@@ -64,7 +64,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from build123d import Align, Box, Compound, Location, Part, Unit, export_step
+from build123d import Align, Box, Compound, Cylinder, Location, Part, Unit, export_step
 
 from stations.cnc_shapeoko.assembly import NOISE_VOL, Component, components
 from stations.cnc_shapeoko.carcass import DATUMS, EXPORT_DIR, Datums, gusset_prism
@@ -76,6 +76,8 @@ __all__ = [
     "solid",
     "gussets",
     "front_leg_flanges",
+    "leg_envelopes",
+    "leg_clearance",
     "front_left_leg_envelope",
     "clearance",
     "check_machine",
@@ -103,36 +105,98 @@ def gussets(d: Datums = DATUMS) -> list[tuple[Gusset, Part]]:
     return [(g, solid(g)) for g in d.s.gussets]
 
 
+def _slab(x: tuple[float, float], y: tuple[float, float], z: tuple[float, float]) -> Part:
+    """An axis-aligned box from two corners in any order, station coordinates."""
+    x0, x1 = sorted(x)
+    y0, y1 = sorted(y)
+    z0, z1 = sorted(z)
+    return Box(x1 - x0, y1 - y0, z1 - z0, align=(Align.MIN, Align.MIN, Align.MIN)).moved(
+        Location((x0, y0, z0))
+    )
+
+
+def _flange_reach(d: Datums = DATUMS) -> float:
+    """How far a flange reaches into the opening past the leg's inner face.
+    The measured ``flange_reach`` (2026-09-04); while it was unmeasured, the
+    width the bolt pattern proved -- the outer hole's far edge -- which is a
+    floor on the real width and never an overstatement."""
+    h = d.s.leg_holes
+    return h.flange_reach if h.flange_reach is not None else h.span_h + h.hole_d / 2
+
+
 def front_leg_flanges(d: Datums = DATUMS) -> list[tuple[str, Part]]:
     """The two front legs' Y-facing flanges, as the envelope anything pulled
     out of a front bay has to pass, in station coordinates.
 
-    Built for the INBOARD case only: the flange running from the leg's corner
-    into the opening, ``leg_wall_t`` thick in Y just outside the leg opening's
-    front face, ``flange_w`` wide in X, floor to table. That is the case that
-    can stand in something's way; the outboard case is outside the opening and
-    clashes with nothing in it, so when ``LegHoles.front_flange_inboard`` reads
-    False this returns nothing.
+    Built for the INBOARD case only: the flange running from the leg's HEEL
+    (its outer corner, ``leg_wall_t`` outside both inner faces) into the
+    opening, ``leg_wall_t`` thick in Y just outside the leg opening's front
+    face, ``flange_w`` wide in X from the heel so its toe stands
+    ``flange_reach`` past the inner face, floor to table. That is the case
+    that can stand in something's way; the outboard case is outside the
+    opening and clashes with nothing in it, so when
+    ``LegHoles.front_flange_inboard`` reads False this returns nothing.
 
-    ``flange_w`` is unmeasured. Until it is, the plate is built at the width
-    the bolt pattern PROVES -- the outer hole's far edge, ``span_h`` plus half
-    the hole -- which is a floor on the real width and never an overstatement.
-    The direction is unmeasured too; a caller checking against these plates
-    reports MEASURE while it is None and a clash once it is True.
+    MEASURED 2026-09-04: inboard, 84.0 outside, on every leg. The inner
+    fillet is not part of this plate; ``leg_envelopes`` carries it.
     """
     s = d.s
     h = s.leg_holes
     if h.front_flange_inboard is False:
         return []
-    w = h.flange_w if h.flange_w is not None else h.span_h + h.hole_d / 2
+    reach = _flange_reach(d)
     t = s.leg_wall_t
-    z0, z1 = 0.0, s.table_h          # floor to the table: the leg's whole height
+    z = (0.0, s.table_h)             # floor to the table: the leg's whole height
+    y = (d.y_front - t, d.y_front)
+    return [
+        ("front left leg, Y flange", _slab((d.x_left - t, d.x_left + reach), y, z)),
+        ("front right leg, Y flange", _slab((d.x_right - reach, d.x_right + t), y, z)),
+    ]
+
+
+def leg_envelopes(d: Datums = DATUMS) -> list[tuple[str, Part]]:
+    """All four legs as the steel the carcass stands inside, station
+    coordinates: (label, solid) per corner.
+
+    Each leg is one angle (MEASURED 2026-09-03), both flanges INBOARD
+    (MEASURED 2026-09-04), ``flange_w`` outside, ``leg_wall_t`` thick, floor
+    to table, its HEEL at the corner one wall outside the station datum on
+    each axis, and its INSIDE corner a fillet of ``inner_fillet_r`` -- steel
+    filling the corner between the two inner faces, which is exactly where a
+    square carcass corner flush to both faces wants to be. The X flange is
+    the bolted one; the Y flange is the band across a bay's open front or the
+    brain band's rear.
+
+    Everything here is a solid in the machine's own steel, so the carcass
+    shares nothing with it, ever: ``leg_clearance`` reports every mm3.
+    """
+    s = d.s
+    h = s.leg_holes
+    if h.front_flange_inboard is not True:
+        return []
+    reach = _flange_reach(d)
+    t = s.leg_wall_t
+    r = h.inner_fillet_r
+    z = (0.0, s.table_h)
     out: list[tuple[str, Part]] = []
-    for label, x0 in (("front left leg, Y flange", d.x_left), ("front right leg, Y flange", d.x_right - w)):
-        plate = Box(w, t, z1 - z0, align=(Align.MIN, Align.MIN, Align.MIN)).moved(
-            Location((x0, d.y_front - t, z0))
-        )
-        out.append((label, plate))
+    corners = (
+        ("front left leg", d.x_left, d.y_front, 1.0, 1.0),
+        ("front right leg", d.x_right, d.y_front, -1.0, 1.0),
+        ("rear left leg", d.x_left, d.y_rear, 1.0, -1.0),
+        ("rear right leg", d.x_right, d.y_rear, -1.0, -1.0),
+    )
+    for label, cx, cy, sx, sy in corners:
+        # the inner faces meet at (cx, cy); sx, sy point INTO the opening
+        x_flange = _slab((cx - sx * t, cx), (cy - sy * t, cy + sy * reach), z)
+        y_flange = _slab((cx - sx * t, cx + sx * reach), (cy - sy * t, cy), z)
+        leg = x_flange + y_flange
+        if r > 0.0:
+            fillet = _slab((cx, cx + sx * r), (cy, cy + sy * r), z) - Cylinder(
+                r, z[1] - z[0], align=(Align.CENTER, Align.CENTER, Align.MIN)
+            ).moved(Location((cx + sx * r, cy + sy * r, z[0])))
+            leg = leg + fillet
+        leg.label = label
+        out.append((label, leg))
     return out
 
 
@@ -157,15 +221,13 @@ def front_left_leg_envelope(d: Datums = DATUMS) -> list[tuple[str, str, Part]]:
     """
     s = d.s
     h = s.leg_holes
-    w = h.flange_w if h.flange_w is not None else h.span_h + h.hole_d / 2
+    w = _flange_reach(d)
     t = s.leg_wall_t
     out: list[tuple[str, str, Part]] = [
         (
             "front left leg, X flange",
             "measured",
-            Box(t, w + t, s.table_h, align=(Align.MIN, Align.MIN, Align.MIN)).moved(
-                Location((d.x_left - t, d.y_front - t, 0.0))
-            ),
+            _slab((d.x_left - t, d.x_left), (d.y_front - t, d.y_front + w), (0.0, s.table_h)),
         )
     ]
     for label, plate in front_leg_flanges(d):
@@ -262,11 +324,51 @@ def clearance(
 # ---------------------------------------------------------------- checks
 
 
+def leg_clearance(
+    comps: list[Component] | None = None, d: Datums = DATUMS
+) -> list[tuple[str, str, float, tuple[tuple[float, float], tuple[float, float], tuple[float, float]]]]:
+    """(part, leg, shared mm3, bbox) for every part sharing more than
+    ``NOISE_VOL`` with a leg's steel, AS PLACED. Pull-outs and swings are the
+    parts' own to sweep (the carriage, the two doors, the drawers); this is
+    the standing carcass against the four angles, fillets included."""
+    comps = components(d) if comps is None else comps
+    found = []
+    for label, leg in leg_envelopes(d):
+        lb = leg.bounding_box()
+        for c in comps:
+            if not _overlaps(c.bbox, lb):
+                continue
+            try:
+                shared = c.part & leg
+            except Exception:
+                continue
+            if shared is None or shared.volume <= NOISE_VOL:
+                continue
+            bb = shared.bounding_box()
+            found.append(
+                (
+                    c.label,
+                    label,
+                    shared.volume,
+                    ((bb.min.X, bb.max.X), (bb.min.Y, bb.max.Y), (bb.min.Z, bb.max.Z)),
+                )
+            )
+    found.sort(key=lambda f: -f[2])
+    return found
+
+
 def check_machine(
     comps: list[Component] | None = None, d: Datums = DATUMS
 ) -> list[str]:
     """Constraints the machine imposes on the station, part by part."""
     notes: list[str] = []
+    for part, leg, vol, ((x0, x1), (y0, y1), (z0, z1)) in leg_clearance(comps, d):
+        notes.append(
+            f"{part} stands inside the {leg}'s steel: {vol / 1000:,.2f} cm3, "
+            f"x {x0:.1f}..{x1:.1f} y {y0:.1f}..{y1:.1f} z {z0:.1f}..{z1:.1f}. "
+            "The angle's flanges run inboard and its inside corner is a "
+            f"{d.s.leg_holes.inner_fillet_r:.2f}mm fillet (MEASURED 2026-09-04)."
+        )
     for cl in clearance(comps, d):
         (_, _), (_, _), (z0, z1) = cl.bbox
         notes.append(

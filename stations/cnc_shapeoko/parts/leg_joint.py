@@ -599,10 +599,12 @@ def check_leg_joint(d: Datums = D) -> list[str]:
                 "laminations and the weakest hole in the station."
             )
         if not (y_lo + y_land <= b.y <= y_hi - y_land):
+            short = max(y_lo + y_land - b.y, b.y - (y_hi - y_land))
             notes.append(
-                f"bolt {b.label} lands at y={b.y:.0f} and the end wall runs "
-                f"{y_lo:.0f}..{y_hi:.0f} with a {y_land:.1f}mm land. The column "
-                "reaches past the birch."
+                f"bolt {b.label} lands at y={b.y:.2f} and the end wall runs "
+                f"{y_lo:.0f}..{y_hi:.0f} with a {y_land:.2f}mm land "
+                f"({EDGE_LAND:.1f} of birch plus the pilot's radius): short by "
+                f"{short:.2f}mm. The column reaches past the birch."
             )
 
     # -- what the columns assume about the leg itself ------------------------
@@ -626,12 +628,13 @@ def check_leg_joint(d: Datums = D) -> list[str]:
             f"is the remaining {reach - proven:.1f}mm. Measure the angle's flange "
             "and write it into params.LegHoles.flange_w."
         )
-    elif h.flange_w < reach:
+    elif h.flange_reach < reach:
         notes.append(
-            f"the angle's flange is {h.flange_w:.1f}mm wide and the columns need "
+            f"the angle's flange is {h.flange_w:.1f}mm wide from the heel, "
+            f"{h.flange_reach:.1f}mm past the inner face, and the columns need "
             f"{reach:.1f}mm of it ({h.cols_per_leg} columns from {h.edge_off:.1f}mm "
             f"at {h.pitch_h:.1f}mm pitch, plus the counterbore's radius). The "
-            f"outer column overhangs the steel by {reach - h.flange_w:.1f}mm, so "
+            f"outer column overhangs the steel by {reach - h.flange_reach:.1f}mm, so "
             "its bolt has birch behind it and nothing in front. Either that column "
             "goes unused and the joint runs one column per leg, or the counterbore "
             "comes down to fit inside the flange."

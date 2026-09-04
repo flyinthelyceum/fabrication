@@ -50,10 +50,26 @@ SOURCES = {
                   "the leg is an ANGLE IRON in profile, not a tube. Supersedes "
                   "https://community.carbide3d.com/t/leg-kit-center-to-center-spacing-and-hole-diameter/105167"
                   " -- a Carbide staff forum reply, not a spec sheet, which had "
-                  "covered the pitch and the hole diameter only. Still open: the "
-                  "angle's flange width, LegHoles.flange_w. The Y flange's "
-                  "direction is Jared's reading of 2026-09-04: OUTBOARD "
-                  "(LegHoles.front_flange_inboard = False, ruling/observed).",
+                  "covered the pitch and the hole diameter only. "
+                  "THEN MEASURED 2026-09-04, Jared, calipers/observed, verbatim: "
+                  "\"the legs all follow the inside of the worktable. so in this "
+                  "case the front-left leg y-facing flange runs inboard toward "
+                  "the machine. as does all flanges on the legs: always inboard. "
+                  "also the inside corners on the legs are radiused. OUTSIDE "
+                  "MEASUREMENTS-- SIDE_FLANGE: 84mm INSIDE MEASUREMENTS-- 76mm "
+                  "(to beginning of radius). M2 17mm from outside face to edge of "
+                  "bolt hole.\" So: every flange on all four legs runs INBOARD "
+                  "(front_flange_inboard = True); flange_w = 84.0 OUTSIDE, heel "
+                  "to toe; inner_fillet_r = 84.0 - 3.5179 - 76.0 = 4.48; "
+                  "edge_off_heel = 17.0 + 6.604/2 = 20.302 to the hole CENTRE "
+                  "from the HEEL, so edge_off (inner face to centre) derives to "
+                  "16.784. SUPERSEDED: the morning reading of 2026-09-04 that "
+                  "put the Y flange OUTBOARD (front_flange_inboard = False) was "
+                  "a misread of an ambiguous question, not a measurement. "
+                  "SUPERSEDED: edge_off 22.86 (0.90in, 2026-09-03) was read as "
+                  "inner-edge-to-centre; the 09-04 reading is heel-to-hole-EDGE "
+                  "and the two datums differ by the wall plus the hole radius, "
+                  "which is the 6.08mm between them.",
     "leg_x_inner": "MEASURED 2026-09-02, tape. Was 1100 scaled off a photograph.",
     "leg_y_inner": "MEASURED 2026-09-02, tape. Was 1150 scaled off a photograph.",
     "leg_splay": "Jared, 2026-09-02: the legs are square. The 6 deg was an "
@@ -150,7 +166,12 @@ SOURCES = {
                   "inserts. No dimension or position is given.",
     "ct15_inlet": "https://www.festoolusa.com/-/media/tts/fcp/festool-usa/downloads/manuals/10696789_d_ct_15_25_e_us.pdf"
                   " -- same manual, fig. 3 'Connect the suction hose'. Not "
-                  "dimensioned. Hose D 27/32 mm x 3.5 m per the data table.",
+                  "dimensioned. Hose D 27/32 mm x 3.5 m per the data table. "
+                  "OBSERVED 2026-09-04, Jared, no numbers, verbatim: \"The CT15 "
+                  "hose comes out of the hole at the top front of the machine "
+                  "just to the right of the FESTOOL label\" (viewed from the "
+                  "control-panel front). Position and diameter still MEASURE; "
+                  "nothing here is invented.",
     "ct15_plug_lead": "https://www.festoolusa.com/-/media/tts/fcp/festool-usa/downloads/manuals/10696789_d_ct_15_25_e_us.pdf"
                   " -- data table: mains power cable length 5.5 m (18 ft). The "
                   "product page says 5 m; the manual's figure is kept and the "
@@ -595,6 +616,19 @@ class Gusset:
 # because it is one measurement session, and ``check()`` reports it as unmeasured
 # until CONFIDENCE["leg_holes"] says otherwise. Tomorrow's numbers are an edit to
 # the defaults below and to nothing else in the repo.
+#
+# THE DATUM IS THE HEEL (2026-09-04). The leg is an angle whose two flanges both
+# run INBOARD, so its outer corner -- the HEEL, the outside face of either
+# flange -- is the only sharp edge the leg has; the inside corner between the
+# flanges is a fillet (``inner_fillet_r``). The station origin stays on the
+# intersection of the two INNER faces, one ``LEG_WALL_T`` in from the heel on
+# each axis, because that is the plane the carcass is flush to; but every
+# in-face number Jared reads with calipers is read from the heel, so the
+# measured field is the heel reading and the inner-face figure derives.
+
+LEG_WALL_T = 3.5179
+"""MEASURED 2026-09-03, calipers, 0.1385in. The leg's wall, one constant so
+``Station.leg_wall_t`` and ``LegHoles.edge_off`` cannot disagree about it."""
 
 
 @dataclass(frozen=True)
@@ -651,21 +685,33 @@ class LegHoles:
     leg's inner edge. Confirmed by the 2026-09-03 calipers, unchanged from the
     placeholder."""
 
-    edge_off: float = 22.86
-    """MEASURED 2026-09-03, calipers, 0.9in. First column, measured from the
-    leg's INNER edge INTO the opening.
+    edge_off_heel: float = 20.302
+    """MEASURED 2026-09-04, Jared, calipers. First column's CENTRE from the
+    HEEL (the flange's outside face). SOURCE "Jared, calipers/observed
+    2026-09-04"; CONFIDENCE measured. The reading was 17.0mm from the outside
+    face to the EDGE of the lower-front bolt hole; plus half of ``hole_d``
+    (6.604 / 2 = 3.302) puts the centre at 20.302.
 
-    From that edge and not from the leg's outer face, for two reasons. The inner
-    edge is the datum: the station origin sits on the intersection of the left
-    and front leg inner faces. And it is the edge the two materials share -- the
-    end wall's birch runs from it inward and the leg's steel runs from it
-    outward, so the only place a bolt can have steel in front of it AND birch
-    behind it is where the leg's face reaches back across that edge into the
-    opening. 22.86mm (0.9in) asserts the leg reaches at least ``span_h`` in.
-    ``leg_joint.check_leg_joint`` states that assumption against the measured
-    value; it is no longer a placeholder but the leg's own reach past its inner
-    corner is still what determines whether this overlap is real -- see
-    ``walls_in_path``, still unmeasured."""
+    Supersedes 22.86 (0.90in, 2026-09-03), which this repo had read as
+    inner-edge-to-centre. The two readings are different datums, not a
+    disagreement: heel-to-edge 17.0 plus the hole radius is 20.302 to the
+    centre from the heel, and less the wall it is 16.784 from the inner face
+    (``edge_off``). The 09-03 figure sat 6.08mm further in than the leg's hole
+    actually does, which is why every inner-column bolt now lands closer to the
+    end wall's front edge than the 09-03 model said."""
+
+    @property
+    def edge_off(self) -> float:
+        """DERIVED: first column's centre from the leg's INNER face INTO the
+        opening, ``edge_off_heel`` less one wall. 16.784mm.
+
+        Kept under this name because it is the in-face coordinate the joint
+        works in: the inner face is the station datum, the plane the carcass is
+        flush to, and the edge the two materials share -- the end wall's birch
+        runs from it inward and the leg's steel from it outward. A bolt needs
+        both, so it lives where the leg's flange reaches back across that face
+        into the opening (``flange_reach``)."""
+        return self.edge_off_heel - LEG_WALL_T
 
     faces: tuple[str, ...] = ("x_inner",)
     """CONFIRMED 2026-09-03: "Bolt holes are only on left and right sides of
@@ -690,34 +736,58 @@ class LegHoles:
     method, and it is written down because the next station's legs get measured
     and not assumed."""
 
-    flange_w: float | None = None
-    """UNMEASURED. Width of the angle's bolt-bearing flange, from the leg's inner
-    corner outward, in the same in-face direction ``edge_off`` runs.
+    flange_w: float | None = 84.0
+    """MEASURED 2026-09-04, Jared, calipers, OUTSIDE: heel (the flange's outer
+    face) to toe, the same for both flanges of the angle. SOURCE "Jared,
+    calipers/observed 2026-09-04"; CONFIDENCE measured.
 
-    This is the ONE number still open on the leg. The holes prove the flange
-    reaches at least far enough to contain them -- the outer column sits 62.99mm
-    off the corner and its own hole wants 3.30mm more, so 66.29mm is proven by
-    the pattern's own existence. What is NOT proven is whether the flange runs
-    far enough past the outer hole for the joint check's full reach. ``None``
-    keeps ``check_leg_joint`` reporting the gap; a number closes it or fails it
-    outright."""
+    Read from the HEEL, not from the inner face: the in-opening reach past the
+    inner face is ``flange_reach`` (84.0 - 3.5179 = 80.48). The bolt pattern had
+    proven 66.29mm of that reach by its own existence; the tape found 14.2mm
+    more. It is ONE width for both flanges because Jared read one number
+    ("SIDE_FLANGE: 84mm") for a symmetric angle."""
 
-    front_flange_inboard: bool | None = False
-    """OUTBOARD. Jared, 2026-09-04: the front-left leg's Y flange runs
-    OUTBOARD, away from the leg opening (vertex at the leg's inner corner).
-    CONFIDENCE: ruling/observed. Which way the angle's OTHER flange runs: the
-    Y-facing one, the one with no holes, on a front or rear leg.
+    inner_fillet_r: float = 4.48
+    """MEASURED 2026-09-04 by difference, Jared, calipers. The leg's inside
+    corner, between its two flanges, is a fillet and not a sharp edge: the
+    INSIDE reading was 76.0mm from a flange's inner face to the start of the
+    radius, so 84.0 (outside) - 3.5179 (wall) - 76.0 (inside, to the radius) =
+    4.48. SOURCE "Jared, calipers/observed 2026-09-04"; CONFIDENCE measured.
 
-    True if it runs INTO the leg opening from the corner, across the bay's
-    open front (the angle's vertex at the leg's OUTER corner). False if it runs
-    away from the opening (vertex at the inner corner). The bolted X-facing
-    flange proves nothing about it: it reaches into the opening either way.
+    Modelled wherever a leg envelope is built (``machine.leg_envelopes``): the
+    fillet is steel filling the corner the carcass's own square corner would
+    otherwise occupy, so an end wall flush to both inner faces meets it unless
+    that corner is chamfered or the carcass steps in. The old "inner corner"
+    datum was a sharp edge that does not exist; the datum is the heel and the
+    inner faces derive from it, one ``LEG_WALL_T`` in."""
+
+    front_flange_inboard: bool | None = True
+    """INBOARD, all four legs, both flanges, full leg height. Jared, 2026-09-04,
+    verbatim: "the legs all follow the inside of the worktable. so in this case
+    the front-left leg y-facing flange runs inboard toward the machine. as does
+    all flanges on the legs: always inboard." SOURCE "Jared, calipers/observed
+    2026-09-04"; CONFIDENCE measured.
+
+    True: the Y-facing flange runs INTO the leg opening from the corner,
+    across the bay's open front (the angle's vertex, the heel, at the leg's
+    OUTER corner). The morning reading of the same day (False, outboard) was a
+    misread of an ambiguous question and is superseded; see SOURCES.
     Added 2026-09-03 (C06), because the lungs carriage and the three drawers
-    all pull out through the front, and a flange running inboard by the width
-    the bolt pattern already proves (66.3mm) stands squarely in their path.
-    ``machine.front_leg_flanges`` builds that case; ``lungs_carriage`` checks
-    it. ``None`` keeps the check reporting MEASURE; ``False`` (the reading)
-    closes C06, C07 and C09's inboard cases."""
+    all pull out through the front, and a flange running inboard stands
+    squarely in their path. ``machine.front_leg_flanges`` builds that band
+    (``flange_reach`` wide, ``LEG_WALL_T`` thick, floor to table) and the
+    carriage, the lungs door, the rear door and the drawers check against it.
+    The field's name is historical: it is one reading for every leg."""
+
+    @property
+    def flange_reach(self) -> float | None:
+        """DERIVED: how far a flange reaches INTO the opening past the leg's
+        inner face, ``flange_w`` less one wall. 80.48mm. None while unmeasured.
+
+        This is the number every in-opening check wants: the toe of the
+        Y flange in X across a bay's front, and the toe of the X flange in Y
+        along an end wall, both measured from the station datum."""
+        return None if self.flange_w is None else self.flange_w - LEG_WALL_T
 
     def columns_h(self) -> tuple[float, ...]:
         """Column offsets in from the leg's inner edge, at ``pitch_h``."""
@@ -806,7 +876,7 @@ class Station:
     t_slot_pitch: float = 102.6     # centre to centre, carbide3d spec table
     table_h_no_feet: float = 893.0  # carbide leg kit page, its own mm for 35 in
     table_h_with_feet: float = 945.0    # carbide leg kit page, 36 in
-    leg_wall_t: float = 3.5179      # MEASURED 2026-09-03, calipers, 0.1385 in.
+    leg_wall_t: float = LEG_WALL_T  # MEASURED 2026-09-03, calipers, 0.1385 in.
                                     # Carbide's leg kit page says 10-gauge (3.4mm);
                                     # the extra 0.12mm is powder coat on both faces,
                                     # which is the direction that does not matter.
