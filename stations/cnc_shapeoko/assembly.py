@@ -872,7 +872,7 @@ def export_in_machine(
     d: Datums = DATUMS,
     out_dir: Path | None = None,
 ) -> Path:
-    """One STEP carrying the carcass AND the machine's gussets.
+    """One STEP carrying the carcass AND the machine's legs and gussets.
 
     Both are already modelled on the same datum, so the honest way to see the
     fit is one file that opens with everything where it belongs, rather than
@@ -880,11 +880,15 @@ def export_in_machine(
     import is a second chance to be wrong about the very relationship the file
     exists to show.
     """
-    from stations.cnc_shapeoko.machine import gussets
+    from stations.cnc_shapeoko.machine import gussets, leg_envelopes
 
     comps = comps if comps is not None else components(d)
     parts: list[Shape] = [c.part for c in comps]
     for g, solid in gussets(d):
+        parts.append(solid)
+    # The legs are floor-to-table L-sections. Without them the gussets float in
+    # Fusion and the file appears to say the leg has no flange below the band.
+    for _, solid in leg_envelopes(d):
         parts.append(solid)
 
     out_dir = out_dir or EXPORT_DIR
@@ -1210,7 +1214,7 @@ def main() -> None:
 
     in_machine = export_in_machine(comps, d)
     print(f"wrote {in_machine}  {in_machine.stat().st_size:,} bytes"
-          "   (carcass + the machine's gussets, one datum, for Fusion)")
+          "   (carcass + the machine's legs and gussets, one datum, for Fusion)")
 
     for name, notes in (
         ("carcass", check_carcass(d)),
