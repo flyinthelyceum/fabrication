@@ -175,6 +175,7 @@ from stations.cnc_shapeoko.carcass import (
     through_slot,
 )
 from stations.cnc_shapeoko.parts import callouts
+from stations.cnc_shapeoko.parts.leg_joint import END_WALL_T
 
 __all__ = [
     "PART_NAME",
@@ -321,7 +322,10 @@ DEVICE_CLEAR = 1.0
 """Air around an instrument inside its pocket, per side. CONFIDENCE: chosen."""
 
 POCKET_FLOOR_MIN = T / 4
-"""Least birch left under an instrument pocket: three plies of the 18mm sheet.
+"""Least birch left under an instrument pocket. NOTE: the plate insets into the
+RIGHT end wall, which is a full-height doubler at 12mm house stock
+(``leg_joint.END_WALL_T``), so a deep instrument recesses into that doubled
+wall and its floor is measured against END_WALL_T, not the single plate.
 The floor is a ledge the instrument's bezel sits on and its studs clamp
 through, not a span, and the heaviest thing on any ledge here is a 200g
 meter. The meter's own pocket leaves 5mm. CONFIDENCE: chosen."""
@@ -346,11 +350,9 @@ CONFIDENCE: chosen, checked by ``check_console_plate``."""
 
 ESTOP_Y = 70.0
 PENDANT_Y = 29.0
-BAG_BAR_Y = 30.0
 """The E-stop's 60mm allocation is taller than an XB4 body, so its bore sits
-lower (allocation 40..100) and the pendant socket and the bag bar under it
-sit lower again (19.5..38.5 and 24.9..35.1) to stay out of the allocation.
-CONFIDENCE: chosen, checked."""
+lower (allocation 40..100) and the pendant socket under it sits lower again
+(19.5..38.5) to stay out of the allocation. CONFIDENCE: chosen, checked."""
 
 CALLOUT_ESTOP = "EMERGENCY STOP"
 """The word under the mushroom guard, V-carved (C17). SOURCE: task C17, the
@@ -382,11 +384,6 @@ mm. Which way the 47 hangs off the head is not on the sheet; centred is the
 reading, and the clash check has a millimetre in hand on it. CONFIDENCE: datasheet
 for the figures, assumption for the centring."""
 
-BAR_H = 8.0
-"""Height of the LED bargraph package above its pins. Its 25.4 x 10.16 face is
-sourced; the height is not on the listings fetched. Drives its pocket depth
-and nothing else. CONFIDENCE: assumption."""
-
 GX16_BEHIND = 15.6
 """GX16 panel socket, overall length. SOURCE: Handson Technology GX16 datasheet
 https://www.handsontec.com/dataspecs/connector/GX16.pdf mechanical drawing:
@@ -396,8 +393,7 @@ CONFIDENCE: datasheet."""
 
 OLED_BEHIND = 10.0
 TOF_BEHIND = 15.0
-BAR_BEHIND = 10.0
-"""Cable and pin room behind the three PCB-mounted instruments. None of them
+"""Cable and pin room behind the two PCB-mounted instruments. Neither
 approaches the chase driver. CONFIDENCE: assumption."""
 
 PANE_T = PT
@@ -523,7 +519,7 @@ DEVICES: tuple[Device, ...] = (
         "chosen; dimensions datasheet drawing",
         face=(64.0, 56.0), pocket_depth=10.0 + PANE_T, floor_bore=48.5 + 2 * DEVICE_CLEAR,
         studs=((-26.25, -15.0), (26.25, -15.0)), stud_d=3.4,
-        front=(0.0, 0.0), behind=(48.5, 48.5, 50.0 - (T - (10.0 + PANE_T))),
+        front=(0.0, 0.0), behind=(48.5, 48.5, 50.0 - (END_WALL_T - (10.0 + PANE_T))),
     ),
     Device(
         "STATE", "Adafruit 938, Monochrome 1.3in 128x64 OLED, STEMMA QT, "
@@ -534,16 +530,6 @@ DEVICES: tuple[Device, ...] = (
         "chosen; dimensions datasheet",
         face=(35.6, 33.0), pocket_depth=6.2 + PANE_T, floor_slot=(20.0, 8.0),
         behind=(35.6, 33.0, OLED_BEHIND),
-    ),
-    Device(
-        "BAG_BAR", "Kingbright DC-10YWA, 10-segment yellow LED bargraph, "
-        "recessed under a clear pane (the bag bar; yellow, never red)",
-        "pocket", 92.0, BAG_BAR_Y,
-        "https://uk.farnell.com/kingbright/dc-10ywa/array-10-led-yellow-25-4x10-16mm/dp/2290326"
-        " -- 25.4 x 10.16 mm package; height see BAR_H",
-        "chosen; face datasheet, height assumption",
-        face=(25.4, 10.16), pocket_depth=BAR_H + PANE_T, floor_slot=(26.0, 9.6),
-        behind=(25.4, 10.16, BAR_BEHIND),
     ),
     Device(
         "PENDANT", "GX16 panel socket, the house connector, pendant port",
@@ -573,7 +559,7 @@ DEVICES: tuple[Device, ...] = (
         "touchscreen's video run out to the Ergotron arm (I91)",
         "d_type", 254.0, LOWER_ROW_Y,
         "as USB_1. The third coupler comes from the same 5-pack the listing "
-        "sells; PL229 is unresolved (params.PL229) and is not cut for.",
+        "sells.",
         "datasheet (C00 capture)",
         bore_d=24.0, d_holes=((-9.5, 12.0), (9.5, -12.0)), d_hole_d=3.5,
         front=(26.0, 31.0), behind=(24.0, 24.0, 27.5),
@@ -1140,7 +1126,7 @@ def joint_table(d: Datums = D) -> list[tuple]:
     ]
     for label, dv, _pane in panes(d):
         out.append(
-            (PART_NAME, label, "housing", "x", x0 + T - dv.pocket_depth, x0 + T,
+            (PART_NAME, label, "housing", "x", x0 + END_WALL_T - dv.pocket_depth, x0 + END_WALL_T,
              f"{dv.label} pane flush in its pocket")
         )
     return out
@@ -1359,6 +1345,19 @@ def check_console_plate(d: Datums = D) -> list[str]:
             f"bolt {worst[0]}'s axis, under the {LEG_LAND:.0f}mm land"
         )
 
+    # -- deep instruments recess into the doubled right end wall (12mm stock)
+    if END_WALL_T > T:
+        deep = [dv.label for dv in DEVICES if dv.kind == "pocket" and dv.pocket_depth > T]
+        if deep:
+            notes.append(
+                f"CONSOLE POCKETS, standing note. {', '.join(deep)} pocket deeper "
+                f"than one {T:.0f}mm plate; the plate insets into the right end "
+                f"wall, which is a full-height doubler at 12mm house stock "
+                f"({END_WALL_T:.0f}mm, leg_joint.END_WALL_T), so those bezels "
+                "recess into the doubled wall and their floor is birch, not air. "
+                "Expected, and worth knowing before the plate is cut."
+            )
+
     # -- 22mm bores are 22.3, every rectangular cutout is a capsule, one red
     reds = [dv for dv in DEVICES if dv.red]
     if len(reds) != 1:
@@ -1370,10 +1369,11 @@ def check_console_plate(d: Datums = D) -> list[str]:
             length, height = dv.pocket
             if length < height:
                 notes.append(f"{dv.label} pocket is taller than it is long; the capsule turns")
-            if T - dv.pocket_depth < POCKET_FLOOR_MIN - 1e-9:
+            if END_WALL_T - dv.pocket_depth < POCKET_FLOOR_MIN - 1e-9:
                 notes.append(
-                    f"{dv.label} pocket is {dv.pocket_depth:.1f} deep in an {T:.0f} plate, "
-                    f"leaving {T - dv.pocket_depth:.1f} under the {POCKET_FLOOR_MIN:.1f} floor"
+                    f"{dv.label} pocket is {dv.pocket_depth:.1f} deep in a {END_WALL_T:.0f}mm "
+                    f"doubled wall, leaving {END_WALL_T - dv.pocket_depth:.1f} under the "
+                    f"{POCKET_FLOOR_MIN:.1f} floor"
                 )
             if dv.floor_slot != (0.0, 0.0) and dv.floor_slot[0] < dv.floor_slot[1]:
                 notes.append(f"{dv.label} floor slot is taller than it is long")
@@ -1431,13 +1431,9 @@ def check_console_plate(d: Datums = D) -> list[str]:
         f"{CHASE - 27.5:.0f}mm. MEASURE THIS with the cable that will live there."
     )
     notes.append(
-        "PL229 is unresolved (params.PL229, no listing carries it): all three "
-        "USB-C cutouts are PL183 from the listing's 5-pack. MEASURE THIS: read the "
-        "number off the second bulkhead; if it is not a PL183 its cutout is not cut."
-    )
-    notes.append(
-        f"BAG_BAR height is an assumption ({BAR_H:.0f}mm) and sets only its pocket depth. "
-        "MEASURE THIS on the part or its Kingbright sheet; the pane sits proud if it is taller."
+        "all three USB-C cutouts are cut as PL183, from the listing's 5-pack. "
+        "MEASURE THIS: read the number off the third bulkhead; if it is not a "
+        "PL183 its cutout is not cut."
     )
 
     # -- the drawers: exactly those crossing the band, each by exactly K

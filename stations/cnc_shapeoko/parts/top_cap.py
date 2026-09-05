@@ -130,6 +130,7 @@ from build123d import Part
 from lib.house import GRID
 from stations.cnc_shapeoko.parts import console_plate, stock_rails
 from stations.cnc_shapeoko.carcass import (
+    bore,
     DADO_D,
     DADO_W,
     DATUMS,
@@ -494,6 +495,28 @@ def comb_housing(d: Datums = DATUMS) -> tuple[float, float, float]:
     return ((y0 + y1) / 2, hs[1].mid_x, hs[2].mid_x)
 
 
+def divider_tie_ys(hs, d: Datums = DATUMS) -> list[float]:
+    """Tie-screw Y positions for a divider housing, DROPPING any that crowd the
+    stock comb's dado dogbones. At 12mm house stock the comb line and the
+    divider's first tie screw fall a cutter apart; the comb glues into the
+    divider there (ruling 11), so that one tie is redundant and is dropped
+    rather than run through the dogbone. build() and check() share this list."""
+    ys = [hs.y0 + p for p in screw_positions(hs.y1 - hs.y0)]
+    reliefs = [(xe, ye) for xe, ye in comb_housing_reliefs(d)
+               if abs(xe - hs.screw_x) < DADO_W]
+    kept: list[float] = []
+    for sy in ys:
+        clear = True
+        for xe, ye in reliefs:
+            gap = hypot(xe - hs.screw_x, ye - sy) - ROUTER_D / 2 - SCREW_CLEAR_D / 2
+            if gap < ROUTER_D / 2:
+                clear = False
+                break
+        if clear:
+            kept.append(sy)
+    return kept
+
+
 def comb_housing_reliefs(d: Datums = DATUMS) -> list[tuple[float, float]]:
     """The four inside corners where the comb's dado meets the two dividers'
     housings: the comb's square end corners seat there, so each gets a blind
@@ -575,9 +598,13 @@ def build(d: Datums = DATUMS) -> Part:
         if hs.blind:
             for xe in (hs.x0, hs.x1):
                 p -= relief(xe, hs.y1, thickness=t, depth=DADO_D, side="back")
-        p -= screw_line(
-            (hs.screw_x, hs.y0), (hs.screw_x, hs.y1), thickness=t, cbore_d=SCREW_CBORE
-        )
+        if hs.blind:
+            for sy in divider_tie_ys(hs, d):
+                p -= bore(hs.screw_x, sy, SCREW_CLEAR_D, thickness=t)
+        else:
+            p -= screw_line(
+                (hs.screw_x, hs.y0), (hs.screw_x, hs.y1), thickness=t, cbore_d=SCREW_CBORE
+            )
 
     # -- housing + tie for the spine ----------------------------------------
     yc, x0, x1 = spine_housing(d)
@@ -681,9 +708,11 @@ def check_top_cap(d: Datums = DATUMS) -> list[str]:
     # survive is the wall between two cuts in the trench floor, one cutter
     # radius of it. (bay_walls.FEATURE_WEB asks a full diameter, for two blind
     # features cut from OPPOSITE faces of one panel. Not this case.)
+    dropped = 0
     for hs in wall_housings(d)[1:3]:
-        for p_ in screw_positions(hs.y1 - hs.y0):
-            sy = hs.y0 + p_
+        placed = divider_tie_ys(hs, d)
+        dropped += len(screw_positions(hs.y1 - hs.y0)) - len(placed)
+        for sy in placed:
             for xe, ye in comb_housing_reliefs(d):
                 gap = hypot(xe - hs.screw_x, ye - sy) - ROUTER_D / 2 - SCREW_CLEAR_D / 2
                 if gap < ROUTER_D / 2:
@@ -692,6 +721,14 @@ def check_top_cap(d: Datums = DATUMS) -> list[str]:
                         f"{gap:.1f}mm to the divider tie screw at ({hs.screw_x:.1f}, "
                         f"{sy:.1f}), under a cutter radius"
                     )
+    if dropped:
+        notes.append(
+            f"COMB TIE, standing note. {dropped} divider tie screw(s) at the "
+            "stock comb's line are dropped: at 12mm house stock the comb dado's "
+            "dogbone and the tie fall a cutter apart, and the comb glues into "
+            "the divider there (ruling 11), so the tie is redundant. Expected, "
+            "and worth knowing before the cap is drilled."
+        )
 
     v = vent_field(d)
     if v.count < VENT_MIN_SLOTS:

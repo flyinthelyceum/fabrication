@@ -243,7 +243,7 @@ def components(d: Datums = DATUMS) -> list[Component]:
         out.append(Component(label, group, part))
 
     # 13. the lungs carriage in its CLOSED position: four panels of the tray,
-    # the CT 15 as a reference solid on its four isolators, and the pressure
+    # the CT 15 as a reference solid on the platform, and the pressure
     # sensor's body on the lip. The tray is what the receptacle box, the
     # plenum and the lungs door are finally compared against as a solid.
     for label, group, part in lungs_carriage.placed_all(d):
@@ -1024,8 +1024,8 @@ def main() -> None:
     )
     print(
         f"  {lungs_carriage.CT15_NAME}: x {ex0:.1f}..{ex1:.1f}  y {ey0:.1f}..{ey1:.1f}  "
-        f"z {ez0:.1f}..{ez1:.1f} on 4 isolators o{lungs_carriage.FOOT_D:.0f} x "
-        f"{lungs_carriage.FOOT_H:.0f}; {d.top_z[0] - ez1:.0f}mm under the cap; "
+        f"z {ez0:.1f}..{ez1:.1f} directly on the platform; "
+        f"{d.top_z[0] - ez1:.0f}mm under the cap; "
         f"{lungs_carriage.DP_NAME} on the lip's rear face, 2 x o{lungs_carriage.DP_HOLE_D} "
         f"at {lungs_carriage.DP_HOLE_PITCH:.0f} pitch"
     )
@@ -1095,21 +1095,16 @@ def main() -> None:
         f"{lungs_door.CATCH_NAME} x {kx0:.0f}..{kx1:.0f} y {ky0:.0f}..{ky1:.0f} z {kz0:.0f}..{kz1:.0f} on the divider"
     )
 
-    print("\nexhaust plenum: the bay breathes out through a baffled box on the spine")
-    (px0, px1), (py0, py1), (pz0, pz1) = exhaust_plenum.box_station(d)
+    print("\nexhaust plenum: the lined bay is the chamber; it breathes out through an end-wall capsule (RT1)")
     (ex0, ex1), (ez0, ez1) = exhaust_plenum.exit_station(d)
     worst = min(a for _n, a in exhaust_plenum.free_areas(d))
     print(
-        f"  {exhaust_plenum.PART_NAME}: {px1 - px0:.0f} x {py1 - py0:.1f} x {pz1 - pz0:.1f} at "
-        f"x {px0:.0f}..{px1:.0f} y {py0:.1f}..{py1:.1f} z {pz0:.1f}..{pz1:.1f}; "
-        f"{exhaust_plenum.POCKETS} pockets, {exhaust_plenum.POCKETS - 1} baffles, "
-        f"gap {exhaust_plenum.gap(d):.0f} past each end; tightest section {worst / 100:.0f} cm2 "
+        f"  {exhaust_plenum.PART_NAME}: no box, no birch; tightest section {worst / 100:.0f} cm2 "
         f"against {exhaust_plenum.section_req() / 100:.0f} required"
     )
     print(
         f"  exit: {ex1 - ex0:.0f} x {ez1 - ez0:.0f} capsule through {bay_walls.WALLS[0].name} at "
-        f"y {ex0:.0f}..{ex1:.0f} z {ez0:.0f}..{ez1:.0f}, {(ez0 + ez1) / 2 - d.deck_top:.0f} over the deck; "
-        f"{exhaust_plenum.HOSE_NAME} over the top by {exhaust_plenum.HOSE_CLEAR:.0f}"
+        f"y {ex0:.0f}..{ex1:.0f} z {ez0:.0f}..{ez1:.0f}, {(ez0 + ez1) / 2 - d.deck_top:.0f} over the deck"
     )
 
     print("\ncallouts: V-carved through the paint on a second fixture (C17); each rides in its part")

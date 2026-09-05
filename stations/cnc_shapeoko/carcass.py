@@ -154,7 +154,6 @@ __all__ = [
     "SCREW_EDGE_OFF",
     "HOUSE_ENGAGE",
     "PLINTH_H",
-    "ISOLATOR_H",
     "SERVICE_GAP",
     "TOP_GAP_MIN",
     "STOCK_HEADROOM",
@@ -244,7 +243,6 @@ carcass becomes a butt joint without a datum changing.
 # reveal against whatever the envelope puts overhead. See Datums.top_gap.
 
 PLINTH_H = GRID * 3     # 60mm toe kick. Levellers and the low air intake.
-ISOLATOR_H = 15.0       # rubber isolation feet under the extractor platform
 SERVICE_GAP = GRID      # clearance above the tallest thing in any bay
 TOP_GAP_MIN = GRID      # the carcass never touches the machine frame
 
@@ -318,9 +316,9 @@ class Datums:
     def stock_clear_w(self) -> float:
         """What the stock bay actually gets once four panels are subtracted.
 
-        THIS, not params.bay_stock_w, is the number the stock rack is cut to.
-        params carries the brief's 220mm estimate, which was taken before the
-        panels had thickness.
+        The stock bay is the remainder: lungs is pinned to the left end and
+        hands to the right, so this is what is left between the dividers, and
+        it is the number the stock rack is cut to.
         """
         a, b = self.stock_x
         return b - a
@@ -393,7 +391,6 @@ class Datums:
         """Everything under the extractor's lid, measured up from deck_top."""
         return (
             self.t                  # pull-out platform
-            + ISOLATOR_H            # rubber isolators
             + self.s.extractor_env[2]
             + SERVICE_GAP
         )
@@ -1365,15 +1362,6 @@ def check_carcass(d: Datums = DATUMS) -> list[str]:
             "must not do."
         )
 
-    if abs(d.stock_clear_w - s.bay_stock_w) > 1e-6:
-        notes.append(
-            f"stock bay is {d.stock_clear_w:.0f}mm clear, not the "
-            f"{s.bay_stock_w:.0f}mm params estimates: four {d.t:.0f}mm panels "
-            f"eat {4 * d.t:.0f}mm the brief's arithmetic did not carry. "
-            f"Rack holds {d.stock_capacity} HALF blanks at "
-            f"{s.sheet_pitch:.0f}mm pitch, not {s.stock_capacity()}."
-        )
-
     if d.stock_clear_w < s.sheet_pitch * 4:
         notes.append(
             f"stock bay is down to {d.stock_clear_w:.0f}mm, under four blanks. "
@@ -1424,21 +1412,12 @@ def check_carcass(d: Datums = DATUMS) -> list[str]:
             f"{SERVICE_GAP:.0f}mm of service gap"
         )
 
-    travel = min(s.travel_x, s.travel_y)
     for label, size in (
         ("deck", d.deck_size),
         ("top cap", d.top_size),
         ("spine", d.spine_size),
         ("bay wall", d.wall_size),
     ):
-        if max(size) > travel:
-            notes.append(
-                f"{label} blank {size[0]:.0f} x {size[1]:.0f} exceeds the "
-                f"machine's own {travel:.0f}mm travel: it cannot be cut on the "
-                "Shapeoko itself. Cut on the track saw or Shaper Origin "
-                "instead, by ruling, 2026-09-02. Expected, and worth knowing "
-                "before it goes to either tool."
-            )
         if not fits(size, SHEET_5X5_BALTIC):
             notes.append(
                 f"{label} blank {size[0]:.0f} x {size[1]:.0f} does not come out "

@@ -164,12 +164,14 @@ TONGUE_D = HOUSE_ENGAGE
 carcass.HOUSE_ENGAGE, the house third-of-thickness every housed edge uses."""
 
 BLANK_T = T
-"""The blank the comb is sized for. SOURCE: house.CARCASS_T via carcass.T;
-ruling 11 sizes the slots for an 18mm blank. CONFIDENCE: spec."""
+"""The blank the comb is sized for. SOURCE: house.CARCASS_T via carcass.T,
+12mm house stock (ruling 18). CONFIDENCE: spec."""
 
-SLOT_CLEAR = 1.0
+SLOT_CLEAR = 0.8
 """Clearance each side of a blank in its slot, and over its top. SOURCE: ruling
-11, 2026-09-03, "18 blank + 1/side". CONFIDENCE: spec."""
+19, 2026-09-04. At 12mm stock and a 20mm pitch the slot must stay narrow enough
+to leave the comb a routable tooth: a 12 blank + 0.8/side is a 13.6 slot, and
+the tooth at 20 pitch is 6.4, just over the 6.35 cutter. CONFIDENCE: spec."""
 
 SLOT_W = BLANK_T + 2 * SLOT_CLEAR
 """Slot width across the bay, and the deck groove's width."""
@@ -194,12 +196,15 @@ it, and the header sits in the cap's shadow line rather than proud of the
 dividers' raw edges. SOURCE: house grid; the ruling names no inset.
 CONFIDENCE: ruling (Jared, 2026-09-04): the 20mm inset is accepted."""
 
-RULED_PITCH = GRID * 2
-RULED_COUNT = 8
-"""What the rack holds by ruling: 40mm pitch, 8 blanks. Ruling 11 (2026-09-03)
-said 9; the lungs bay's +60 (2026-09-04, the spacer behind the stile) takes
-the stock bay to 322 and Jared accepted 9 -> 8 with the fix set. Held here so
-the derived count is checked against the ruling rather than trusted."""
+RULED_PITCH = GRID
+RULED_COUNT = 15
+"""What the rack holds by ruling: 20mm pitch (ruling 19, 2026-09-04, which
+REVERSES ruling 11's 40mm). Ruling 19 read 18 blanks against the stock bay as
+it stood; the same rebuild that carried ruling 19 also re-took the CT 15 body
+from its datasheet (RT6, wider) and set the lungs spacer to five 12mm plies,
+which widened the lungs bay and took the stock bay to ~314 clear, so the
+derived count settled at 15. Held here so the derived count is checked against
+the ruling rather than trusted; re-rule if the stock bay moves again."""
 
 SPINE_MIN = ROUTER_D
 """Least birch between a slot's capsule tip and the tongue: one cutter diameter,

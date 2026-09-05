@@ -28,7 +28,7 @@ One birch plate and a set of reference solids.
 ``ssr_env``             cutting list: the DIN-standard envelope of each device
 ``pe_busbar_env``       stood on its rail so every later brain-band layout
 ``fuse_env_*``          collides with the electrical honestly. Same idea as
-``ct_env_*``            ``vfd_mount.vfd_keepout``.
+``ct_env_spindle``      ``vfd_mount.vfd_keepout``.
 
 ``extractor_receptacle`` A steel surface box with one NEMA 5-15R on the LUNGS
                         face of the spine at the EXTRACTOR MAINS crossing, fed
@@ -63,8 +63,8 @@ under the MAST FEED gland, so two of the five legs are the shortest possible.
 through every device on both rails, and through the interlock, so opening the
 rear door never removes the static path at the moment it exposes the machine.
 
-THE TWO CURRENT TRANSFORMERS
-============================
+THE CURRENT TRANSFORMER
+=======================
 
 ``ct_env_spindle``     clamps the SPINDLE LEG, the VFD's output to the motor
                        (brief v7 §Path B: "around the spindle output leg").
@@ -73,13 +73,8 @@ THE TWO CURRENT TRANSFORMERS
                        passes through it on its way out. This is the CT whose
                        reading starts the extractor and feeds the console's
                        load number.
-``ct_env_extractor``   the second CT of the BOM pair, on the extractor's leg
-                       below the SSR: confirms the extractor actually drew
-                       current after the SSR closed. Its job is DESIGN, not
-                       in the brief; the brief buys two and names one.
-
-Both CTs are low-voltage leads that cross to the signal side through the
-partition's transit, which is why the transit is in the top-right corner of
+The spindle CT is a low-voltage lead that crosses to the signal side through
+the partition's transit, which is why the transit is in the top-right corner of
 this plate.
 
 THE JOINTS
@@ -95,8 +90,8 @@ THE JOINTS
                        has 25mm-pitch slots and its phase from a cut end is
                        whatever the cut left; drilling through the slot is
                        how a rail is always fitted). Devices clip to the rails.
-                       The CTs are held to the plate face with a cable-tie
-                       saddle each: a CT clamps a conductor, not a rail.
+                       The CT is held to the plate face with a cable-tie
+                       saddle: a CT clamps a conductor, not a rail.
     receptacle box     its back flat on the spine's FRONT face, two screws
                        into the spine, blind, pilots through the box's own
                        holes; its rear knockout on the gland's axis.
@@ -332,7 +327,7 @@ CROSSING_RAIL: dict[str, str] = {
 without a line here fails the gate rather than leaving the schedule short."""
 
 CROSSING_FEEDS: dict[str, str] = {
-    "EXTRACTOR MAINS": "the receptacle on the lungs face, from the SSR, through the extractor-leg CT",
+    "EXTRACTOR MAINS": "the receptacle on the lungs face, from the SSR",
     "MAST FEED": "mast strip 3-core and camera USB, from the always-live spur",
     "STOCK WASH": "stock bay wash light, from the always-live spur",
     "CONSOLE STOP": "E-stop contacts in the contactor coil loop; the coil is always-live, the E-stop opens it",
@@ -449,11 +444,6 @@ def envelopes(d: Datums = DATUMS) -> list[Env]:
     ssr = Env("ssr_env", "SSR EXTRACTOR", SSR_ENV[0], SSR_ENV[1], SSR_ENV[2],
               ctr.name, x, ctr.y_local, depth_from_rail=True)
     out.append(ssr)
-
-    # The extractor-leg CT on the plate face under the SSR, in the wiring
-    # room between the rows: the SSR's output drops through it to the gland.
-    out.append(Env("ct_env_extractor", "CT EXTRACTOR LEG", CT_ENV[0], CT_ENV[1], CT_ENV[2],
-                   None, ssr.x_c - CT_ENV[0] / 2, (live.y_local + ctr.y_local) / 2))
 
     # The contactor: rightmost, nearest the transit and the operator (I74).
     cw = CONTACTOR_MODULES * DIN_MODULE_W
@@ -665,7 +655,7 @@ def wire_schedule(d: Datums = DATUMS) -> list[str]:
             f"rides {rail}; {feeds}"
         )
     lines.append(
-        "transit carries only low voltage: both CT leads, the ESP32's DC, the PC "
+        "transit carries only low voltage: the CT lead, the ESP32's DC, the PC "
         "brick's DC and the motion controller's DC cross the partition there; no mains does"
     )
     lines.append(
@@ -797,20 +787,10 @@ def check_mains_backplate(d: Datums = DATUMS) -> list[str]:
             f"extractor is {d.s.extractor_env[0]:.0f} long in a {d.front_bay_d:.0f} bay: "
             f"{-room:.0f}mm short"
         )
-    else:
-        notes.append(
-            "RECEPTACLE ROOM IS ARITHMETIC, standing note. The box stands "
-            f"{BOX_ENV[2]:.1f}mm into the lungs bay at z {bz0:.0f}..{bz1:.0f}, leaving "
-            f"{room:.0f}mm in front of a {d.s.extractor_env[0]:.0f} extractor in the "
-            f"{d.front_bay_d:.0f} bay. This line is bay depth minus two lengths, "
-            "nothing more; the solid comparison is lungs_carriage's (C06), which "
-            "places the tray, the unit and the sensor and measures this box "
-            "against them, and the assembly's interference check sees the box."
-        )
 
     # -- what the ordered parts have not told us yet
     notes.append(
-        "the SSR-with-heatsink, the 8-way PE bar and the two CTs are modelled "
+        "the SSR-with-heatsink, the 8-way PE bar and the spindle CT are modelled "
         f"from representative listings ({SSR_ENV[0]:.0f}x{SSR_ENV[1]:.0f}x{SSR_ENV[2]:.0f}, "
         f"{BUSBAR_ENV[0]:.0f}x{BUSBAR_ENV[1]:.0f}x{BUSBAR_ENV[2]:.0f}, "
         f"{CT_ENV[0]:.0f}x{CT_ENV[1]:.0f}x{CT_ENV[2]:.1f}) because the BOM lines carry "

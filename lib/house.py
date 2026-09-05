@@ -105,7 +105,8 @@ def export_stl(
 
 # ---------------------------------------------------------------- materials
 
-CARCASS_T = 18.0        # Baltic birch. Parametric: joinery derives from this.
+CARCASS_T = 12.0        # Baltic birch (house stock, ruling 18, 2026-09-04).
+                        # Parametric: joinery derives from this. Was 18.0.
 PANEL_T = 3.0           # smoked acrylic. Parametric: order and design unblock each other.
 
 MATERIALS = {

@@ -16,15 +16,11 @@ Four panels of birch and three kinds of air.
                       the pressure sensor.
 
 ``ct15_env``          The extractor, ``EXTRACTORS["CT15"]`` calipered, as a
-                      reference solid on its isolators. Not birch, not cut: in
+                      reference solid on the platform. Not birch, not cut: in
                       the assembly so the hose, the exhaust plenum (C08), the
                       lungs door (C09) and the receptacle box all collide with
                       the unit honestly instead of with a number in a docstring.
 
-``isolator_foot_*``   The four rubber isolation feet from the BOM, as reference
-                      cylinders under the unit. ``carcass.ISOLATOR_H`` already
-                      spends their height in the stack-up; this is the first
-                      time they have a footprint.
 
 ``dp_sensor_pad``     The differential-pressure sensor's body on its pad on the
                       lip's rear face, as a reference solid over the two holes
@@ -43,7 +39,7 @@ platform, which is what lets the lip be HOUSED in them at the rear instead of
 standing on the platform held by screws through end grain: a lip that gets
 pulled against every time the tray is opened wants a dado on both ends, not a
 screw. The stack-up ``bay_walls.check_bay_walls`` measures (slide member,
-isolator, unit, service gap) is exactly this tray: the platform's top face is
+unit, service gap) is exactly this tray: the platform's top face is
 ``SLIDE_MEMBER_H`` above the deck, no more.
 
 The cheeks stand on the deck's own face, the way the bottom drawer does: the
@@ -125,14 +121,13 @@ Every panel is drawn flat on the house convention and stood up by its plane:
 
 from __future__ import annotations
 
-from build123d import Align, Box, Cylinder, GeomType, Location, Part, Plane, extrude
+from build123d import Align, Box, GeomType, Location, Part, Plane, extrude
 
 from lib.house import GRID, SHEET_5X5_BALTIC, fits
 from stations.cnc_shapeoko.carcass import (
     DADO_D,
     DADO_W,
     DATUMS,
-    ISOLATOR_H,
     SCREW_CLEAR_D,
     SERVICE_GAP,
     T,
@@ -159,7 +154,6 @@ from stations.cnc_shapeoko.parts.bay_walls import (
 __all__ = [
     "PART_NAME",
     "CT15_NAME",
-    "FOOT_NAME",
     "DP_NAME",
     "SLIDE_TRAVEL",
     "LIP_H",
@@ -168,13 +162,11 @@ __all__ = [
     "carriage_origin",
     "platform_size",
     "ct15_station",
-    "feet_station",
     "dp_station",
     "build_cheek",
     "build_platform",
     "build_lip",
     "build_ct15",
-    "build_feet",
     "build_dp_sensor",
     "panels",
     "placed_all",
@@ -189,7 +181,6 @@ D: Datums = DATUMS
 
 PART_NAME = "lungs_carriage"
 CT15_NAME = "ct15_env"
-FOOT_NAME = "isolator_foot"
 DP_NAME = "dp_sensor_pad"
 
 
@@ -221,10 +212,9 @@ reconcile, not this tray's. Nothing here reads it except the check."""
 # ---- the tray --------------------------------------------------------------
 LIP_H = GRID * 2
 """How far the lip and the cheeks rise above the platform's top face.
-SOURCE: design, on the bench grid. CONFIDENCE: design. Two modules: past the
-isolators (``ISOLATOR_H``) and into the unit's chassis by a hand's worth, so a
-yanked tray pulls the unit by its body and not by its feet. Also the height of
-the sensor's pad on the lip."""
+SOURCE: design, on the bench grid. CONFIDENCE: design. Two modules, up into
+the unit's chassis by a hand's worth, so a yanked tray pulls the unit by its
+body. Also the height of the sensor's pad on the lip."""
 
 CHEEK_H = SLIDE_MEMBER_H + LIP_H
 """Cheek height above the deck. SOURCE: derived. The slide band plus the lip's
@@ -233,7 +223,7 @@ platform."""
 
 PLATFORM_TOP = SLIDE_MEMBER_H
 """Platform top face above ``deck_top``. SOURCE: bay_walls.check_bay_walls,
-which already budgets the lungs stack as slide member + isolator + unit +
+which already budgets the lungs stack as slide member + unit +
 service gap. CONFIDENCE: derived. This tray IS that stack-up; the platform sits
 no higher than the member it hangs on."""
 
@@ -267,22 +257,6 @@ CT15_INLET_END = "rear"
 docstring: hose port high and rear in the left end wall, sensor tube leaving
 the lip. CONFIDENCE: design. ``params.ct15_inlet`` is None, so this places the
 unit's box and marks nothing on it."""
-
-# ---- the isolators ----------------------------------------------------------
-FOOT_H = ISOLATOR_H
-"""Isolator height, the carcass stack-up's figure. SOURCE: carcass.ISOLATOR_H.
-CONFIDENCE: derived."""
-
-FOOT_D = 25.0
-"""Isolator diameter, top face. SOURCE: representative listing, uxcell rubber
-feet D25 x 19 x H15mm, Harfington p-1152140, whose H15 matches ISOLATOR_H;
-the BOM line ("Rubber isolation feet, Amazon, 4") carries no SKU. CONFIDENCE:
-representative, MEASURE THIS when they arrive. Drives only the footprint of a
-reference cylinder; no cut reads it."""
-
-FOOT_INSET = GRID
-"""Foot centre in from each corner of the unit's footprint, both axes.
-SOURCE: design, one grid module. CONFIDENCE: design."""
 
 # ---- the pressure sensor ----------------------------------------------------
 DP_SENSOR = "Sensirion SDP810-500Pa, tube connection, article 1-101532-01"
@@ -410,24 +384,13 @@ def ct15_station(
     d: Datums = D,
 ) -> tuple[tuple[float, float], tuple[float, float], tuple[float, float]]:
     """The unit's box in station coordinates: centred between the cheeks, its
-    inlet end against the lip, standing on the isolators."""
+    inlet end against the lip, standing on the platform."""
     x0, _y0, z0 = carriage_origin(d)
     long, wide, tall = CT15["env"]
     cx = x0 + carriage_width(d) / 2
     y_rear = lip_y(d)[0]
-    z_bot = z0 + PLATFORM_TOP + FOOT_H
+    z_bot = z0 + PLATFORM_TOP
     return ((cx - wide / 2, cx + wide / 2), (y_rear - long, y_rear), (z_bot, z_bot + tall))
-
-
-def feet_station(d: Datums = D) -> list[tuple[str, tuple[float, float, float]]]:
-    """(label, centre of the top face) of each isolator, under the unit's
-    four corners."""
-    (x0, x1), (y0, y1), (z0, _z1) = ct15_station(d)
-    out = []
-    for xl, x in (("l", x0 + FOOT_INSET), ("r", x1 - FOOT_INSET)):
-        for yl, y in (("f", y0 + FOOT_INSET), ("r", y1 - FOOT_INSET)):
-            out.append((f"{FOOT_NAME}_{yl}{xl}", (x, y, z0)))
-    return out
 
 
 def dp_pad_local(d: Datums = D) -> tuple[float, float]:
@@ -545,7 +508,7 @@ def build_cheek(hand: str, d: Datums = D) -> Part:
 
 def build_platform(d: Datums = D) -> Part:
     """The platform, flat. No features: it runs in two dados and is glued,
-    and the isolators are the unit's, not the platform's."""
+    and the unit stands directly on it."""
     w, dep = platform_size(d)
     return panel(w, dep)
 
@@ -580,18 +543,6 @@ def build_ct15(d: Datums = D) -> Part:
     return _box(*ct15_station(d))
 
 
-def build_feet(d: Datums = D) -> list[tuple[str, Part]]:
-    """The four isolators as reference cylinders, STATION coordinates, each
-    standing on the platform under one corner of the unit."""
-    out: list[tuple[str, Part]] = []
-    for label, (x, y, z_top) in feet_station(d):
-        cyl = Cylinder(
-            FOOT_D / 2, FOOT_H, align=(Align.CENTER, Align.CENTER, Align.MIN)
-        ).moved(Location((x, y, z_top - FOOT_H)))
-        out.append((label, cyl))
-    return out
-
-
 def build_dp_sensor(d: Datums = D) -> Part:
     """The sensor's envelope on its pad, STATION coordinates."""
     return _box(*dp_station(d))
@@ -617,7 +568,6 @@ def placed_all(d: Datums = D) -> list[tuple[str, str, Part]]:
         (label, "carriage", plane * part) for label, part, plane in panels(d)
     ]
     out.append((CT15_NAME, "reference", build_ct15(d)))
-    out += [(label, "reference", part) for label, part in build_feet(d)]
     out.append((DP_NAME, "reference", build_dp_sensor(d)))
     return out
 
@@ -637,7 +587,7 @@ def swept(part: Part) -> Part:
     prisms cover it; that is the whole sweep, exactly, with no step size to
     choose. Planar faces are extruded along -Y (a face parallel to Y sweeps a
     sheet with no volume and is skipped). A curved face -- the slide bores,
-    the screw holes, the tube route's walls, the isolators' barrels -- is
+    the screw holes and the tube route's walls -- is
     swept as the prism of its own bounding box, which is never less than its
     true sweep and, for every curved face on this tray, sits inside the
     silhouette of the plate or cylinder that carries it."""
@@ -677,11 +627,8 @@ def joint_table(d: Datums = D) -> list[tuple]:
             )
     out.append((f"{n}_platform", f"{n}_lip", "butt", None, 0.0, 0.0,
                 "platform's rear edge butts the lip's front face"))
-    for label, _part in build_feet(d):
-        out.append((f"{n}_platform", label, "bearing", None, 0.0, 0.0,
-                    "isolator stands on the platform"))
-        out.append((label, CT15_NAME, "bearing", None, 0.0, 0.0,
-                    "the unit stands on the isolator"))
+    out.append((f"{n}_platform", CT15_NAME, "bearing", None, 0.0, 0.0,
+                "the unit stands directly on the platform"))
     out.append((f"{n}_lip", DP_NAME, "bearing", None, 0.0, 0.0,
                 "sensor body flat on the lip's rear face over its two holes"))
     out.append((f"{n}_lip", CT15_NAME, "butt", None, 0.0, 0.0,
@@ -815,14 +762,6 @@ def check_lungs_carriage(d: Datums = D) -> list[str]:
             f"the receptacle box's front at y {by0:.1f} is inside the tray's "
             f"reach to y {tray_rear:.1f} at a height they share"
         )
-    else:
-        notes.append(
-            f"the receptacle box stands {by0 - tray_rear:.0f}mm behind the "
-            f"closed tray's rearmost point (the sensor's barbs at y {tray_rear:.0f}); "
-            "the box is in the assembly and this tray is compared against it as "
-            "a solid, so the RECEPTACLE ROOM note in mains_backplate is now "
-            "geometry. Expected, and worth knowing."
-        )
 
     # -- the lungs door's landing (C09): the closed tray sits behind it
     if y0 < LUNGS_DOOR_LANDING:
@@ -845,13 +784,6 @@ def check_lungs_carriage(d: Datums = D) -> list[str]:
         )
     if DP_ROUTE_W < DP_TUBE_ID:
         notes.append("the tube route is narrower than the tube")
-
-    # -- isolators under the unit, on the platform
-    for label, (fx, fy, fz) in feet_station(d):
-        if not (cx0 <= fx - FOOT_D / 2 and fx + FOOT_D / 2 <= cx1 and cy0 <= fy - FOOT_D / 2 and fy + FOOT_D / 2 <= cy1):
-            notes.append(f"{label} at ({fx:.1f}, {fy:.1f}) is outside the unit's footprint")
-        if abs(fz - FOOT_H - (z0 + PLATFORM_TOP)) > 1e-6:
-            notes.append(f"{label} does not stand on the platform")
 
     # -- the slide sheet against what bay_walls carries
     if abs(SLIDE_MEMBER_H - SLIDE_HEIGHT_SHEET) > 1e-6:
@@ -919,15 +851,6 @@ def check_lungs_carriage(d: Datums = D) -> list[str]:
                 f"{first:.0f}mm of travel on ({vol / 1000:.1f} cm3 swept). "
                 "The tray does not pull out."
             )
-        if not clashes:
-            obs = ", ".join(lab for lab, _p in pullout_obstacles(d))
-            notes.append(
-                f"TRAY PULL-OUT, standing note. The tray's left cheek passes at x {x0:.1f}; "
-                f"the front-left stile's inner edge is at {d.lungs_opening_x[0]:.2f} and the "
-                "lungs door's knuckle stands in the gap past it. Swept over the whole "
-                f"{SLIDE_TRAVEL:.0f} of travel against {obs}: nothing shared. Expected, "
-                "and worth knowing before the spacer is read as optional."
-            )
 
     # -- what the unit's faces have not told us
     notes.append(
@@ -963,8 +886,6 @@ def export(d: Datums = D) -> list:
     for label, part, _plane in panels(d):
         written += export_part(part, label)
     written += export_part(build_ct15(d), CT15_NAME, dxf=False)
-    for label, part in build_feet(d):
-        written += export_part(part, label, dxf=False)
     written += export_part(build_dp_sensor(d), DP_NAME, dxf=False)
     return written
 
@@ -984,8 +905,7 @@ if __name__ == "__main__":
     print(f"  platform top {PLATFORM_TOP:.0f} above the deck; lip rises {LIP_H:.0f} above it")
     print(
         f"  {CT15_NAME}: x {cx0:.1f}..{cx1:.1f}  y {cy0:.1f}..{cy1:.1f}  z {cz0:.1f}..{cz1:.1f} "
-        f"on {len(feet_station(d))} x o{FOOT_D:.0f} x {FOOT_H:.0f} isolators; "
-        f"{d.top_z[0] - cz1:.0f}mm under the cap"
+        f"directly on the platform; {d.top_z[0] - cz1:.0f}mm under the cap"
     )
     (sx0, sx1), (sy0, sy1), (sz0, sz1) = dp_station(d)
     print(

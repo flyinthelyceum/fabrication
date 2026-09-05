@@ -45,7 +45,7 @@ from stations.cnc_shapeoko.assembly import (
     envelope,
     interference,
 )
-from stations.cnc_shapeoko.carcass import DATUMS, check_carcass
+from stations.cnc_shapeoko.carcass import DATUMS, check_carcass, clear_over_relieved
 from stations.cnc_shapeoko.machine import check_machine
 from stations.cnc_shapeoko.tools import nest
 from stations.cnc_shapeoko.parts import (
@@ -173,6 +173,7 @@ def main() -> int:
     rows = collect()
     order = ("BLOCKING", "TODO", "MEASURE", "STANDING")
     d = DATUMS
+    reveal = clear_over_relieved((d.x_left, d.x_right), (d.y_front, d.y_rear), d.s) - d.carcass_h
 
     print(
         f"CNC station  ·  {d.s.spec['name']}  ·  "
@@ -180,7 +181,7 @@ def main() -> int:
         f"stock {d.stock_clear_w:.0f} clear ({d.stock_capacity} blanks) | "
         f"hands {d.s.bay_hands_w:.0f} (opening {d.hands_opening_x[1] - d.hands_opening_x[0]:.0f}) | "
         f"rear opening {d.rear_opening_x[1] - d.rear_opening_x[0]:.0f}  ·  "
-        f"bay {d.bay_h:.0f}, reveal {d.top_gap:.0f} (UNRELIEVED ceiling; the relieved reveal check_carcass uses is in the notes below)"
+        f"bay {d.bay_h:.0f}, reveal {reveal:.0f} (relieved: clear over the carcass's own relieved footprint)"
     )
 
     for bucket in order:

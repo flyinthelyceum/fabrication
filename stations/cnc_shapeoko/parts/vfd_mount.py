@@ -108,9 +108,12 @@ from stations.cnc_shapeoko.carcass import (
     screw_positions,
     snap_up,
 )
+from math import ceil
+
 from stations.cnc_shapeoko.parts.leg_joint import (
     INSERT_PART,
     INSERT_PILOT_D,
+    WALL_BACK_MIN,
     WALL_CBORE_D,
     WALL_CBORE_DEPTH,
     WALL_PILOT_DEPTH,
@@ -130,6 +133,16 @@ PLATE_T = DATUMS.t
 """Plate thickness. SOURCE: task C04 ruling 2026-09-03, "use carcass_t birch",
 not the 3mm acrylic. CONFIDENCE: ruling. It carries a hung drive and takes
 knife-thread inserts; 3mm of anything would do neither."""
+
+INSERT_PLIES = max(1, ceil((WALL_CBORE_DEPTH + WALL_PILOT_DEPTH + WALL_BACK_MIN) / PLATE_T))
+INSERT_SUBSTRATE_T = INSERT_PLIES * PLATE_T
+"""Birch behind each hanging-bolt insert, and how many plies of house stock
+make it. DERIVED, the same rule as the leg joint's end wall: the bore is
+15.2mm and wants 2mm behind it, so 12mm house stock (ruling 18) is one ply
+short and each insert seats in a local DOUBLER PAD -- a second ply laminated
+to the plate behind the two boss holes before the inserts are driven. At 18mm
+one ply carried it and there is no pad. A build step the flat-panel model
+carries as a note, not a second solid."""
 
 LIFT = GRID * 3
 """Drive bottom above deck_top. SOURCE: design, on the bench grid; no ruling
@@ -423,10 +436,20 @@ def check_vfd_mount(d: Datums = DATUMS) -> list[str]:
                     f"an insert bore at local ({mx:.1f}, {my:.1f}) is {gap:.1f}mm "
                     f"from a spine screw at ({sx:.1f}, {sy:.1f})"
                 )
-    if WALL_CBORE_DEPTH + WALL_PILOT_DEPTH >= PLATE_T:
+    if WALL_CBORE_DEPTH + WALL_PILOT_DEPTH >= INSERT_SUBSTRATE_T:
         notes.append(
             f"the insert pilot is {WALL_CBORE_DEPTH + WALL_PILOT_DEPTH:.1f} deep "
-            f"in a {PLATE_T:.0f} plate: it is a through hole"
+            f"in a {INSERT_SUBSTRATE_T:.0f} plate: it is a through hole"
+        )
+    if INSERT_PLIES > 1:
+        notes.append(
+            f"INSERT DOUBLER PADS, standing note. Each of the two hanging-bolt "
+            f"inserts seats in {INSERT_PLIES} plies of {PLATE_T:.0f}mm birch "
+            f"({INSERT_SUBSTRATE_T:.0f}mm): a doubler pad laminated to the plate "
+            f"behind the boss hole, because a blind {INSERT_PART} bores "
+            f"{WALL_CBORE_DEPTH + WALL_PILOT_DEPTH:.1f}mm and one {PLATE_T:.0f}mm "
+            "ply cannot hold it at 12mm house stock. Laminate the pads, then "
+            "drill. Expected, and worth knowing before the plate is cut."
         )
 
     # -- what the drive's back has not told us yet

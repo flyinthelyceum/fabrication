@@ -1,4 +1,4 @@
-"""The trace sheets, the height gauge and the tracing collar: the physical
+"""The trace sheets and the tracing collar: the physical
 things a tool capture needs (spec v3, 2026-09-04; the sheet family added the
 same day).
 
@@ -18,7 +18,6 @@ writes, beside this file:
     trace_sheet_<size>.png  each page rasterised (pdftoppm at RENDER_DPI when
                         it is on the box, else matplotlib), for a look and for
                         the synthetic test. ``trace_sheet.png`` is LETTER's.
-    height_gauge.stl    the go/no-go height gauge: a block with five slots,
                         10/20/30/40/50 wide, open at the top and through the
                         block's depth. A tool that slides into the 20 and not
                         the 10 is height class 20. Labels embossed.
@@ -38,7 +37,8 @@ does not lie in it at any rotation, and the collar makes that worse: the
 pencil rides 7mm outside the tool, so a 228mm tool draws a 242mm loop. One
 sheet size was never going to be enough.
 
-The family stops at A2 because of THE SIZING PRINCIPLE:
+The family is LETTER and TABLOID (RT4 trimmed the rest) under THE SIZING
+PRINCIPLE:
 
     A TRACE SHEET NEVER HAS TO BE BIGGER THAN THE DRAWER. Anything that will
     not lie in a drawer does not get a foam pocket, so it never gets traced.
@@ -62,7 +62,7 @@ SELF-IDENTIFYING SHEETS
 Every size uses a DIFFERENT quartet of ArUco ids out of DICT_4X4_50, so the
 ids in the photo say which paper it is:
 
-    LETTER 0-3    A4 4-7    TABLOID 8-11    A3 12-15    A2 16-19    ARCH_B 20-23
+    LETTER 0-3    TABLOID 8-11
 
 ``capture_ingest`` reads the quartet and looks the geometry up here. Nobody
 types the paper size into a form, and a sheet photographed under the wrong
@@ -260,24 +260,16 @@ SIZES: dict[str, SheetSpec] = {
     for s in (
         SheetSpec("LETTER", 215.9, 279.4, 30.0, (0, 1, 2, 3),
                   "the default. Everything in the cutter and instrument drawers."),
-        SheetSpec("A4", 210.0, 297.0, 30.0, (4, 5, 6, 7),
-                  "the default where the paper is metric. Taller than LETTER, 6mm narrower."),
         SheetSpec("TABLOID", 279.0, 432.0, 40.0, (8, 9, 10, 11),
                   "the long-tool sheet: the jog pendant, a torque wrench, a long clamp."),
-        SheetSpec("A3", 297.0, 420.0, 40.0, (12, 13, 14, 15),
-                  "TABLOID's metric twin: wider, shorter."),
-        SheetSpec("A2", 420.0, 594.0, 40.0, (16, 17, 18, 19),
-                  "the ceiling. Its window covers the whole drawer interior plus the collar's halo."),
-        SheetSpec("ARCH_B", 305.0, 457.0, 40.0, (20, 21, 22, 23),
-                  "the plotter roll's size, for when the shop has ARCH B and not TABLOID."),
     )
 }
-"""The family, in the order the README lists it. Tag size is a documented
-constant per size, not a formula: 30mm on the two letter-class sheets, 40mm on
-the four big ones. It stops at 40 because A2's window has to keep covering the
-drawer interior (446 x 223) plus a collar diameter, and 50mm tags would take
-20mm out of the window's long axis and leave 454.6 against the 460 a
-full-interior tool draws. CONFIDENCE: derived, and stated in the README."""
+"""The family: LETTER and TABLOID (RT4, 2026-09-04, trimmed the metric and
+ARCH B twins away -- the shop prints on these two). Tag size is a documented
+constant per size, not a formula: 30mm on LETTER, 40mm on TABLOID, big enough
+to detect at arm's length and small enough to keep out of the window. LETTER
+keeps ids 0-3 and TABLOID 8-11 so already-printed sheets still read.
+CONFIDENCE: derived, and stated in the README."""
 
 SIZE_FOR_TAG: dict[int, SheetSpec] = {tid: s for s in SIZES.values() for tid in s.tag_ids}
 """ArUco id -> the sheet that carries it. This is the whole of the
@@ -580,54 +572,6 @@ def draw_card(pdf_path: Path) -> Path:
     return pdf_path
 
 
-# ================================================================ height gauge
-
-GAUGE_SLOTS = (10.0, 20.0, 30.0, 40.0, 50.0)
-"""Slot widths, the height classes. SOURCE: spec v3. A tool whose thickness
-slides into a slot is at most that class. CONFIDENCE: spec."""
-
-GAUGE_WALL = 5.0
-GAUGE_D = 60.0
-GAUGE_H = 60.0
-GAUGE_FLOOR = 15.0
-GAUGE_L = sum(GAUGE_SLOTS) + GAUGE_WALL * (len(GAUGE_SLOTS) + 1)
-"""The block: 180 x 60 x 60. The brief said 120 long; five slots totalling
-150mm of width plus six 5mm walls need 180, so the length is what the slots
-demand and the deviation is recorded here rather than hidden by narrowing a
-slot. Slots are 45 deep (60 less a 15 floor) and run through the block's
-60mm depth so a long tool passes straight through. Fits the AD5M bed with
-its margin. CONFIDENCE: derived from the spec's five widths."""
-
-GAUGE_LABEL_H = 8.0
-GAUGE_LABEL_PROUD = 0.8
-
-
-def build_height_gauge():
-    """The gauge as a build123d Part, standing on Z = 0 in print orientation."""
-    from build123d import (
-        Align,
-        Box,
-        Location,
-        Plane,
-        Text,
-        extrude,
-    )
-
-    block = Box(GAUGE_L, GAUGE_D, GAUGE_H, align=(Align.MIN, Align.MIN, Align.MIN))
-    x = GAUGE_WALL
-    for w in GAUGE_SLOTS:
-        slot = Box(w, GAUGE_D + 2, GAUGE_H - GAUGE_FLOOR, align=(Align.MIN, Align.MIN, Align.MIN)).moved(
-            Location((x, -1, GAUGE_FLOOR))
-        )
-        block -= slot
-        # the label, embossed on the front face (y = 0) under its slot
-        txt = Text(f"{w:g}", font_size=GAUGE_LABEL_H, align=(Align.CENTER, Align.CENTER))
-        glyphs = extrude(Plane.XZ * txt, amount=GAUGE_LABEL_PROUD)      # Plane.XZ's normal is -Y, so this stands proud of the front face
-        block += glyphs.moved(Location((x + w / 2, 0, GAUGE_FLOOR / 2)))
-        x += w + GAUGE_WALL
-    return block
-
-
 # ================================================================ tracing collar
 
 COLLAR_OD = 14.0
@@ -723,7 +667,7 @@ def write_all(out_dir: Path = HERE, sizes: list[SheetSpec] | None = None, stl: b
     written = write_sheets(list(SIZES.values()) if sizes is None else sizes, out_dir)
     written.append(draw_card(out_dir / "capture_card.pdf"))
     if stl:
-        for name, builder in (("height_gauge.stl", build_height_gauge), ("tracing_collar.stl", build_tracing_collar)):
+        for name, builder in (("tracing_collar.stl", build_tracing_collar),):
             part = builder()
             p = out_dir / name
             export_stl(part, p)

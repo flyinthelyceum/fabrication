@@ -231,7 +231,7 @@ to edit; the ruling is what the pane is ordered against."""
 # ====================================================================
 
 # ---- the hinge --------------------------------------------------------------
-HINGE = "continuous (piano) hinge, 1-1/2in open x 48in, stainless, surface mount"
+HINGE = "continuous (piano) hinge, 1in open x 48in, stainless, surface mount"
 """SOURCE: brief BOM line "Piano hinge, rear door and lungs door, Amazon, 2".
 No SKU on the line; the class of part every listing sells. CONFIDENCE:
 representative. MEASURE THIS when it arrives: leaf thickness, knuckle
@@ -246,10 +246,13 @@ HINGE_KNUCKLE_D = 5.0
 0.09in pin). CONFIDENCE: representative. Sets HINGE_GAP: the knuckle lies in
 the gap between the door's bottom edge and the deck's top face."""
 
-HINGE_LEAF_W = 16.5
-"""One leaf, knuckle to edge: (38.1 open less the knuckle) / 2. SOURCE:
-derived from the representative listing. CONFIDENCE: representative. Has to
-fit the deck's 18mm rear edge, which is the check."""
+HINGE_LEAF_W = (25.4 - HINGE_KNUCKLE_D) / 2
+"""One leaf, knuckle to edge: (25.4 open less the knuckle) / 2 = 10.2. SOURCE:
+derived from the representative listing. CONFIDENCE: representative. At 12mm
+house stock (ruling 18) the 1-1/2in (38.1) open hinge's 16.5 leaf overhangs
+the deck's rear edge and a stile's inner edge, both 12mm deep, so the hinge is
+the 1in (25.4) open size: a 10.2 leaf lands on 12mm with margin. Has to fit
+the panel edge it screws to, which is the check. MEASURE THIS when it arrives."""
 
 HINGE_LEN = 1219.2
 """48in. SOURCE: the listing's length. CONFIDENCE: representative. Longer than
@@ -1482,7 +1485,7 @@ def check_rear_door(d: Datums = D) -> list[str]:
         "where the BOM line reads 20mm; the spec wins and the BOM line follows. The "
         "harness gland sits on the SEALED side by the same spec while the motion "
         "controller is on the signal side, so the harness crosses the partition at "
-        "the transit with the CT leads. Expected, and worth knowing before the "
+        "the transit with the CT lead. Expected, and worth knowing before the "
         "harness is pulled."
     )
     notes.append(

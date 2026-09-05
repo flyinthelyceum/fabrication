@@ -17,13 +17,13 @@ side comes off as one unit the way the mains backplate does on the sealed side.
 
 ``mini_pc_cradle_*``      A birch shelf on the subplate's device face, two
                           birch cheeks, and a CLEAR acrylic lip on the shelf's
-                          door edge. The PC lies on the shelf with its rear
-                          ports looking at the subplate across ``CABLE_ROOM``
-                          and its front (power button, USB-A) looking at the
-                          rear door's reveal. Every cradle dimension is
-                          arithmetic on ``params.mini_pc_env``: the NUC 13 Pro
-                          tall chassis today, the P350 Tiny by editing that
-                          one tuple once Todoist 6hQMrP5PW7fcHQW7 closes.
+                          door edge. The PC stands UPRIGHT on the shelf on
+                          its 37mm-flat profile, its big face looking at the
+                          rear door's reveal and its rear ports looking at the
+                          subplate across ``CABLE_ROOM``. Every cradle
+                          dimension is arithmetic on ``params.mini_pc_env``:
+                          the Lenovo ThinkStation P350 Tiny (RT3), a fitted
+                          cradle, not a reserved seat.
 
 ``mini_pc_env``           The PC as a reference solid on the shelf. Its
                           projection onto the door plane is checked against
@@ -47,9 +47,6 @@ side comes off as one unit the way the mains backplate does on the sealed side.
 ``esp32_board_env``       The protoboard and the ESP32 on it, as a reference
                           solid standing off the carrier's front face.
 
-``usb_hub_env``           A 4-port hub on the subplate's face beside the rail,
-                          held with cable-tie saddles the way the CTs are.
-
 ``motion_controller_env`` The Carbide Motion controller, placed ONLY when
                           ``params.motion_controller_env`` carries a number.
                           It is None today (C00: Carbide publishes no envelope
@@ -71,8 +68,8 @@ The layout is three horizontal bands on the subplate, read from the top:
              position at which the PC's left edge clears the window's left
              edge by ``PC_WINDOW_MARGIN``.
     MIDDLE   the rail and the ESP32 carrier at the LEFT, under the transit,
-             so the two CT leads and the ESP32's supply land on the board
-             without crossing anything; the USB hub to the right of the rail.
+             so the CT lead and the ESP32's supply land on the board
+             without crossing anything.
     BOTTOM   the controller's seat: the whole width of the plate, from its
              bottom edge up to a service gap under the rail band, and as deep
              as the band allows to the door's landing.
@@ -110,13 +107,13 @@ THE JOINTS
     rail                  screwed to the subplate through its own slots,
                           pilots at assembly. Reference solid.
     carrier               hooks behind the rail's flanges. Faces only.
-    board, hub            bear on the carrier's front and the plate's face.
+    board                 bears on the carrier's front and the plate's face.
 
 WHAT IS MEASURED, WHAT IS NOT
 =============================
 
-The PC is the NUC 13 Pro class of thing (``params.mini_pc_env``, medium).
-The rail is a standard. The hub, the protoboard and its hole pattern are
+The PC is the Lenovo P350 Tiny (``params.mini_pc_env``, datasheet).
+The rail is a standard. The protoboard and its hole pattern are
 REPRESENTATIVE (no SKU, no board named) and the check carries them as MEASURE;
 none of them moves the subplate. The controller is None and drives nothing.
 
@@ -190,7 +187,6 @@ PC_NAME = "mini_pc_env"
 RAIL_NAME = "din_rail_signal"
 CARRIER_NAME = "esp32_carrier"
 BOARD_NAME = "esp32_board_env"
-HUB_NAME = "usb_hub_env"
 CONTROLLER_NAME = "motion_controller_env"
 
 D: Datums = DATUMS
@@ -225,11 +221,11 @@ housed panel, not a fastened one, and the plate snaps up off its face."""
 
 # ---- the PC and its cradle ---------------------------------------------
 PC_ENV = params.STATION.mini_pc_env
-"""(W, D, H) of the PC lying flat, front to the door. SOURCE:
-params.mini_pc_env, the NUC 13 Pro tall chassis, CONFIDENCE medium ("as the
-class of thing"). The FALLBACK until Todoist 6hQMrP5PW7fcHQW7 (console PC,
-open 2026-09-04) closes; the P350 Tiny swaps in by editing that tuple and
-nothing here. Every cradle number below is arithmetic on it."""
+"""(W across X, D into the band, H up) of the PC standing upright. SOURCE:
+params.mini_pc_env, the Lenovo ThinkStation P350 Tiny, CONFIDENCE datasheet
+(PSREF). Stood on its 37mm flat profile so it reaches only 36.5 into the brain
+band and shows its 179 x 182.9 face through the reveal. Every cradle number
+below is arithmetic on it."""
 
 CABLE_ROOM = GRID * 2
 """Air between the subplate's face and the PC's rear. SOURCE: design, on the
@@ -238,9 +234,9 @@ straight HDMI plug and its bend want 40mm, and the brick's lead arrives here
 from the transit."""
 
 PC_SIDE_CLEAR = GRID / 2
-"""PC side to cheek, per side. SOURCE: design. CONFIDENCE: design. The NUC
-breathes through its sides; 10mm of air and a cheek only 40 tall keep the
-intake open while the PC cannot walk sideways."""
+"""PC side to cheek, per side. SOURCE: design. CONFIDENCE: design. 10mm of
+air each side and a low cheek locate the standing PC without pinching its
+side vents; it cannot walk sideways."""
 
 PC_FRONT_CLEAR = GRID / 2
 """PC front to the lip. CONFIDENCE: design. Room for a finger on the power
@@ -252,8 +248,8 @@ SHELF_T = D.t
 
 CHEEK_H = GRID * 2
 """Cheek height above the shelf's top. SOURCE: design, on the grid.
-CONFIDENCE: design. Under the PC's 54mm so its lid and side vents stay in
-the open, over half of it so it is held."""
+CONFIDENCE: design. A low cheek at the base of the upright PC: it locates
+the foot and lets the tall face stand clear above it."""
 
 LIP_T = PT
 LIP_MATERIAL = "clear acrylic 3mm"
@@ -280,11 +276,14 @@ the reveal window outline"), with a margin so the check is not decided at the
 pane's edge. CONFIDENCE: spec. This number and the window DERIVE the cradle's
 X on the plate; nothing chooses it."""
 
-SHELF_Y_LOCAL = GRID * 14
-"""Plate-local height of the shelf's UNDERSIDE. SOURCE: layout: puts the PC's
-rear ports at the partition transit's height (transit z 538..578 station;
-the PC lies 516..570) so the brick's DC lead lands without a bend.
-CONFIDENCE: chosen, checked against the plate's top and the cap."""
+CRADLE_CARRIER_GAP = GRID / 8
+"""Running clearance between the cradle shelf's underside and the printed
+carrier's top. SOURCE: design. CONFIDENCE: design. The P350 stands 182.9 tall
+on its 37mm flat profile (RT3) and the cradle sits directly above the carrier
+in the same X band under the reveal window, so the shelf has to miss the
+carrier by this much. The band between the carrier's top and the window's
+top-margin is tight (about 3mm of play at 12mm stock), so this is small; the
+window fit and the cap clearance are checked in ``check_signal_mounts``."""
 
 # ---- the rail and the printed carrier ----------------------------------
 RAIL_H = mains_backplate.RAIL_H
@@ -304,10 +303,14 @@ the grid. CONFIDENCE: design. One carrier of CARRIER_W plus a module of rail
 each side for the fingers and a second clip-on later; the transit is above
 its left end."""
 
-RAIL_Y_LOCAL = GRID * 10
+RAIL_Y_LOCAL = GRID * 8
 """Rail centreline above the plate's bottom edge. SOURCE: design, on the
-grid. CONFIDENCE: design. Under the cradle by more than a service gap, over
-the controller's seat by one."""
+grid. CONFIDENCE: design. Under the cradle and over the controller's seat.
+Dropped from GRID*10 to GRID*8 (RT3, 2026-09-04): the upright P350 cradle
+stacks directly above the carrier under the reveal, and the P350's big face is
+nearly as wide as the window, so its top corners have to stay clear of the
+window's rounded corners; lowering the rail lowers the whole cradle enough to
+clear both the carrier and those corners while the seat below stays ample."""
 
 CARRIER_MATERIAL = "PLA, 0.2mm layers, 4 walls, printed front face down"
 BOARD = (70.0, 50.0)
@@ -358,20 +361,6 @@ rib's length along the rail, centred; the rest are print-scale numbers.
 SOURCE: design, the shape every DIN clip has. CONFIDENCE: design. The lower
 one is the latch: printed at HOOK_RIB_T it flexes to snap on; the upper one
 is the hook. Lead-in chamfers are the print's, not the model's."""
-
-# ---- the hub ------------------------------------------------------------
-HUB_ENV = (103.0, 30.0, 10.0)
-"""(along the rail, across, off the plate face) of a 4-port USB 3.0 hub.
-SOURCE: anker.com/products/a7516, "103 x 30 x 10" for the 0.75ft cable
-version (the page labels it inches; the 2ft version reads 1.18 x 0.39 in for
-the same body, which is 30 x 10 mm, so mm it is). CONFIDENCE: REPRESENTATIVE,
-MEASURE THIS: the brief lists "USB hub" on the signal side and the BOM carries
-no line for it. Drives its own reference solid and nothing else."""
-
-HUB_X_LOCAL = RAIL_X_LOCAL + RAIL_LEN + GRID
-"""Hub's left edge: one module right of the rail's end. CONFIDENCE: design."""
-
-HUB_FIX = "two cable-tie saddles on the plate face, the CTs' fixing"
 
 # ---- the controller -----------------------------------------------------
 CONTROLLER_ENV = params.motion_controller_env
@@ -488,7 +477,7 @@ def spine_screws_local(d: Datums = D) -> list[tuple[float, float]]:
 
 
 def pc_size() -> tuple[float, float, float]:
-    """(W along X, D into the band, H up) of the PC, lying flat."""
+    """(W along X, D into the band, H up) of the PC, standing upright."""
     return PC_ENV
 
 
@@ -511,13 +500,29 @@ def window_station(d: Datums = D) -> tuple[tuple[float, float], tuple[float, flo
 
 
 def cradle_x_local(d: Datums = D) -> float:
-    """Plate-local X of the cradle's left (cheek) face, DERIVED: the leftmost
-    position at which the PC's left edge clears the window's left edge by
-    PC_WINDOW_MARGIN, snapped up to the grid."""
-    (wx0, _wx1), _z, _r = window_station(d)
-    x_pc_min = wx0 + PC_WINDOW_MARGIN
+    """Plate-local X of the cradle's left (cheek) face, DERIVED: the PC is
+    CENTRED in the reveal window, so the big face shows with equal margin each
+    side. Centring, not left-align, because the P350's face very nearly fills
+    the window's width and a snapped left edge would spend all the slack on one
+    side and fail the far margin."""
+    (wx0, wx1), _z, _r = window_station(d)
+    w, _dep, _h = pc_size()
+    x_pc_min = (wx0 + wx1) / 2 - w / 2
     x_cheek = x_pc_min - PC_SIDE_CLEAR - CHEEK_T
-    return snap_up(x_cheek - plate_x(d)[0])
+    return x_cheek - plate_x(d)[0]
+
+
+def shelf_y_local(d: Datums = D) -> float:
+    """Plate-local height of the shelf's UNDERSIDE, DERIVED to stand the shelf
+    ``CRADLE_CARRIER_GAP`` clear of the printed carrier's top: the cradle sits
+    directly above the carrier in the same X band (both are under the reveal
+    window), so the shelf's underside is what has to miss it. The upright PC
+    then reaches up into the window; the window is tall enough and well under
+    the cap, so the PC still fits the pane with its margin and clears the cap.
+    ``check_signal_mounts`` verifies the window fit, the cap and the carrier."""
+    carrier_top = carrier_station(d)[2][1]
+    shelf_underside = carrier_top + CRADLE_CARRIER_GAP
+    return shelf_underside - plate_z(d)[0]
 
 
 def shelf_station(d: Datums = D) -> tuple[tuple[float, float], tuple[float, float], tuple[float, float]]:
@@ -525,7 +530,7 @@ def shelf_station(d: Datums = D) -> tuple[tuple[float, float], tuple[float, floa
     w, dep = shelf_size(d)
     x0 = plate_x(d)[0] + cradle_x_local(d)
     y0 = device_face_y(d)
-    z0 = plate_z(d)[0] + SHELF_Y_LOCAL
+    z0 = plate_z(d)[0] + shelf_y_local(d)
     return ((x0, x0 + w), (y0, y0 + dep), (z0, z0 + SHELF_T))
 
 
@@ -563,7 +568,7 @@ def shelf_screws_local(d: Datums = D) -> list[tuple[float, float]]:
     rear end grain: on the shelf's mid-thickness, at the fastener rhythm."""
     w, _dep = shelf_size(d)
     x0 = cradle_x_local(d)
-    y = SHELF_Y_LOCAL + SHELF_T / 2
+    y = shelf_y_local(d) + SHELF_T / 2
     return [(x0 + p, y) for p in screw_positions(w)]
 
 
@@ -572,7 +577,7 @@ def cheek_screws_local(d: Datums = D) -> list[tuple[float, float]]:
     grain: on the cheek's mid-thickness, mid-height."""
     w, _dep = shelf_size(d)
     x0 = cradle_x_local(d)
-    y = SHELF_Y_LOCAL + SHELF_T + CHEEK_H / 2
+    y = shelf_y_local(d) + SHELF_T + CHEEK_H / 2
     return [(x0 + CHEEK_T / 2, y), (x0 + w - CHEEK_T / 2, y)]
 
 
@@ -727,21 +732,6 @@ def board_station(d: Datums = D) -> tuple[tuple[float, float], tuple[float, floa
     )
 
 
-# ---- the hub ----------------------------------------------------------------
-
-
-def hub_station(d: Datums = D) -> tuple[tuple[float, float], tuple[float, float], tuple[float, float]]:
-    px0 = plate_x(d)[0]
-    face = device_face_y(d)
-    zc = rail_centre_z(d)
-    along, across, depth = HUB_ENV
-    return (
-        (px0 + HUB_X_LOCAL, px0 + HUB_X_LOCAL + along),
-        (face, face + depth),
-        (zc - across / 2, zc + across / 2),
-    )
-
-
 # ---- the controller's seat --------------------------------------------------
 
 
@@ -751,7 +741,7 @@ def controller_seat(d: Datums = D) -> tuple[tuple[float, float], tuple[float, fl
     from the plate's face to the door's landing."""
     px0, px1 = plate_x(d)
     pz0 = plate_z(d)[0]
-    band_bottom = min(rail_station(d)[2][0], carrier_station(d)[2][0], hub_station(d)[2][0])
+    band_bottom = min(rail_station(d)[2][0], carrier_station(d)[2][0])
     return ((px0, px1), (device_face_y(d), door_landing_y(d)), (pz0, band_bottom - SEAT_GAP))
 
 
@@ -861,10 +851,6 @@ def build_board(d: Datums = D) -> Part:
     return _box(*board_station(d))
 
 
-def build_hub(d: Datums = D) -> Part:
-    return _box(*hub_station(d))
-
-
 def build_controller(d: Datums = D) -> Part | None:
     st = controller_station(d)
     return None if st is None else _box(*st)
@@ -887,7 +873,6 @@ def placed_all(d: Datums = D) -> list[tuple[str, str, Part]]:
         (RAIL_NAME, "steel", build_rail(d)),
         (CARRIER_NAME, "print", place_carrier(d=d)),
         (BOARD_NAME, "reference", build_board(d)),
-        (HUB_NAME, "reference", build_hub(d)),
     ]
     ctl = build_controller(d)
     if ctl is not None:
@@ -906,14 +891,12 @@ def joint_table(d: Datums = D) -> list[tuple]:
          "shelf's rear end grain on the subplate's device face, screwed through the plate"),
         (PART_NAME, RAIL_NAME, "bearing", None, 0.0, 0.0,
          "rail screwed to the subplate through its own slots"),
-        (PART_NAME, HUB_NAME, "bearing", None, 0.0, 0.0,
-         f"hub on the plate face, {HUB_FIX}"),
         (RAIL_NAME, CARRIER_NAME, "bearing", None, 0.0, 0.0,
          "carrier's hooks behind the rail's flanges, its back on their faces"),
         (CARRIER_NAME, BOARD_NAME, "bearing", None, 0.0, 0.0,
          f"board on {STANDOFF} into the carrier's inserts"),
         (SHELF_NAME, PC_NAME, "bearing", None, 0.0, 0.0,
-         "the PC lies on the shelf"),
+         "the PC stands upright on the shelf"),
         (SHELF_NAME, LIP_NAME, "bearing", None, 0.0, 0.0,
          "lip flat on the shelf's front edge, two screws into the end grain"),
     ]
@@ -1138,11 +1121,10 @@ def check_signal_mounts(d: Datums = D) -> list[str]:
 
     # -- what the representative parts have not told us yet
     notes.append(
-        f"the USB hub ({HUB_ENV[0]:.0f}x{HUB_ENV[1]:.0f}x{HUB_ENV[2]:.0f}, anker A7516 as the "
-        f"class), the protoboard ({BOARD[0]:.0f}x{BOARD[1]:.0f}, holes o{BOARD_HOLE_D:.1f} at "
+        f"the protoboard ({BOARD[0]:.0f}x{BOARD[1]:.0f}, holes o{BOARD_HOLE_D:.1f} at "
         f"{BOARD_HOLE_INSET:.1f} in) and the heat-set insert (o{INSERT_HOLE_D:.1f} pilot) are "
-        "REPRESENTATIVE: no SKU on the BOM, no board named. MEASURE THIS when in hand; the hub "
-        "moves only its own solid, the board only the carrier's outline and insert pattern."
+        "REPRESENTATIVE: no SKU on the BOM, no board named. MEASURE THIS when in hand; the "
+        "board moves only the carrier's outline and insert pattern."
     )
 
     # -- the schedule, kept visible on every run
@@ -1164,10 +1146,10 @@ def wire_schedule(d: Datums = D) -> list[str]:
     return [
         f"WIRE SCHEDULE {PART_NAME}: everything here is ALWAYS-LIVE DC or signal; no mains crosses the partition",
         f"transit z {tz0:.0f}..{tz1:.0f} at x {d.brain_split_x:.0f}: PC brick DC (ALWAYS-LIVE) to the PC's rear at "
-        f"z {pc_station(d)[2][0]:.0f}..{pc_station(d)[2][1]:.0f}; ESP32 supply DC (ALWAYS-LIVE) and both CT leads to the carrier; "
+        f"z {pc_station(d)[2][0]:.0f}..{pc_station(d)[2][1]:.0f}; ESP32 supply DC (ALWAYS-LIVE) and the CT lead to the carrier; "
         "the motion controller's supply, contactor-fed, as the mains schedule has it",
         "spine crossings, high row: CONSOLE STOP, CONSOLE CONTROL, CONSOLE INSTRUMENT (GX16) above the plate; "
-        "low row: PENDANT AND USB (gland) below it; pendant to the controller, USB to the hub",
+        "low row: PENDANT AND USB (gland) below it; pendant to the controller, USB to the PC",
         "rear door: RJ45 to the PC's rear; GX16 pendant and mast-camera bulkheads; the reveal shows the PC",
         "controller logic 0V never lands on the PE star (params.bond_excluded)",
     ]

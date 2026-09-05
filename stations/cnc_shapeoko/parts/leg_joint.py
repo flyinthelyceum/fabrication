@@ -120,6 +120,7 @@ E-stop is the whole red budget, and nothing here senses, gates or stops anything
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import ceil
 
 from build123d import Align, Cylinder, Location, Part, Plane
 
@@ -253,10 +254,28 @@ WALL_BACK_MIN = 2.0
 wall bulges when the insert is driven, and the bay side of an end wall is a
 finished face."""
 
+END_WALL_PLIES = max(1, ceil((WALL_CBORE_DEPTH + WALL_PILOT_DEPTH + WALL_BACK_MIN) / T))
+END_WALL_T = END_WALL_PLIES * T
+"""How thick the end wall has to be where a blind insert seats, and how many
+plies of house stock make it. DERIVED: the bore is 15.2mm and it wants 2.0mm
+of birch behind it, so the wall must be 17.2mm. At 18mm stock one ply carried
+that; at 12mm house stock (ruling 18) one ply is 3.2mm short, so the end wall
+is TWO plies -- a full-height doubler laminated to the inner face before the
+inserts are driven (RULED 2026-09-04: "full-height end-wall doubler plies").
+The doubler is a build element the flat-panel model carries as a standing note
+rather than a second solid, the same way the acoustic lay-ups are carried; the
+hands bay grew one ply (bay_hands_w 400 -> 412) to keep its clear width, and
+the lungs bay absorbed the left wall's ply into its derived width."""
+
 # -- where the joint may sit on the panel -----------------------------------
-EDGE_LAND = T
+EDGE_LAND = 18.0
 """Solid birch around the PILOT BORE, between it and any edge of the panel, its
-tongues included. One panel thickness, the same land the louvre field keeps.
+tongues included. PINNED at 18.0 (2026-09-04), not ``T``: this is a structural
+land, not a joinery dimension, and at 12mm house stock a floating ``T`` land
+would fall to 12 and let ``edge_margin`` drop to 16.76, which is UNDER the
+inner bolt column's 16.78mm heel reading -- silently re-admitting the dropped
+inner column and restoring the 16-bolt pattern by 0.018mm. Held at 18 the inner
+column stays rejected and the joint stays 8 bolts (leg_cols_used).
 
 This is the STRUCTURAL land. The pilot runs nearly the whole thickness and it is
 what the knife thread expands into, so the material around it is what takes the
@@ -574,11 +593,25 @@ def check_leg_joint(d: Datums = D) -> list[str]:
 
     # -- the insert in an 18mm panel ----------------------------------------
     depth = WALL_CBORE_DEPTH + WALL_PILOT_DEPTH
-    if depth > T - WALL_BACK_MIN:
+    if depth > END_WALL_T - WALL_BACK_MIN:
         notes.append(
-            f"the insert bore is {depth:.1f}mm into {T:.0f}mm of birch, leaving "
-            f"{T - depth:.1f}mm behind it against a {WALL_BACK_MIN:.1f}mm floor. "
-            "The bay face of an end wall is a finished face and it will bulge."
+            f"the insert bore is {depth:.1f}mm into {END_WALL_T:.0f}mm of end wall, "
+            f"leaving {END_WALL_T - depth:.1f}mm behind it against a "
+            f"{WALL_BACK_MIN:.1f}mm floor. The bay face of an end wall is a "
+            "finished face and it will bulge."
+        )
+    if END_WALL_PLIES > 1:
+        notes.append(
+            f"END-WALL DOUBLER, standing note. The end walls are {END_WALL_PLIES} "
+            f"plies of {T:.0f}mm birch ({END_WALL_T:.0f}mm): a full-height doubler "
+            "laminated to the inner face before the leg-bolt inserts are driven, "
+            f"because a blind {INSERT_THREAD} insert bores {depth:.1f}mm and one "
+            f"{T:.0f}mm ply cannot hold it (RULED 2026-09-04, \"full-height end-wall "
+            "doubler plies\"). The doubler is a build step the flat-panel model "
+            "does not cut as a second solid; laminate it, then drill. The hands "
+            "bay grew one ply (bay_hands_w 412) and the lungs bay absorbed the "
+            "left doubler into its derived width. Expected, and worth knowing "
+            "before the walls are cut."
         )
 
     if INSERT_PILOT_D >= INSERT_OD:
