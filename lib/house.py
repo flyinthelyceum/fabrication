@@ -15,9 +15,51 @@ GRID = 20.0
 lands on it stops needing improvised workholding."""
 
 
+PITCH = 96.0
+"""Centre-to-centre spacing of the 20mm dog holes. MFT pitch, added 2026-09-05.
+
+GRID and PITCH are two different systems and they do not reconcile below 2400mm,
+which is their least common multiple. Forcing a dimension to satisfy both drives
+it to 480mm steps, and the only bench-scale results are too small to work at or
+too deep for the room. So they divide the work instead:
+
+    GRID  governs BLANKS AND PARTS. A blank on the 20mm module drops onto any
+          worktop and gets clamped without improvising. This is what STOCK_MODULE
+          is derived from and what ``on_grid`` tests.
+
+    PITCH governs WORKTOPS THAT BUTT. Two tops only read as one surface if the
+          hole pattern runs continuous across the seam, which requires each top
+          to be a whole number of pitches with a half-pitch margin at the edge.
+          This is what ``continuous`` tests.
+
+A worktop is not a blank, so it answers to PITCH and is exempt from GRID. The
+stock module already shows the split: 600 is exactly 30 grid modules and 6.25
+pitches, and nobody has ever wanted it to be otherwise.
+"""
+
+EDGE_MARGIN = PITCH / 2
+"""Last hole to the edge of a worktop. Half a pitch on each of two butted tops
+sums to one full pitch across the seam, which is the whole trick."""
+
+
 def on_grid(mm: float) -> bool:
     """True when a dimension lands on the 20mm grid."""
     return abs(mm / GRID - round(mm / GRID)) < 1e-9
+
+
+def continuous(mm: float) -> bool:
+    """True when a worktop dimension keeps the hole pitch running across a seam.
+
+    The dimension has to be a whole number of pitches. Given that, a half-pitch
+    margin at each edge puts the last hole of one top exactly one pitch from the
+    first hole of the next.
+    """
+    return abs(mm / PITCH - round(mm / PITCH)) < 1e-9
+
+
+def holes(mm: float) -> int:
+    """How many dog holes fit a worktop dimension that satisfies ``continuous``."""
+    return int(round(mm / PITCH))
 
 
 # ---------------------------------------------------------------- stock module
