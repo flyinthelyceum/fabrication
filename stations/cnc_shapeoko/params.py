@@ -74,7 +74,11 @@ SOURCES = {
     "leg_y_inner": "MEASURED 2026-09-02, tape. Was 1150 scaled off a photograph.",
     "leg_splay": "Jared, 2026-09-02: the legs are square. The 6 deg was an "
                  "eyeball off a render, never measured.",
-    "clear_h_min": "MEASURED 2026-09-02, tape, floor to the lowest obstruction.",
+    "clear_h_min": "MEASURED 2026-09-02, tape, floor to the lowest obstruction, "
+                   "which is the bottom of an X gusset, not a Y gusset: "
+                   "z_beam 839.9875 - gusset_x_h 180.975 = 659.01, 4.96mm from "
+                   "the 654.05 tape reading, against 839.9875 - gusset_y_h "
+                   "266.7 = 573.29, 80.76mm off.",
     "gusset_x": "MEASURED 2026-09-02, tape plus a hand-dimensioned elevation.",
     "gusset_y": "MEASURED 2026-09-02, tape plus a hand-dimensioned elevation.",
     "gusset_plate_t": "MEASURED 2026-09-02. Photographs and calipers: the "
@@ -461,7 +465,9 @@ CONFIDENCE = {
     "table_h": "measured",   # 2026-09-02: levelling feet ARE on the machine, so
                              # it is Carbide's 945 config and not the 893 one.
     "clear_h_min": "measured",   # floor to the LOWEST obstruction, which is the
-                             # bottom of a Y gusset. The floor of the envelope.
+                             # bottom of an X gusset (839.9875 - 180.975 = 659.01,
+                             # 4.96mm off the tape), not a Y gusset. The floor of
+                             # the envelope.
     "z_beam": "measured",    # 2026-09-03 tape, floor to the underside of the
                              # frame beam directly. Was derived from
                              # clear_h_min + gusset_y_h; see SOURCES.
@@ -900,10 +906,12 @@ class Station:
                                     # number that was never the right config.
     clear_h_min: float = 654.05     # MEASURED 2026-09-02, 25-3/4 in, floor to the
                                     # LOWEST obstruction under the frame, which is
-                                    # the bottom of a Y gusset. This is the FLOOR of
-                                    # the clearance envelope and not the envelope:
-                                    # anything whose footprint is smaller than the
-                                    # leg opening asks clear_z(x, y) instead.
+                                    # the bottom of an X gusset (839.9875 - 180.975
+                                    # = 659.01, 4.96mm off the tape), not a Y
+                                    # gusset. This is the FLOOR of the clearance
+                                    # envelope and not the envelope: anything whose
+                                    # footprint is smaller than the leg opening
+                                    # asks clear_z(x, y) instead.
     z_beam: float = 839.9875        # MEASURED 2026-09-03, 33-1/16 in, floor to the
                                     # UNDERSIDE OF THE FRAME BEAM directly, per the
                                     # standing request in check(). Supersedes the
@@ -1381,15 +1389,21 @@ def check(s: Station = STATION) -> list[str]:
             "is not the whole session yet."
         )
 
-    if CONFIDENCE.get("z_beam") != "measured":
+    # clear_h_min was tape-read to the bottom of an X gusset, not a Y gusset
+    # (SOURCES, CONFIDENCE). Both z_beam and clear_h_min are independently
+    # measured now, so this always runs rather than only while z_beam was
+    # derived: it is a cross-check between two tape readings, not a gate on
+    # either one's confidence.
+    CLEAR_H_MIN_TOL = 10.0  # mm, tape
+    clear_h_min_expected = s.z_beam - s.gusset_x_h
+    clear_h_min_diff = s.clear_h_min - clear_h_min_expected
+    if abs(clear_h_min_diff) > CLEAR_H_MIN_TOL:
         problems.append(
-            f"z_beam {s.z_beam:.2f}mm is DERIVED and not measured. The tape read "
-            f"{s.clear_h_min:.2f}mm from the floor to the LOWEST obstruction, which "
-            f"is the bottom of a Y gusset, and the gusset's own {s.gusset_y_h:.1f}mm "
-            f"was added to it. That implies a frame beam {s.table_h - s.z_beam:.2f}mm "
-            "thick, which is thin for a member carrying a gantry. Measure floor to "
-            "the UNDERSIDE OF THE FRAME BEAM directly and write the answer into "
-            "z_beam. Everything above the gussets moves with it."
+            f"clear_h_min {s.clear_h_min:.2f}mm disagrees with z_beam - gusset_x_h "
+            f"({s.z_beam:.2f} - {s.gusset_x_h:.1f} = {clear_h_min_expected:.2f}mm) "
+            f"by {clear_h_min_diff:.2f}mm, outside the {CLEAR_H_MIN_TOL:.0f}mm tape "
+            "tolerance. clear_h_min is supposed to be the bottom of an X gusset; "
+            "re-tape both numbers."
         )
 
     problems.append(
