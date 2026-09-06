@@ -196,3 +196,73 @@ glance, both fail closed. Every other sensor reports and gets no vote. Software
 that says no in a classroom gets bypassed inside a term, and the bypass takes a
 real safety layer with it on the way past.
 """
+
+
+# ---------------------------------------------------------------- CNC joinery grammar
+
+JOINERY_RULES = """CNC joinery grammar v1.3 (2026-09-05). Global: workbench and stations.
+
+The constraint that writes it: three-axis, one-sided, flat. Every cut comes from
+the up face and nothing enters an edge, so the whole vocabulary is PROFILE,
+POCKET (blind: dado, rabbet, groove, counterbore), HOLE, and the hand-cut DOMINO
+mortise for anything a pocket cannot reach.
+
+1. One pocketed face per panel. Every panel declares pocket_face (up on the
+   machine) and paint_face. The other face carries only through holes. A panel
+   that wants pockets on both faces is a design error and the check fails it.
+2. Paint goes on the outside face; pockets go on the inside face; so painted
+   parts cut face-DOWN. Every glue surface is a cut surface or a bare inside
+   face: no glue on paint, ever.
+3. Widths come from measured stock. T_ACTUAL per batch, measured painted. Dado,
+   rabbet and slot width = T_ACTUAL + JOINT_CLEAR. Nominal thickness never
+   appears in a mating dimension.
+4. Depths: dado T/3, rabbet T/2, groove T/3. One number for every housed pocket;
+   the rabbet at a panel end goes deeper because nothing behind it is weakened.
+5. Through, never stopped. Dados and rabbets run edge to edge, so the joint
+   shows on the bare edge and there are no inside corners to relieve. A forced
+   stopped pocket is never dogboned: the tongue runs one cutter radius short of
+   the rounded end (aperture = round inward, joinery = dogbone outward).
+6. Relief hides. Nothing visible carries a dogbone. If a cross-lap ever appears,
+   its relief lives at the notch root inside the lap.
+7. Always housed; before a Domino, move the joint. Every joint is a dado or a
+   rabbet. When rule 1 blocks a pocket, reassign the joint (a screwed bearing
+   joint, or swap which face pockets) before reaching for a Domino; the Domino
+   is the last resort, never a through-tab.
+8. Mirrored parts are one blank. Symmetric joinery at both ends so a left and a
+   right are the same DXF flipped.
+9. Knock-down is bolts through holes, no counterbores. A counterbore is a pocket
+   on the wrong face.
+"""
+
+JOINERY_OPS = ("PROFILE", "POCKET", "HOLE", "DOMINO")
+"""The whole vocabulary. TAB and SLOT are struck (v1.2): a tenon that has to
+exist is a Domino, cut by hand after the CNC."""
+
+JOINT_CLEAR = 0.1
+"""Total slack in a housed joint, split either side. Baltic birch runs about
++/-0.2 on nominal, so a zero-clearance housing is a press fit that delaminates
+the ply it is pressed into. 0.1 is a mallet fit that still takes glue. Rule 3
+adds it to MEASURED stock, never to nominal: paint adds 0.05-0.1 per face and
+0.1 against nominal would bind."""
+
+DADO_D_FRAC = 1 / 3
+RABBET_D_FRAC = 1 / 2
+
+DOMINO = "Festool DF 500, 8 mm in 18 mm stock (10 mm needs 22+)"
+"""The escape hatch. Verify the machine and the cutter on hand before a build
+relies on one; the bench fleet as drawn has none."""
+
+
+def housed_w(t_actual: float, clear: float = JOINT_CLEAR) -> float:
+    """Rule 3: the width of a dado, rabbet or slot that takes ``t_actual`` stock."""
+    return t_actual + clear
+
+
+def dado_d(t: float) -> float:
+    """Rule 4: a through dado or groove, one third into the panel it is cut in."""
+    return t * DADO_D_FRAC
+
+
+def rabbet_d(t: float) -> float:
+    """Rule 4: a rabbet at a panel end, half the panel."""
+    return t * RABBET_D_FRAC
