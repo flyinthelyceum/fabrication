@@ -200,7 +200,7 @@ real safety layer with it on the way past.
 
 # ---------------------------------------------------------------- CNC joinery grammar
 
-JOINERY_RULES = """CNC joinery grammar v1.3 (2026-09-05). Global: workbench and stations.
+JOINERY_RULES = """CNC joinery grammar v1.4 (2026-09-06). Global: workbench and stations.
 
 The constraint that writes it: three-axis, one-sided, flat. Every cut comes from
 the up face and nothing enters an edge, so the whole vocabulary is PROFILE,
@@ -212,7 +212,11 @@ mortise for anything a pocket cannot reach.
    that wants pockets on both faces is a design error and the check fails it.
 2. Paint goes on the outside face; pockets go on the inside face; so painted
    parts cut face-DOWN. Every glue surface is a cut surface or a bare inside
-   face: no glue on paint, ever.
+   face: no glue on paint, ever. One exception (v1.4): a pocket on the painted
+   face is allowed when the mating part covers it completely. The panel names
+   the part that hides it, and the assembly's coverage check proves the
+   pocket's footprint lies inside that part's contact face. The pocket floor
+   is still a cut surface; paint is still never a glue surface.
 3. Widths come from measured stock. T_ACTUAL per batch, measured painted. Dado,
    rabbet and slot width = T_ACTUAL + JOINT_CLEAR. Nominal thickness never
    appears in a mating dimension.
