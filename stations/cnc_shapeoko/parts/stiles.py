@@ -244,13 +244,6 @@ def check_stiles(d: Datums = D) -> list[str]:
                     f"{label} landed at {axis} {g[0]:.1f}..{g[1]:.1f} and belongs at "
                     f"{e[0]:.1f}..{e[1]:.1f}. Its plane is wrong."
                 )
-        hit = gussets_over((x0, x1), (y0, y1), s.gussets)
-        if hit:
-            notes.append(
-                f"{label} is relieved to {', '.join(g.label for g in hit)} where its tenon "
-                "passes the cap. Expected, and worth knowing before the tenon is read as "
-                "a plain rectangle."
-            )
 
     notes.append(
         f"STILES, standing note. RULED 2026-09-04: the flange band at each corner is a "

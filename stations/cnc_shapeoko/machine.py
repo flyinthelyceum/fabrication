@@ -64,11 +64,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from build123d import Align, Box, Compound, Cylinder, Location, Part, Unit, export_step
+from build123d import Align, Box, Compound, Cylinder, Location, Part, Plane, Unit, export_step
 
 from stations.cnc_shapeoko.assembly import NOISE_VOL, Component, components
 from stations.cnc_shapeoko.carcass import DATUMS, EXPORT_DIR, Datums, gusset_prism
 from stations.cnc_shapeoko.params import Gusset
+from stations.cnc_shapeoko.parts.leg_joint import bolts as leg_bolts
 
 __all__ = [
     "MACHINE_NAME",
@@ -178,14 +179,19 @@ def leg_envelopes(d: Datums = DATUMS) -> list[tuple[str, Part]]:
     t = s.leg_wall_t
     r = h.inner_fillet_r
     z = (0.0, s.table_h)
+    hole_r = h.hole_d / 2
+    over = 1.0  # overshoot past both flange faces so the boolean is clean
+    bolts_by_leg: dict[str, list] = {}
+    for b in leg_bolts(d):
+        bolts_by_leg.setdefault(b.leg, []).append(b)
     out: list[tuple[str, Part]] = []
     corners = (
-        ("front left leg", d.x_left, d.y_front, 1.0, 1.0),
-        ("front right leg", d.x_right, d.y_front, -1.0, 1.0),
-        ("rear left leg", d.x_left, d.y_rear, 1.0, -1.0),
-        ("rear right leg", d.x_right, d.y_rear, -1.0, -1.0),
+        ("front left leg", d.x_left, d.y_front, 1.0, 1.0, "left_front"),
+        ("front right leg", d.x_right, d.y_front, -1.0, 1.0, "right_front"),
+        ("rear left leg", d.x_left, d.y_rear, 1.0, -1.0, "left_rear"),
+        ("rear right leg", d.x_right, d.y_rear, -1.0, -1.0, "right_rear"),
     )
-    for label, cx, cy, sx, sy in corners:
+    for label, cx, cy, sx, sy, leg_key in corners:
         # the inner faces meet at (cx, cy); sx, sy point INTO the opening
         x_flange = _slab((cx - sx * t, cx), (cy - sy * t, cy + sy * reach), z)
         y_flange = _slab((cx - sx * t, cx + sx * reach), (cy - sy * t, cy), z)
@@ -195,6 +201,18 @@ def leg_envelopes(d: Datums = DATUMS) -> list[tuple[str, Part]]:
                 r, z[1] - z[0], align=(Align.CENTER, Align.CENTER, Align.MIN)
             ).moved(Location((cx + sx * r, cy + sy * r, z[0])))
             leg = leg + fillet
+        # The X flange is the same wall leg_joint.bolts() already bolts the
+        # carcass end wall through, so its M6 clearance holes reuse those
+        # positions rather than re-deriving the pattern; a hole only removes
+        # steel, so the clash volume this envelope feeds stays a valid gate.
+        for b in bolts_by_leg.get(leg_key, []):
+            plane = Plane(
+                origin=(cx - sx * t, b.y, b.z), x_dir=(0.0, 1.0, 0.0), z_dir=(sx, 0.0, 0.0)
+            )
+            cutter = plane * Cylinder(
+                hole_r, t + 2 * over, align=(Align.CENTER, Align.CENTER, Align.MIN)
+            ).moved(Location((0, 0, -over)))
+            leg = leg - cutter
         leg.label = label
         out.append((label, leg))
     return out

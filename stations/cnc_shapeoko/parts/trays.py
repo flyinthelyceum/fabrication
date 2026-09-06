@@ -47,11 +47,6 @@ inward) and a capsule finger scoop on its long side. Packing is by each
 pocket's box: the derived box for the catalog rules, the loop's bounding box
 for a capture. Foam forgives the rest.
 
-``hex`` is a layout habit rather than a socket rule: once captured, the keys
-stand long arm along the drawer's depth in a size-ordered row, and the SIZE
-is the label milled through the black layer beside each, so a missing 2.5
-reads as a bright hole with "2.5" over it.
-
 WHAT A ROW NEEDS
 ================
 
@@ -65,7 +60,7 @@ command reports it too.
 
 D1 generates in full from its eleven CATALOG rows (twelve pockets; the #201
 is stocked twice). Its wrenches, the collet nut and the inserts, and every
-row of D2 (instruments, the pendant, the hex rack) and D3 (workholding), run
+row of D2 (instruments, the pendant) and D3 (workholding), run
 through the same ``plan()`` today and cut nothing until they are traced. The
 moment a row carries a silhouette and a height class it has a pocket.
 
@@ -88,7 +83,6 @@ from __future__ import annotations
 
 import csv
 import math
-import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -254,11 +248,6 @@ ISO 15488, not a caliper reading; ``params.SOURCES["er16_collet_od"]`` carries
 the chain and the standing note that Jared's calipers supersede it.
 CONFIDENCE: standard, high."""
 
-HEX_SIZE = re.compile(r"(\d+(?:\.\d+)?|\d+/\d+)\s*(mm|in|\")", re.IGNORECASE)
-"""How a hex row's size is read off its name ("2.5mm hex key", "5/32in").
-A row whose name carries no size labels with its box thickness, which for a
-hex key is its across-flats."""
-
 ARC_CHORD_TOL = 0.05
 """Chord error when a captured loop's DXF is read back and any arc in it is
 sampled to points. The ingest writes lines only; this covers a hand-edited
@@ -394,7 +383,7 @@ class Socket:
 
 def bbox(row: ToolRow) -> tuple[float, float, float] | None:
     """(L, W, T) for one row, or None when it has no pocket. Kept for the
-    hex sort and the report; ``socket`` is what the plan uses."""
+    report; ``socket`` is what the plan uses."""
     s = socket(row)
     return None if s is None else (s.l, s.w, s.t)
 
@@ -441,15 +430,9 @@ def pocket_depth(t: float, allow: float = FOAM_REVEAL) -> float:
 
 
 def label_text(row: ToolRow) -> str:
-    """What is milled beside the pocket: a hex key's SIZE, everything else's
-    name. Flute count and coating would go here too; this snapshot has no
-    such columns, so nothing is invented to fill them."""
-    if row.kind == "hex":
-        m = HEX_SIZE.search(row.name)
-        if m:
-            return m.group(1) + ("" if m.group(2).lower() == "mm" else "in")
-        box = bbox(row)
-        return f"{box[2]:g}" if box else row.name
+    """What is milled beside the pocket: the row's name. Flute count and
+    coating would go here too; this snapshot has no such columns, so nothing
+    is invented to fill them."""
     return row.name
 
 
@@ -598,24 +581,13 @@ def _fit_label(txt: str, room: float) -> tuple[str, float]:
 
 
 def _units(key: str, rows: list[ToolRow] | None = None) -> list[ToolRow]:
-    """One entry per unit of stock, file order, the hex keys gathered into a
-    size-ordered run where the first of them appeared."""
+    """One entry per unit of stock, file order."""
     no_pocket = {r.id for r, _why in skipped(key, rows)}
     units: list[ToolRow] = []
-    hexes: list[ToolRow] = []
-    hex_at: int | None = None
     for r in rows_for(key, rows):
         if r.id in no_pocket:
             continue
-        if r.kind == "hex":
-            if hex_at is None:
-                hex_at = len(units)
-            hexes.extend([r] * max(1, r.qty))
-        else:
-            units.extend([r] * max(1, r.qty))
-    if hexes:
-        hexes.sort(key=lambda r: (bbox(r)[2], bbox(r)[0]))
-        units[hex_at:hex_at] = hexes
+        units.extend([r] * max(1, r.qty))
     return units
 
 
@@ -642,7 +614,7 @@ def plan(key: str = TRAY_V1, d: Datums = D, rows: list[ToolRow] | None = None) -
         loop = s.loop
         if loop is None and pw < pd:
             pw, pd = pd, pw                 # a box is laid long side along X first
-        rotated = r.kind == "hex" or MARGIN + pw + MARGIN > tray_w
+        rotated = MARGIN + pw + MARGIN > tray_w
         if rotated:
             pw, pd = pd, pw
         if loop is None:

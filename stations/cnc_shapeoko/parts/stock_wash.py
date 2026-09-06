@@ -6,9 +6,13 @@ WHAT IT IS
 
 The stock bay has no door. Nine HALF blanks stand on edge in the comb and the
 operator reads them from across the room: ply count, void, veneer, which one
-is the 12mm. The brief (v8, "Front centre: Stock") gives the bay a low-angle
-LED wash across the edges so the material is legible at the moment of choice.
-This module is that wash, as the carcass sees it:
+is the 12mm. The brief (v8, "Front centre: Stock") gives the bay a warm LED
+wash. In this geometry it is a top-edge RAKE, not full-height edge
+legibility: the source sits 17mm above a 600mm edge, so the light grazes the
+crown of each standing blank and fades to almost nothing at the groove floor.
+It is a warm lit display of the stacked edges, enough to pick the bay out and
+read the top band, not a wash that makes the whole height legible. This module
+is that wash, as the carcass sees it:
 
   ``stock_wash_channel``   one aluminium LED channel of the standard 17 x 8
                            surface-mount class, its frosted diffuser facing
@@ -59,9 +63,11 @@ surface's relief casts the shadows that make it readable. The edge faces
 here are vertical planes; a source above them and a few millimetres AHEAD
 of them rakes them by position alone. A blank standing with its front edge
 on the STOCK header's face (y = comb front) has the diffuser 1.5..18.5mm
-ahead of it and 17mm above its top, so light reaches the top of the edge
-at ``rake_angles()[0]`` off the face and the bottom at ``rake_angles()[1]``:
-low-angle, from the top down, the whole height. TILTING the channel adds
+ahead of it and 17mm above its top, so the light grazes the TOP of the edge
+at ``rake_angles()[0]`` off the face and reaches the groove floor at only
+``rake_angles()[1]``: a warm top-edge rake, bright at the crown and fading
+down the height, a lit display rather than full-height legibility. TILTING
+the channel adds
 nothing to that (aiming the peak at mid-height of a 600 edge from 17mm above
 it is a two-degree tilt) and the band cannot hold a tilted channel anyway:
 ``tilt_room()`` says how much of the 20mm a 10 degree set would need. So

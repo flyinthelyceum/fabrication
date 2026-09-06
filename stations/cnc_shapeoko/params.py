@@ -74,7 +74,11 @@ SOURCES = {
     "leg_y_inner": "MEASURED 2026-09-02, tape. Was 1150 scaled off a photograph.",
     "leg_splay": "Jared, 2026-09-02: the legs are square. The 6 deg was an "
                  "eyeball off a render, never measured.",
-    "clear_h_min": "MEASURED 2026-09-02, tape, floor to the lowest obstruction.",
+    "clear_h_min": "MEASURED 2026-09-02, tape, floor to the lowest obstruction, "
+                   "which is the bottom of an X gusset, not a Y gusset: "
+                   "z_beam 839.9875 - gusset_x_h 180.975 = 659.01, 4.96mm from "
+                   "the 654.05 tape reading, against 839.9875 - gusset_y_h "
+                   "266.7 = 573.29, 80.76mm off.",
     "gusset_x": "MEASURED 2026-09-02, tape plus a hand-dimensioned elevation.",
     "gusset_y": "MEASURED 2026-09-02, tape plus a hand-dimensioned elevation.",
     "gusset_plate_t": "MEASURED 2026-09-02. Photographs and calipers: the "
@@ -94,7 +98,11 @@ SOURCES = {
     "vfd_fan": "MEASURED 2026-09-02, calipers, two square fans on the left face.",
     "vfd_vent_clear": "https://carbide3d.com/hub/docs/65mm-er16-spindle/",
     "vfd_mount_pitch": "https://carbide3d.com/hub/docs/65mm-er16-spindle/",
-    "mini_pc_env": "https://download.intel.com/newsroom/2023/client-computing/Intel-NUC-13-Pro-Tech-Product-Spec.pdf",
+    "mini_pc_env": "https://psref.lenovo.com/syspool/Sys/PDF/ThinkStation/ThinkStation_P350_Tiny/ThinkStation_P350_Tiny_Spec.PDF"
+                   " -- Lenovo ThinkStation P350 Tiny, 1L Tiny chassis, PSREF "
+                   "dimensions 179mm W x 182.9mm D x 36.5mm H (read 2026-09-04). "
+                   "Replaces the Intel NUC 13 Pro (117x112x54, medium): the P350 "
+                   "is the unit Jared is fitting, RT3.",
     "drawer_slide_side_clear": "https://www.accuride.com/hardware/3832 -- the 3832 "
                   "series sheet: \"clearance required .50in +0.031/-0.0 [12.7mm "
                   "+0.8/-0.0]\", and the slides may not function with less than "
@@ -128,12 +136,6 @@ SOURCES = {
              "SIZE drawing: 29.7 overall, flange 2.2 thick, 26 x 31 flange, "
              "round 24 cutout, two 3.5 holes on a 19 x 24 diagonal. thepenglin.com "
              "carries no drawings, only links back to Amazon.",
-    "PL229": "https://www.amazon.com/s?k=PENGLIN+PL229 -- UNRESOLVED 2026-09-03. "
-             "No PENGLIN listing found on amazon.com or thepenglin.com carries "
-             "Model Number PL229; the model numbers the listings do carry are "
-             "PL163N, PL171, PL183, PL204, PL207, PL219, PL259, PL370, PL385, "
-             "PL410. Read the number off the part or the order and re-run the "
-             "capture; until then every PL229 value is None.",
     "45-682-292": "https://www.ergodirect.com/attachments/doc/e3df7e14535acb3b8540cb5b4845df8fa258d971/drawing-ergotron-lx-pro-desk-monitor-arm.pdf"
                   " -- Ergotron DIM-LXproArm dimensional illustrations rev "
                   "11/12/2024, plus the ErgoDirect spec table at "
@@ -248,11 +250,12 @@ SOURCES = {
 # bag part numbers are per size and do not interchange, so both live on the same
 # row as the name and neither can drift away from it again.
 #
-#   CT 15      457 x 308 x 429    15 L    130 m3/h  fitted, CALIPERED
-#              (the spec table's 470 x 320 x 435 also had W and D the wrong way
-#               round, which is why the row below is now the caliper's; the
-#               airflow column is the EXTRACTOR figure, not the turbine's, and
-#               it read 130 CFM here until 2026-09-04 -- see the row)
+#   CT 15      470 x 320 x 435    15 L    130 m3/h  fitted, DATASHEET (RT6)
+#              (re-taken 2026-09-04 from the festoolusa published L x W x H; the
+#               earlier caliper read 457 x 308 x 429 was ~6.4mm short on height
+#               and undersized W and D. The airflow column is the EXTRACTOR
+#               figure, not the turbine's, and it read 130 CFM here until
+#               2026-09-04 -- see the row)
 #   CT 26 EI   630 x 365 x 540    26 L              never fitted
 #   CT 36 EI   630 x 365 x 596    36 L              WITHDRAWN 2026-09-03
 #   CT 48 EI   740 x 406 x 1005   48 L              will not fit, ever
@@ -260,9 +263,11 @@ SOURCES = {
 EXTRACTORS = {
     "CT15": {
         "name": "Festool CT 15 HEPA CLEANTEC",
-        "env": (457.2, 307.975, 428.625),   # CALIPERED 2026-09-02. Supersedes the
-                                        # festoolusa spec table's 470 x 320 x 435,
-                                        # which was also transposed in W and D.
+        "env": (470.0, 320.0, 435.0),   # DATASHEET (RT6, 2026-09-04): festoolusa
+                                        # published L x W x H. Supersedes the
+                                        # 2026-09-02 caliper (457.2 x 307.975 x
+                                        # 428.625), which read ~6.4mm short on
+                                        # height. CONFIDENCE: datasheet.
         "capacity_l": 15,
         # AIRFLOW, CORRECTED 2026-09-04. The manual's data table row "Max.
         # suction capacity (air), extractor/turbine" carries TWO figures:
@@ -343,16 +348,6 @@ PL183 = {
                                     # length behind the body is not on the sheet
 }
 
-PL229 = {
-    "name": "PENGLIN PL229 -- identity UNRESOLVED, see SOURCES",
-    "cutout": None,                 # MEASURE, all of it: no listing carries
-    "cutout_d": None,               # this model number. Read it off the part
-    "flange": None,                 # or the order, then re-run the capture.
-    "flange_t": None,
-    "body_behind_flange": None,
-    "panel_t_range": None,
-}
-
 LX_PRO_ARM = {                      # Ergotron 45-682-292, the SOURCES key
     "name": "Ergotron LX Pro desk arm, matte black, 45-682-292",
     "vesa": ((75.0, 75.0), (100.0, 100.0)),     # MIS-D 100/75, spec statement
@@ -415,7 +410,6 @@ ct15_plug_lead = {
 CATALOG = {
     "UPTJ14": UPTJ14,
     "PL183": PL183,
-    "PL229": PL229,
     "45-682-292": LX_PRO_ARM,
     "motion_controller_env": motion_controller_env,
     "motion_controller_mount": motion_controller_mount,
@@ -450,14 +444,6 @@ CATALOG_MEASURE_HINTS = {
                   "face on the RIGHT edge: the cable exit and its bend room.",
     "PL183.cable_behind": "Straight length of the mating USB-C plug behind "
                   "the body: depth the console plate needs behind the panel.",
-    "PL229.cutout": "Whole block. First read the model number off the part or "
-                  "the order; no listing on amazon.com or thepenglin.com "
-                  "carries PL229.",
-    "PL229.cutout_d": "Cutout diameter, if round.",
-    "PL229.flange": "Flange W x H.",
-    "PL229.flange_t": "Flange thickness.",
-    "PL229.body_behind_flange": "Body length behind the flange face.",
-    "PL229.panel_t_range": "Panel thickness the thread or clip accepts.",
     "45-682-292.clamp_plate_holes": "Hole field on the 2-piece clamp's "
                   "vertical plate: what J04 lands on the leg's 40x40 pattern "
                   "or the Carbide bracket.",
@@ -479,7 +465,9 @@ CONFIDENCE = {
     "table_h": "measured",   # 2026-09-02: levelling feet ARE on the machine, so
                              # it is Carbide's 945 config and not the 893 one.
     "clear_h_min": "measured",   # floor to the LOWEST obstruction, which is the
-                             # bottom of a Y gusset. The floor of the envelope.
+                             # bottom of an X gusset (839.9875 - 180.975 = 659.01,
+                             # 4.96mm off the tape), not a Y gusset. The floor of
+                             # the envelope.
     "z_beam": "measured",    # 2026-09-03 tape, floor to the underside of the
                              # frame beam directly. Was derived from
                              # clear_h_min + gusset_y_h; see SOURCES.
@@ -530,7 +518,7 @@ CONFIDENCE = {
     "hose_bend_mult": "assumption",  # nobody publishes one. Flagged, not sourced.
     "vfd_vent_clear": "high",    # carbide 65mm spindle doc, 30cm
     "vfd_mount_pitch": "high",   # carbide 65mm spindle doc
-    "mini_pc_env": "medium",     # NUC 13 Pro tall chassis, as the class of thing
+    "mini_pc_env": "datasheet",  # Lenovo P350 Tiny, PSREF W x D x H
     # ---- catalog capture 2026-09-03 (C00). "datasheet" = read off the maker's
     # page or the listing SOURCES names. A dotted key is one value inside that
     # block that the sources do not state; it is None and reads MEASURE.
@@ -540,7 +528,6 @@ CONFIDENCE = {
     "UPTJ14.usb_c_offset": "MEASURE",
     "PL183": "datasheet",
     "PL183.cable_behind": "MEASURE",
-    "PL229": "MEASURE",          # the whole block: no listing carries PL229
     "45-682-292": "datasheet",
     "45-682-292.clamp_plate_holes": "MEASURE",
     "motion_controller_env": "MEASURE",     # forum lead only, not a datasheet
@@ -919,10 +906,12 @@ class Station:
                                     # number that was never the right config.
     clear_h_min: float = 654.05     # MEASURED 2026-09-02, 25-3/4 in, floor to the
                                     # LOWEST obstruction under the frame, which is
-                                    # the bottom of a Y gusset. This is the FLOOR of
-                                    # the clearance envelope and not the envelope:
-                                    # anything whose footprint is smaller than the
-                                    # leg opening asks clear_z(x, y) instead.
+                                    # the bottom of an X gusset (839.9875 - 180.975
+                                    # = 659.01, 4.96mm off the tape), not a Y
+                                    # gusset. This is the FLOOR of the clearance
+                                    # envelope and not the envelope: anything whose
+                                    # footprint is smaller than the leg opening
+                                    # asks clear_z(x, y) instead.
     z_beam: float = 839.9875        # MEASURED 2026-09-03, 33-1/16 in, floor to the
                                     # UNDERSIDE OF THE FRAME BEAM directly, per the
                                     # standing request in check(). Supersedes the
@@ -1006,11 +995,11 @@ class Station:
 
     # ---- bays -------------------------------------------------------------
     bay_brain_d: float = 250.0      # rear band, full width
-    bay_stock_w: float = 220.0      # DEAD ESTIMATE. Stock is the remainder and
-                                    # Datums.stock_clear_w is the real number;
-                                    # this is kept only so check() can report
-                                    # how far the brief's arithmetic was out.
-    bay_hands_w: float = 400.0      # drawer width
+    bay_hands_w: float = 412.0      # drawer opening + the right end-wall
+                                    # doubler ply (12mm): the blind M6 leg-joint
+                                    # insert needs 24mm of end wall at 12mm
+                                    # stock, so the end walls are doubled and the
+                                    # hands bay grows one ply to keep 400 clear.
 
     # ---- drawer slides, as the maker specifies them ------------------------
     # The BOM buys 500mm full-extension side-mount slides, Accuride 3832 class,
@@ -1036,16 +1025,17 @@ class Station:
     lungs_lining_t: float = 12.0    # MLV plus open-cell foam, bonded, per side
     lungs_slide_t: float = 12.7     # slide member plus its clearance, per side
     lungs_side_clear: float = 20.0  # hand clearance, carriage to lining, per side
-    lungs_spacer_plies: int = 3
+    lungs_spacer_plies: int = 5
     """Plies of the carcass birch laminated into the block the LEFT slide's
     cabinet member screws to, standing off the left end wall's inner face.
     RULED 2026-09-04 (Jared): "lungs bay +40 with the left slide on a 40
     spacer so the tray clears the toe". The stile that replaced the flange
     band carries the lungs door's knuckle at its inner edge, and the tray has
-    to pass the knuckle, not only the toe: ``lungs_carriage.spacer_needed``
-    comes out at 45.8, so 40 no longer clears and the spacer is the first
-    one-material block past it, three plies (54). The bay derives from it and
-    lands at 460, not 440. SOURCE "lungs_spacer_plies"; CONFIDENCE choice."""
+    to pass the knuckle, not only the toe. At 12mm house stock the tray needs
+    about 52.8 of spacer to clear the stile's inner edge, the knuckle and a
+    running clearance, so the block is five plies of the carcass birch (60);
+    at the old 18mm three plies gave 54. The bay derives from it. SOURCE
+    "lungs_spacer_plies"; CONFIDENCE choice."""
 
     # ---- the Kerf fix set, RULED 2026-09-04 (evening) ---------------------
     # Every door and drawer front is INSET between a fixed stile and a
@@ -1120,18 +1110,22 @@ class Station:
                                             # 1.5 pays for the air having to turn
                                             # through 90 degrees to leave.
 
-    mini_pc_env: tuple[float, float, float] = (117.0, 112.0, 54.0)   # NUC 13 Pro tall
+    mini_pc_env: tuple[float, float, float] = (179.0, 36.5, 182.9)   # Lenovo P350 Tiny,
+                                    # stood UPRIGHT on its 37mm-flat profile: big
+                                    # face (179 W) to the reveal, only 36.5 deep
+                                    # into the brain band, 182.9 tall (RT3, PSREF)
 
     # ---- sheet goods ------------------------------------------------------
     carcass_t: float = CARCASS_T
     panel_t: float = PANEL_T
     stock_module: float = STOCK_MODULE
     sheet_slot: tuple[float, float] = (600.0, 600.0)   # HALF blank on edge
-    sheet_pitch: float = GRID * 2   # slot spacing in the rack. RULING 11,
-                                    # 2026-09-03: two grid modules. At one
-                                    # module an 18mm blank plus 1mm a side is
-                                    # a 20mm slot at 20mm pitch, and the comb
-                                    # has no teeth; 9 blanks in the bay, not 19.
+    sheet_pitch: float = GRID       # slot spacing in the rack. RULING 19,
+                                    # 2026-09-04 REVERSES ruling 11: one grid
+                                    # module, 20mm pitch. At 12mm house stock a
+                                    # blank plus clearance is a ~14mm slot in a
+                                    # 20mm pitch, so the comb keeps a 6mm tooth
+                                    # and the bay holds 18 blanks, not 9.
     laser_blank: tuple[float, float] = QUARTER
 
     # ---- extraction -------------------------------------------------------
@@ -1183,15 +1177,6 @@ class Station:
         "any second earth rod or building steel tap",
     )
 
-    def front_bays(self) -> float:
-        """Sum of the three front bay widths."""
-        return self.bay_lungs_w + self.bay_stock_w + self.bay_hands_w
-
-    def slack(self) -> float:
-        """Millimetres left over across the front. The brief's warning is that
-        this is currently zero against an estimated leg_x_inner."""
-        return self.leg_x_inner - self.front_bays()
-
     def front_bay_d(self) -> float:
         """Usable depth of a front bay: the leg opening less the rear brain band
         and the panel that divides them."""
@@ -1201,10 +1186,6 @@ class Station:
         """Working bend radius for the extraction hose. An assumption, derived so
         that it moves when hose_id moves."""
         return self.hose_id * self.hose_bend_mult
-
-    def stock_capacity(self) -> int:
-        """HALF blanks the station rack holds on edge."""
-        return int(self.bay_stock_w // self.sheet_pitch)
 
     # ---- the fitted extractor ---------------------------------------------
 
@@ -1232,7 +1213,7 @@ class Station:
     @property
     def lungs_spacer(self) -> float:
         """Thickness of the left slide's spacer block: plies of the carcass
-        birch. 54mm at three. DERIVED."""
+        birch. 60mm at five plies of 12mm stock. DERIVED."""
         return self.lungs_spacer_plies * self.carcass_t
 
     def lungs_allowance(self) -> float:
@@ -1369,18 +1350,6 @@ def check(s: Station = STATION) -> list[str]:
     """
     problems: list[str] = []
 
-    if s.slack() < 0:
-        problems.append(
-            f"front bays overflow the leg opening by {-s.slack():.0f}mm "
-            f"({s.front_bays():.0f} into {s.leg_x_inner:.0f}). "
-            "Stock is the bay that gives; the room's wall rack absorbs it."
-        )
-    elif s.slack() == 0:
-        problems.append(
-            "front bays sum to leg_x_inner with zero slack. This is the brief's "
-            "open item: one tape measurement between the inside faces of the legs."
-        )
-
     if CONFIDENCE.get("leg_x_inner") == "low":
         problems.append(
             f"leg_x_inner is still {s.leg_x_inner:.0f}mm scaled off a photograph, "
@@ -1420,15 +1389,21 @@ def check(s: Station = STATION) -> list[str]:
             "is not the whole session yet."
         )
 
-    if CONFIDENCE.get("z_beam") != "measured":
+    # clear_h_min was tape-read to the bottom of an X gusset, not a Y gusset
+    # (SOURCES, CONFIDENCE). Both z_beam and clear_h_min are independently
+    # measured now, so this always runs rather than only while z_beam was
+    # derived: it is a cross-check between two tape readings, not a gate on
+    # either one's confidence.
+    CLEAR_H_MIN_TOL = 10.0  # mm, tape
+    clear_h_min_expected = s.z_beam - s.gusset_x_h
+    clear_h_min_diff = s.clear_h_min - clear_h_min_expected
+    if abs(clear_h_min_diff) > CLEAR_H_MIN_TOL:
         problems.append(
-            f"z_beam {s.z_beam:.2f}mm is DERIVED and not measured. The tape read "
-            f"{s.clear_h_min:.2f}mm from the floor to the LOWEST obstruction, which "
-            f"is the bottom of a Y gusset, and the gusset's own {s.gusset_y_h:.1f}mm "
-            f"was added to it. That implies a frame beam {s.table_h - s.z_beam:.2f}mm "
-            "thick, which is thin for a member carrying a gantry. Measure floor to "
-            "the UNDERSIDE OF THE FRAME BEAM directly and write the answer into "
-            "z_beam. Everything above the gussets moves with it."
+            f"clear_h_min {s.clear_h_min:.2f}mm disagrees with z_beam - gusset_x_h "
+            f"({s.z_beam:.2f} - {s.gusset_x_h:.1f} = {clear_h_min_expected:.2f}mm) "
+            f"by {clear_h_min_diff:.2f}mm, outside the {CLEAR_H_MIN_TOL:.0f}mm tape "
+            "tolerance. clear_h_min is supposed to be the bottom of an X gusset; "
+            "re-tape both numbers."
         )
 
     problems.append(
@@ -1653,9 +1628,6 @@ if __name__ == "__main__":
     print(f"fitted:  {s.spec['name']}  {s.extractor_env[0]:.0f} x "
           f"{s.extractor_env[1]:.0f} x {s.extractor_env[2]:.0f}")
     print(f"lungs bay {s.bay_lungs_w:.0f}mm clear")
-    print(f"front bays {s.front_bays():.0f}mm into {s.leg_x_inner:.0f}mm, "
-          f"slack {s.slack():.0f}mm")
-    print(f"station rack holds {s.stock_capacity()} HALF blanks on edge")
     print(
         f"ceiling {s.clear_h_min:.1f} at the leg faces, {s.z_beam:.1f} at the beam; "
         f"full height only over x {s.gusset_x_intrude:.1f}.."

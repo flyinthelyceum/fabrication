@@ -84,10 +84,10 @@ by its span.
 Three of the five registers are capsule ends, and the task's words were
 "screw-line or hinge holes". That is a deviation from the letter, chosen
 because the drawer fronts, the lungs door and the comb have no round hole on
-the carved face and the rule was no new holes. It is workable, and it is not
-this module's to accept quietly: ``check_callouts`` names every register
-that is not a round hole as a standing RULING WANTED line, so the gate
-carries it until Jared rules.
+the carved face and the rule was no new holes. RULED (J2, 2026-09-04): the
+capsule-end register is ACCEPTED AS BUILT, so ``check_callouts`` no longer
+raises it. It still flags a register that is not a void, or one that bears
+so little of its pin the panel would rattle: those are defects, not the ruling.
 """
 
 from __future__ import annotations
@@ -460,7 +460,9 @@ def check_callouts(
     # cannot make a round hole look like half of one
     z_face = thickness if callouts[0].face == "front" else 0.0
     skin = (z_face - SKIN, z_face) if callouts[0].face == "front" else (0.0, SKIN)
-    bearing: list[float] = []
+    # RULED (J2, 2026-09-04): the capsule-end register is ACCEPTED AS BUILT.
+    # The "REGISTER IS NOT A ROUND HOLE" RULING WANTED note is retired; the
+    # not-a-void and rattle checks below stay, because those are real defects.
     for x, y, dia in (register.a, register.b):
         r = dia / 2
         inside = _probe(part, x, y, 0.0, r - PIN_EPS, thickness)
@@ -471,27 +473,13 @@ def check_callouts(
             )
         ring = _probe(part, x, y, r + PIN_EPS, r + 3 * PIN_EPS, thickness, skin)
         # the same ring through a solid disc AT the datum: what 100% bearing is.
-        # (Before this fix the disc sat at the origin, ``full`` read 0 and the
-        # rattle test below could never fire.)
         disc = extrude(Circle(r + 4 * PIN_EPS), amount=thickness).moved(Location((x, y, 0)))
         full = _probe(disc, x, y, r + PIN_EPS, r + 3 * PIN_EPS, thickness, skin)
-        bearing.append(ring / full)
         if ring < 0.45 * full:
             notes.append(
                 f"{tag}register at ({x:.1f}, {y:.1f}) bears on {100 * ring / full:.0f}% of a "
                 f"{dia:.1f}mm pin; a hole gives 100, a capsule end 50. The pin would rattle."
             )
-    if min(bearing) < 0.95:
-        # workable, and not the spec's words: say so on the gate, do not bury
-        # it under the rattle threshold above
-        notes.append(
-            f"{tag}REGISTER IS NOT A ROUND HOLE, standing note. The register is "
-            f"{register.what}, capsule ends the pins bear on at {100 * bearing[0]:.0f}% and "
-            f"{100 * bearing[1]:.0f}% (a hole gives 100). The task named 'screw-line or hinge "
-            "holes'; this part has none on its carved face and no new holes were allowed, so "
-            "the pins seat in the half circle plus the slot flanks, which locates the panel. "
-            "RULING WANTED: accept the capsule-end register as built, or name two holes."
-        )
     if register.span < REGISTER_SPAN_MIN:
         notes.append(
             f"{tag}register datums are {register.span:.1f}mm apart, under "

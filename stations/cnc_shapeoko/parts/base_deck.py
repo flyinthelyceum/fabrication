@@ -182,12 +182,28 @@ X_RAIL_CY = (PLINTH_Y[0] + T / 2, PLINTH_Y[1] - T / 2)
 Y_RAIL_CX = (
     PLINTH_X[0] + T / 2,
     D.wall_x[1] + T / 2,
+    (D.wall_x[1] + D.wall_x[2]) / 2 + T / 2,
     D.wall_x[2] + T / 2,
     PLINTH_X[1] - T / 2,
 )
 """Cross rails run under the two internal bay walls, so the load path from a
 vertical goes straight to the floor, and under the two perimeter lines. The end
-walls sit PLINTH_SETBACK outboard of the perimeter rails and cantilever it."""
+walls sit PLINTH_SETBACK outboard of the perimeter rails and cantilever it.
+
+RULING 19 (2026-09-04) adds a FIFTH rail, the middle one, under the STOCK bay
+at its own midspan (~x 647): at 12mm house stock the stock deck carries 18
+blanks on edge at 20mm pitch, and that load over the full lungs/stock-to-
+stock/hands span deflects past L/360. The mid rail halves the span and the
+load per span, so the deck passes with margin. It clears the brain intake
+(checked below), which sits inboard of it."""
+
+STOCK_MID_RAIL_CX = Y_RAIL_CX[2]
+"""The fifth (middle) cross rail is GLUED to the deck's underside, not screwed
+down through it: at the 20mm ruling-19 pitch the stock grooves run over it and
+a deck-screw line would land in a groove. It is a mid-span BEARING support --
+the deck rests on it and is bonded to its solid underside, and the groove in
+the deck's TOP face over it does not touch the bond. So it takes no deck-screw
+line and the groove-over-rail check skips it."""
 
 Y_RAIL_SPAN = (PLINTH_Y[0] + T, PLINTH_Y[1] - T)
 Y_RAIL_LEN = (Y_RAIL_SPAN[1] - Y_RAIL_SPAN[0]) + 2 * DADO_D
@@ -365,6 +381,8 @@ def build_deck() -> Part:
             cbore_depth=DECK_SCREW_CBORE_DEPTH,
         )
     for cx in Y_RAIL_CX:
+        if abs(cx - STOCK_MID_RAIL_CX) < EPS:
+            continue        # glued mid-stock rail: no deck-screw line (grooves run over it)
         p -= screw_line(
             (cx, Y_RAIL_SPAN[0]),
             (cx, Y_RAIL_SPAN[1]),
@@ -631,6 +649,8 @@ def check_base_deck() -> list[str]:
             "head would stand in a groove floor"
         )
     for cx in Y_RAIL_CX:
+        if abs(cx - STOCK_MID_RAIL_CX) < EPS:
+            continue        # glued bearing rail: bonded to the underside, no screw through a groove
         for gx in STOCK_GROOVE_X:
             if abs(gx - cx) < r + T / 2:
                 notes.append(

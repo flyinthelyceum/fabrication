@@ -56,8 +56,8 @@ THE SHEET SIZE IS NEVER AN ARGUMENT
 ===================================
 
 Nobody tells this module what paper the trace is on. Each size in
-``trace_sheet.SIZES`` carries its own quartet of ArUco ids -- LETTER 0-3, A4
-4-7, TABLOID 8-11, A3 12-15, A2 16-19, ARCH_B 20-23 -- so the markers in the
+``trace_sheet.SIZES`` carries its own quartet of ArUco ids -- LETTER 0-3,
+TABLOID 8-11 (RT4 trimmed the rest) -- so the markers in the
 photo name the geometry, and ``identify`` looks it up. Two consequences worth
 having:
 

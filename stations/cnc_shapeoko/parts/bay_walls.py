@@ -112,7 +112,6 @@ from lib.house import GRID
 from stations.cnc_shapeoko.carcass import (
     DADO_D,
     DATUMS,
-    ISOLATOR_H,
     RABBET_D,
     ROUTER_D,
     SCREW_CLEAR_D,
@@ -856,7 +855,7 @@ def check_bay_walls(d: Datums = D) -> list[str]:
     # The real stack stands on a slide member, not on a bare platform: a
     # side-mount cabinet member cannot sit lower than the deck face. Compare the
     # real stack against the bay rather than against lungs_stack_h's assumption.
-    needed = SLIDE_MEMBER_H + ISOLATOR_H + s.extractor_env[2] + SERVICE_GAP
+    needed = SLIDE_MEMBER_H + s.extractor_env[2] + SERVICE_GAP
     over = needed - d.bay_h
     if over > 0:
         notes.append(
