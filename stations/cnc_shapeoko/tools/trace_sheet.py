@@ -572,6 +572,16 @@ def draw_card(pdf_path: Path) -> Path:
     return pdf_path
 
 
+# ================================================================ height classes
+
+GAUGE_SLOTS = (10.0, 20.0, 30.0, 40.0, 50.0)
+"""Slot widths, the height classes. SOURCE: spec v3. A tool whose thickness
+slides into a slot is at most that class. The gauge's STL generator went with
+the subtract pass (bd13c82, 2026-09-05); the block in Drawer 1, the sheet's
+HEIGHT box and ``capture_ingest.HEIGHT_CLASSES`` all still read these five, so
+the widths stay. CONFIDENCE: spec."""
+
+
 # ================================================================ tracing collar
 
 COLLAR_OD = 14.0
