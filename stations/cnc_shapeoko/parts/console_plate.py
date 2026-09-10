@@ -555,16 +555,6 @@ DEVICES: tuple[Device, ...] = (
         front=(26.0, 31.0), behind=(24.0, 24.0, 27.5),
     ),
     Device(
-        "SCREEN", "PENGLIN PL183 USB-C panel-mount coupler, D-type: the "
-        "touchscreen's video run out to the Ergotron arm (I91)",
-        "d_type", 254.0, LOWER_ROW_Y,
-        "as USB_1. The third coupler comes from the same 5-pack the listing "
-        "sells.",
-        "datasheet (C00 capture)",
-        bore_d=24.0, d_holes=((-9.5, 12.0), (9.5, -12.0)), d_hole_d=3.5,
-        front=(26.0, 31.0), behind=(24.0, 24.0, 27.5),
-    ),
-    Device(
         "TOF", "Adafruit 3967, VL53L1X time-of-flight breakout, behind a 6mm "
         "bore at the plate's top edge",
         "bore", 327.0, TOF_Y,
@@ -1431,9 +1421,23 @@ def check_console_plate(d: Datums = D) -> list[str]:
         f"{CHASE - 27.5:.0f}mm. MEASURE THIS with the cable that will live there."
     )
     notes.append(
-        "all three USB-C cutouts are cut as PL183, from the listing's 5-pack. "
-        "MEASURE THIS: read the number off the third bulkhead; if it is not a "
-        "PL183 its cutout is not cut."
+        "both USB-C cutouts are cut as PL183, from the listing's 5-pack. "
+        "MEASURE THIS: read the number off the bulkheads; if they are not "
+        "PL183 the cutouts are not cut."
+    )
+    notes.append(
+        f"PL183.panel_t_range is 2-10mm (params, listing) and the plate is "
+        f"{house.CARCASS_T:.0f}mm. "
+        "UNMODELLED: a rear counterbore around each D cutout, or a coupler rated for "
+        "the plate. Separate decision, 2026-09-09."
+    )
+    notes.append(
+        "UNMODELLED: the screen cable gland. RULED 2026-09-09: the touchscreen's two "
+        "cables (HDMI to mini HDMI, USB-A to USB-C, 15ft each) run in the Ergotron "
+        "arm's channels and enter the carcass through a gland at the arm mount (J04, "
+        "the Carbide monitor-mount location), not through this plate. The SCREEN "
+        "coupler that stood at x=254 is gone (branch console-hdmi-bulkhead keeps "
+        "the HDMI D-type dead end: the NAHDMI-W takes a 2mm panel)."
     )
 
     # -- the drawers: exactly those crossing the band, each by exactly K

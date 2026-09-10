@@ -329,6 +329,11 @@ UPTJ14 = {
     "usb_c_offset": None,           # MEASURE: port centre from the bottom
                                     # edge and from the back face.
     "hdmi": "mini HDMI, same edge as the USB-C pair, outboard of them",
+    "runs": "RULED 2026-09-09: TWO cables to the panel, HDMI -> mini HDMI "
+            "(video) and USB-A -> USB-C (touch + power), 15ft each, in the "
+            "Ergotron arm's cable channels, into the carcass through a gland "
+            "at the arm mount (J04), NOT through the console plate. The P350 "
+            "Tiny's USB-C carries no video (Lenovo PSREF, 2026-09-08).",
 }
 
 PL183 = {
@@ -372,6 +377,8 @@ LX_PRO_ARM = {                      # Ergotron 45-682-292, the SOURCES key
                                     # numbers). J04's leg-pattern fit-check
                                     # needs it.
     "grommet": "not included; 98-728-292 is the grommet base",
+    "cable_route": "the arm's channels carry the screen's two cables to a "
+                   "gland at the mount; see UPTJ14['runs'] (ruling 2026-09-09)",
 }
 
 motion_controller_env = None        # W x H x D. MEASURE. Carbide publishes no
