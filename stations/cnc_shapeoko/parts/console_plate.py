@@ -33,21 +33,31 @@ the meter bezels stand proud), and the plate sits in a 3mm relief over the
 wall's aperture instead of a rabbeted tongue-and-lip. Same day: a second
 meter, SPEED beside LOAD, and the pendant port is USB-C, not GX16.
 
+Ruling 2026-09-09 (console_subtract, Jared, calipers on the Carbide boxes):
+the Carbide power pendant is NOT set into the plate as a box. Its E-stop and
+feed-hold holes both read 0.865in (21.97mm), the 22mm standard, so the two
+buttons come OUT of the box and go through this plate as two 22mm devices on
+their own leads back to the Carbide controller; the box's ALLOCATED envelope
+and its reference solid are gone. The VFD box's spindle button reads 0.743in
+(18.87mm), a 19mm anti-vandal, so SPINDLE is that button, on hand, not a
+Schneider 22. The state display is struck ("carbide motion logs all of it"),
+the ToF sensor is struck, the two USB-C ports stay as thumb-drive ports to
+the PC. Reach order from the plate's front edge: STOP, HOLD, then the key.
+
 
 WHAT THIS PART OWNS
 ===================
 
   * CONSOLE_BAND: the region of the right end wall the console may occupy
   * the plate: 3mm stainless (``PLATE_T``), set FLUSH with the wall's outer
-    face in a relief over a through-aperture; every device cutout, the two
-    meters' stud holes, the state display's window
+    face in a relief over a through-aperture; every device cutout and the
+    two meters' stud holes
   * the cutter the right end wall subtracts to receive the plate
     (``wall_cutter``), so the aperture and the plate are one set of numbers
   * the CHASE behind the plate: the air the devices need (``CHASE``), the
     birch that walls it off from the drawers (a cheek, a floor rib) and the
     clear acrylic reveal that closes its front
-  * the keep-out the drawers are checked against, as a reference solid, and
-    the E-stop module's ALLOCATED envelope inside it
+  * the keep-out the drawers are checked against, as a reference solid
   * ``narrowed_openings`` / ``DRAWER_GIVE``: what the drawers lose
   * the E-stop's callout (C17), Enduramark-marked under the mushroom guard
     at ``estop_callout_anchor``, sized by ``estop_callout_band`` to the steel
@@ -96,20 +106,17 @@ Depth as the whole product, head included, and the sheet does not split front
 from back, so the whole figure is taken as behind-plate. Conservative by the
 head's projection, and it drives the chase honestly rather than by a guess.
 
-The Carbide E-stop module (the Shapeoko 5 Pro power pendant, in hand, GX16
-leads) has NO published envelope: Carbide publishes none, the community asked
-(thread 58934) and got nothing, and the printable home base is an STL rather
-than a drawing. Its row is an ALLOCATION -- the room reserved for it on its
-bracket behind the plate -- not a measurement, and ``CONFIDENCE`` says so. It
-does not drive ``CHASE``; the check confirms the allocation fits inside the
-chase with the margin and reports MEASURE THIS until the pendant is calipered.
+The three Carbide buttons (E-stop, feed hold, spindle) are ON HAND, pulled
+from the Shapeoko 5 Pro power pendant and the VFD box. Their HOLES are
+measured (2026-09-09, Jared, calipers); the buttons' bodies behind the plate,
+their flanges and the panel range they clamp are not, so those rows carry
+XB4-class figures marked assumption and the check reports MEASURE THIS. None
+of them drives ``CHASE``: the key switch does.
 
 Nothing is recessed (2026-09-09). The two meters mount the way a panel meter
 does: body through a bore, bezel on the face, two studs through the plate.
-The state display's PCB sits behind the plate on standoffs and its glass
-reads through a rectangular WINDOW (kind ``slot``) with a small corner radius
-the waterjet leaves anyway. There are no pockets and no panes; a 3mm plate
-has no depth to pocket.
+There are no pockets, no panes and no windows; a 3mm plate has no depth to
+pocket, and nothing reads through it since the state display was struck.
 
 22mm-standard devices get a 22.3mm bore, which is Schneider's own "Ø 22.3 mm
 0/+0.4" figure and the lower edge of the band every 22mm maker quotes.
@@ -194,7 +201,6 @@ __all__ = [
     "RIB_NAME",
     "REVEAL_NAME",
     "KEEPOUT_NAME",
-    "ESTOP_ENV_NAME",
     "CONSOLE_Y",
     "CHASE",
     "CHASE_MARGIN",
@@ -217,7 +223,6 @@ __all__ = [
     "build_rib",
     "build_reveal",
     "build_keepout",
-    "build_estop_env",
     "panes",
     "placed_all",
     "joint_table",
@@ -236,7 +241,6 @@ CHEEK_NAME = "console_cheek"
 RIB_NAME = "console_rib"
 REVEAL_NAME = "console_reveal"
 KEEPOUT_NAME = "console_keepout"
-ESTOP_ENV_NAME = "estop_module_env"
 MARK_LAYER = "MARK"
 
 D: Datums = DATUMS
@@ -360,16 +364,32 @@ UPPER_ROW_Y = 78.0
 LOWER_ROW_Y = 37.0
 """Plate-local Y of the two 22mm/USB rows (0 at the plate's bottom edge), in a
 plate 120 tall whose usable field is LIP..h-LIP = 12..108. The upper row puts
-a 47mm XB4 body at 54.5..101.5, inside the land; the lower row puts the
-OLED's 33mm body at 20.5..53.5, a millimetre under the XB4s.
+a 47mm XB4 body at 54.5..101.5, inside the land; the lower row carries the
+three PL183 couplers (24mm bodies at 25..49) and nothing else since the state
+display was struck (2026-09-09).
 CONFIDENCE: chosen, checked by ``check_console_plate``."""
 
-ROW_22_X: tuple[float, float, float, float] = (112.0, 152.0, 192.0, 232.0)
-"""Plate-local X of the four 22mm devices on the upper row: ARM, SPINDLE,
-DUST, BAG_LAMP, at ``PITCH_22_MIN`` exactly. Was 115/160/205/250 on a 45
-pitch; the SPEED meter (2026-09-09) takes the 70mm the row gave up, and 40 is
-the pitch the XB4 sheet allows. ARM's body stays 2mm clear of the E-stop's
-allocation behind the plate. CONFIDENCE: chosen, checked."""
+ESTOP_X = 38.0
+FEED_HOLD_X = 78.0
+"""Plate-local X of the two Carbide buttons on the upper row, RULED 2026-09-09:
+the E-stop at the plate's front corner, the feed hold inboard of it, both at
+``PITCH_22_MIN`` to each other and to ARM at ``ROW_22_X[0]``. 38 is as far
+forward as the EMERGENCY STOP word lets it go at a legible height: the word
+is fit to the steel between the front screw margin and the guard's centreline
+(``callouts_local``). Reach order from where the operator stands: STOP is
+the corner you slap without looking, HOLD the button you use every job, then
+the key. CONFIDENCE: chosen, checked."""
+
+ROW_22_X: tuple[float, float, float, float] = (118.0, 158.0, 198.0, 238.0)
+"""Plate-local X of the four switch-row devices inboard of the Carbide pair:
+ARM, SPINDLE, DUST, BAG_LAMP, at ``PITCH_22_MIN`` exactly. Was 115/160/205/250
+on a 45 pitch; the SPEED meter (2026-09-09) takes the 70mm the row gave up,
+and 40 is the pitch the XB4 sheet allows. Then 112/152/192/232; the row moved
+6 inboard the same day so the E-stop's word clears the plate's front edge,
+which puts the lamp's bezel edge on SPEED's bezel edge (253, touching, not
+overlapping) and its bore 7.9 from SPEED's stud hole (web 6.35). SPINDLE
+is a 19 since 2026-09-09 and could sit closer; it keeps the 40 so the row
+reads as one row. CONFIDENCE: chosen, checked."""
 
 METER_X: tuple[float, float] = (285.0, 355.0)
 """Plate-local X of the two meters, SPEED then LOAD, reading left to right the
@@ -377,24 +397,23 @@ way the switch row does: the cause you set, then the effect you read. Faces
 64 wide with 6 between them, bores 19.5 apart; LOAD's face stops 1mm inside
 the margin. CONFIDENCE: chosen, checked."""
 
-ESTOP_Y = 76.0
 PENDANT_Y = 29.0
-"""The E-stop's 60mm allocation is taller than an XB4 body, so its bore sits
-where the allocation (46..106) clears the top margin by 2, and the pendant
-port under it (PL183 body 17..41, 2026-09-09) stays 5 under the allocation.
-The callout band between the two is 11.5. CONFIDENCE: chosen, checked."""
+"""The pendant port sits under the E-stop on the lower row's line for a
+PL183 (body 17..41); the E-stop itself is on ``UPPER_ROW_Y`` with the other
+22s since 2026-09-09 (it is a 22mm device, not a box). The callout band
+between the port's flange and the mushroom guard is 13.5.
+CONFIDENCE: chosen, checked."""
 
 CALLOUT_ESTOP = "EMERGENCY STOP"
 """The word under the mushroom guard, V-carved (C17). SOURCE: task C17, the
 one callout on the E-stop; it names the device and is raw birch like every
 other word, never red. CONFIDENCE: spec. Its height is derived from
-``estop_callout_band``, the birch between the guard and the pendant's
+``estop_callout_band``, the steel between the guard and the pendant's
 flange, by ``callouts.fit_height``; the station's CALLOUT_H does not fit."""
 
 METER_Y = 50.0
 """Plate-local Y of the two meters: 56mm faces at 22..78 own the plate's right
-end, nothing shares that band, and the ToF sits over LOAD.
-CONFIDENCE: chosen, checked."""
+end, nothing shares that band. CONFIDENCE: chosen, checked."""
 
 METER_FRONT: tuple[float, float] = (64.0, 56.0)
 METER_BORE = 48.5 + 2 * DEVICE_CLEAR
@@ -407,16 +426,37 @@ M3 studs 52.5 apart 15 below centre). The real pair (Weston 301 class) is a
 hunt; when it lands these five numbers change together. CONFIDENCE:
 datasheet for the placeholder, MEASURE for the pair."""
 
-TOF_Y = 93.0
-"""Plate-local Y of the ToF bore, at the plate's top edge: the board's 17.5mm
-reaches 101.75, inside the tongue's outline, under the lip's screw line.
-CONFIDENCE: chosen."""
+CARBIDE_HOLE_22 = 21.97
+CARBIDE_HOLE_19 = 18.87
+"""What the Carbide boxes' button holes read. MEASURED 2026-09-09 (Jared,
+calipers): E-stop and feed hold 0.865in, the VFD box's spindle button 0.743in.
+The plate cuts the STANDARD cutouts those sizes name (``BORE_22``,
+``BORE_19``), not the readings; the readings are why the buttons are 22 and
+19 and nothing else. CONFIDENCE: measured."""
 
-ESTOP_ALLOC: tuple[float, float, float] = (GRID * 3.5, GRID * 3, GRID * 3)
-"""(W along the plate, H, depth behind the plate) RESERVED for the Carbide
-E-stop module on its bracket. NOT a measurement: see the module docstring.
-The depth is the brief's own "~60mm behind panel". CONFIDENCE: allocation.
-Never drives CHASE; ``check_console_plate`` reports MEASURE THIS."""
+BORE_19 = 19.0
+"""19mm anti-vandal cutout, nominal. The makers quote 19.0-19.2; the button
+on hand has not been read for its thread OD, so the nominal stands.
+MEASURE THIS with the button. CONFIDENCE: assumption."""
+
+ESTOP_BEHIND = 60.0
+FEED_HOLD_BEHIND = 57.0
+SPINDLE_BEHIND = 39.37
+"""Depth behind the plate of the three Carbide buttons. The spindle button is
+MEASURED 2026-09-09 (Jared, calipers): 1.55in behind its flange. The other
+two are NOT: the E-stop carries the brief's "~60mm behind panel", the feed
+hold an XB4 momentary's 57; MEASURE THIS with those two in hand. All under
+the key switch's 86, so none drives the chase. CONFIDENCE: measured (spindle),
+assumption (E-stop, feed hold)."""
+
+AV19_FLANGE = 21.82
+AV19_BODY: tuple[float, float] = (AV19_FLANGE, AV19_FLANGE)
+AV19_PANEL_T: tuple[float, float] = (1.0, 10.0)
+"""The spindle button's flange is MEASURED 2026-09-09 (Jared, calipers):
+0.859in over the flange. Its body behind the plate is taken as no wider than
+the flange (a 19mm anti-vandal's body is its thread, under the flange), and
+the panel range is the makers' 1-10mm; both assumption. CONFIDENCE: measured
+(flange), assumption (body, panel_t)."""
 
 XB4_BODY: tuple[float, float] = (30.0, 47.0)
 """(W, H) of a Harmony XB4 complete unit behind the plate, taken as centred on
@@ -432,11 +472,6 @@ socket 15.6 overall, M16x1 thread 8.6 long, flange Ø19, S19 nut. The mating
 plug goes in from OUTSIDE, so behind-plate is the socket plus solder tails.
 CONFIDENCE: datasheet."""
 
-OLED_BEHIND = 10.0
-TOF_BEHIND = 15.0
-"""Cable and pin room behind the two PCB-mounted instruments. Neither
-approaches the chase driver. CONFIDENCE: assumption."""
-
 @dataclass(frozen=True)
 class Device:
     """One console element and everything the plate has to cut for it.
@@ -446,8 +481,6 @@ class Device:
 
     kind      bore      a round through hole, ``bore_d``
               d_type    a round hole plus two diagonal screw holes (Neutrik D)
-              slot      a through window ``slot`` W x H, corners ``slot_r``,
-                        for an instrument mounted BEHIND the plate
     studs     (dx, dy) of through holes ``stud_d`` for a stud-mounted bezel
     front     (W, H) the device occupies ON the outer face: bezel or flange
     behind    (W, H, depth) the device occupies behind the plate's inner face,
@@ -465,8 +498,6 @@ class Device:
     source: str
     confidence: str
     bore_d: float = 0.0
-    slot: tuple[float, float] = (0.0, 0.0)
-    slot_r: float = 2.0
     studs: tuple[tuple[float, float], ...] = ()      # (dx, dy) + stud bore d
     stud_d: float = 0.0
     d_holes: tuple[tuple[float, float], ...] = ()    # D-type screw holes (dx, dy)
@@ -481,15 +512,27 @@ _SE = "https://www.se.com/us/en/product/{}/ -- product data sheet PDF: "
 
 DEVICES: tuple[Device, ...] = (
     Device(
-        "E_STOP", "Carbide 3D Shapeoko 5 Pro power pendant, in hand, GX16 leads; "
-        "mounted as a unit on a bracket behind the plate, mushroom through the bore",
-        "bore", 60.0, ESTOP_Y,
-        "https://community.carbide3d.com/t/need-dimensions-of-so5-power-pendant-and-control-box/58934"
-        " (asked, never answered); https://carbide3d.com/3d-print/power-pendant-home-base/"
-        " (an STL, no drawing). Carbide publishes no envelope.",
-        "bore: datasheet (22mm standard); envelope: allocation, MEASURE THIS; "
-        "panel_t: assumption (a 22mm head), MEASURE with the pendant",
-        bore_d=BORE_22, front=(40.0, 40.0), behind=ESTOP_ALLOC, panel_t=XB4_PANEL_T, red=True,
+        "E_STOP", "22mm mushroom E-stop, ON HAND, pulled from the Carbide 3D "
+        "Shapeoko 5 Pro power pendant; its own leads back to the Carbide controller",
+        "bore", ESTOP_X, UPPER_ROW_Y,
+        "MEASURED 2026-09-09 (Jared, calipers): the pendant's E-stop hole reads "
+        "0.865in (CARBIDE_HOLE_22), the 22mm standard; cut BORE_22. The box "
+        "itself is not on the plate (ruling console_subtract).",
+        "bore: measured (22mm standard); guard 40, body XB4-class, depth "
+        "ESTOP_BEHIND, panel_t: assumption, MEASURE with the button",
+        bore_d=BORE_22, front=(40.0, 40.0), behind=(XB4_BODY[0], XB4_BODY[1], ESTOP_BEHIND),
+        panel_t=XB4_PANEL_T, red=True,
+    ),
+    Device(
+        "FEED_HOLD", "22mm push button, ON HAND, pulled from the Carbide power "
+        "pendant (feed hold); its own leads back to the Carbide controller",
+        "bore", FEED_HOLD_X, UPPER_ROW_Y,
+        "MEASURED 2026-09-09 (Jared, calipers): the pendant's feed-hold hole reads "
+        "0.865in (CARBIDE_HOLE_22), the 22mm standard; cut BORE_22.",
+        "bore: measured (22mm standard); body XB4-class, depth FEED_HOLD_BEHIND, "
+        "panel_t: assumption, MEASURE with the button",
+        bore_d=BORE_22, front=(30.0, 30.0), behind=(XB4_BODY[0], XB4_BODY[1], FEED_HOLD_BEHIND),
+        panel_t=XB4_PANEL_T,
     ),
     Device(
         "ARM", "Schneider Harmony XB4BG21, key switch selector, metal, black, "
@@ -502,24 +545,25 @@ DEVICES: tuple[Device, ...] = (
         panel_t=XB4_PANEL_T,
     ),
     Device(
-        "SPINDLE", "Schneider Harmony ZB4BH033 head (green flush, illuminated, "
-        "push-push) on the XB4BW33B5 body (universal LED 24V, 1NO+1NC)",
+        "SPINDLE", "19mm anti-vandal push button, ON HAND, pulled from the Carbide "
+        "VFD box (spindle enable); the Schneider ZB4BH033 that stood here is superseded",
         "bore", ROW_22_X[1], UPPER_ROW_Y,
-        _SE.format("ZB4BH033") + "'Head for illuminated push button, Harmony XB4, "
-        "metal, green flush, 22mm, universal LED, push push'; body figures from "
-        + _SE.format("XB4BW33B5") + "Mounting diameter 22.5 mm, Height 47 mm, "
-        "Width 30 mm, Depth 57 mm",
-        "chosen; dimensions datasheet (body), head swap is in front of the plate",
-        bore_d=BORE_22, front=(30.0, 30.0), behind=(XB4_BODY[0], XB4_BODY[1], 57.0),
-        panel_t=XB4_PANEL_T,
+        "MEASURED 2026-09-09 (Jared, calipers): the VFD box's spindle-button hole "
+        "reads 0.743in (CARBIDE_HOLE_19), a 19mm anti-vandal; cut BORE_19. Flange "
+        "0.859in (AV19_FLANGE), 1.55in behind the flange (SPINDLE_BEHIND). Kept "
+        "on the 22 row's 40 pitch: a 19 among 22s reads as one row.",
+        "bore, flange, depth: measured; body width and panel_t: assumption",
+        bore_d=BORE_19, front=AV19_BODY, behind=(AV19_BODY[0], AV19_BODY[1], SPINDLE_BEHIND),
+        panel_t=AV19_PANEL_T,
     ),
     Device(
         "DUST", "Schneider Harmony XB4BD33, 3-position selector switch, black, "
-        "maintained, 2 NO: AUTO / ON / OFF",
+        "maintained, 2 NO: AUTO / ON / OFF, acting on a trigger load in the CT 15's "
+        "auto-start socket (params.DUST_CONTROL), never on the extractor's mains",
         "bore", ROW_22_X[2], UPPER_ROW_Y,
         _SE.format("XB4BD33") + "Mounting diameter 22.5 mm, Height 47 mm, "
-        "Width 30 mm, Depth 68 mm",
-        "chosen; dimensions datasheet",
+        "Width 30 mm, Depth 68 mm. Wiring: params.SOURCES['DUST_CONTROL']",
+        "chosen; dimensions datasheet; wiring ruling 2026-09-09",
         bore_d=BORE_22, front=(30.0, 30.0), behind=(XB4_BODY[0], XB4_BODY[1], 68.0),
         panel_t=XB4_PANEL_T,
     ),
@@ -558,19 +602,9 @@ DEVICES: tuple[Device, ...] = (
         front=METER_FRONT, behind=METER_BEHIND, panel_t=params.METER_MOVEMENT["panel_t_range"],
     ),
     Device(
-        "STATE", "Adafruit 938, Monochrome 1.3in 128x64 OLED, STEMMA QT, on "
-        "standoffs behind the plate, glass reading through a window",
-        "slot", 144.0, LOWER_ROW_Y,
-        "https://www.adafruit.com/product/938 -- PCB 35.6 x 33 x 6.2 mm, "
-        "active area 29.42 x 14.70 mm",
-        "chosen; dimensions datasheet",
-        slot=(29.42 + 2 * DEVICE_CLEAR, 14.70 + 2 * DEVICE_CLEAR),
-        behind=(35.6, 33.0, OLED_BEHIND),
-    ),
-    Device(
         "PENDANT", "PENGLIN PL183 USB-C panel-mount coupler, D-type (params.PL183): "
         "the jog pendant's port",
-        "d_type", 60.0, PENDANT_Y,
+        "d_type", ESTOP_X, PENDANT_Y,
         "RULED 2026-09-09 (Jared: 'Jog Remote USB-C'). The Carbide pendant is a "
         "USB device on a removable USB-C to USB-A lead; the GX16 that stood here "
         "as the house connector meant re-terminating USB into aircraft pins on "
@@ -580,7 +614,9 @@ DEVICES: tuple[Device, ...] = (
         front=(26.0, 31.0), behind=(24.0, 24.0, 27.5), panel_t=params.PL183["panel_t_range"],
     ),
     Device(
-        "USB_1", "PENGLIN PL183 USB-C panel-mount coupler, D-type (params.PL183)",
+        "USB_1", "PENGLIN PL183 USB-C panel-mount coupler, D-type (params.PL183): "
+        "thumb-drive port to the PC (RULED 2026-09-09: keep, two hosts on a passive "
+        "cable do nothing, so never a laptop)",
         "d_type", 192.0, LOWER_ROW_Y,
         "params.SOURCES['PL183']: round 24 cutout, 2 x 3.5 on a 19 x 24 "
         "diagonal, flange 26 x 31 x 2.2, body 27.5 behind the flange",
@@ -589,19 +625,12 @@ DEVICES: tuple[Device, ...] = (
         front=(26.0, 31.0), behind=(24.0, 24.0, 27.5), panel_t=params.PL183["panel_t_range"],
     ),
     Device(
-        "USB_2", "PENGLIN PL183 USB-C panel-mount coupler, D-type (params.PL183)",
+        "USB_2", "PENGLIN PL183 USB-C panel-mount coupler, D-type (params.PL183): "
+        "second thumb-drive port to the PC",
         "d_type", 223.0, LOWER_ROW_Y,
         "as USB_1", "datasheet (C00 capture)",
         bore_d=24.0, d_holes=((-9.5, 12.0), (9.5, -12.0)), d_hole_d=3.5,
         front=(26.0, 31.0), behind=(24.0, 24.0, 27.5), panel_t=params.PL183["panel_t_range"],
-    ),
-    Device(
-        "TOF", "Adafruit 3967, VL53L1X time-of-flight breakout, behind a 6mm "
-        "bore at the plate's top edge",
-        "bore", 327.0, TOF_Y,
-        "https://www.adafruit.com/product/3967 -- 25.5 x 17.5 x 4.6 mm, FoV 27 deg",
-        "chosen; dimensions datasheet",
-        bore_d=6.0, front=(6.0, 6.0), behind=(25.5, 17.5, TOF_BEHIND),
     ),
 )
 
@@ -851,11 +880,7 @@ def build_plate(d: Datums = D) -> Part:
 
     # the devices
     for dv in DEVICES:
-        if dv.kind == "slot":
-            sl, sh = dv.slot
-            p -= through_slot((dv.cx, dv.cy), sl, sh, thickness=PLATE_T, corner_r=dv.slot_r)
-        else:
-            p -= bore(dv.cx, dv.cy, dv.bore_d, thickness=PLATE_T)
+        p -= bore(dv.cx, dv.cy, dv.bore_d, thickness=PLATE_T)
         for dx, dy in dv.d_holes:
             p -= bore(dv.cx + dx, dv.cy + dy, dv.d_hole_d, thickness=PLATE_T)
         for dx, dy in dv.studs:
@@ -1018,27 +1043,13 @@ def build_reveal(d: Datums = D) -> Part:
 
 
 def build_keepout(d: Datums = D) -> Part:
-    """The chase air the drawers are checked against, in STATION coordinates,
-    less the E-stop module's allocation so the two reference solids do not
-    share volume."""
+    """The chase air the drawers are checked against, in STATION coordinates.
+    Since 2026-09-09 nothing is subtracted from it: the E-stop is a 22mm
+    device like its neighbours, not a box on a bracket."""
     x0, x1 = chase_x(d)
     (y0, y1), (z0, z1) = console_band(d)
-    box = Box(x1 - x0, y1 - y0, z1 - z0, align=(Align.MIN,) * 3).moved(
+    return Box(x1 - x0, y1 - y0, z1 - z0, align=(Align.MIN,) * 3).moved(
         Location((x0, y0, z0))
-    )
-    return box - build_estop_env(d)
-
-
-def build_estop_env(d: Datums = D) -> Part:
-    """The E-stop module's ALLOCATED envelope behind its bore, station
-    coordinates. An allocation, never a measurement; see the docstring."""
-    dv = next(v for v in DEVICES if v.red)
-    w, h, dep = dv.behind
-    x1 = wall_inner_x(d)
-    y = CONSOLE_Y[0] + dv.cx
-    z = plate_z(d)[0] + dv.cy
-    return Box(dep, w, h, align=(Align.MAX, Align.CENTER, Align.CENTER)).moved(
-        Location((x1, y, z))
     )
 
 
@@ -1051,7 +1062,7 @@ def panes(d: Datums = D) -> list[tuple[str, Device, Part]]:
 
 def placed_all(d: Datums = D) -> list[tuple[str, str, Part]]:
     """(label, group, placed solid) for everything this module puts in the
-    assembly: the steel plate, birch, acrylic, and the two reference solids.
+    assembly: the steel plate, birch, acrylic, and the keep-out reference solid.
     The plate lies in the wall's relief, its outer face at the wall's."""
     out: list[tuple[str, str, Part]] = [
         (PART_NAME, "steel", plate_plane(d) * build_plate(d).moved(Location((0.0, 0.0, T - PLATE_T)))),
@@ -1059,7 +1070,6 @@ def placed_all(d: Datums = D) -> list[tuple[str, str, Part]]:
         (RIB_NAME, "carcass", rib_plane(d) * build_rib(d)),
         (REVEAL_NAME, "acrylic", reveal_plane(d) * build_reveal(d)),
         (KEEPOUT_NAME, "reference", build_keepout(d)),
-        (ESTOP_ENV_NAME, "reference", build_estop_env(d)),
     ]
     return out
 
@@ -1077,10 +1087,6 @@ def joint_table(d: Datums = D) -> list[tuple]:
          "plate flush in the wall's outer-face relief, over the aperture"),
         (PART_NAME, KEEPOUT_NAME, "bearing", None, 0.0, 0.0,
          "the chase air starts at the plate's inner face"),
-        (PART_NAME, ESTOP_ENV_NAME, "bearing", None, 0.0, 0.0,
-         "the module's bracket hangs off the plate's inner face"),
-        (KEEPOUT_NAME, ESTOP_ENV_NAME, "bearing", None, 0.0, 0.0,
-         "the allocation is subtracted from the air"),
         (wall, KEEPOUT_NAME, "bearing", None, 0.0, 0.0, "air against the wall's inner face"),
         (CHEEK_NAME, KEEPOUT_NAME, "bearing", None, 0.0, 0.0, "air against the cheek"),
         (RIB_NAME, KEEPOUT_NAME, "bearing", None, 0.0, 0.0, "air above the rib"),
@@ -1132,10 +1138,19 @@ def estop_callout_band(d: Datums = D) -> tuple[float, float]:
 
 def callouts_local(d: Datums = D) -> list[callouts.Callout]:
     """The plate's one word, on the outer face the operator reads, as tall as
-    its band allows. Marked, not carved: the solid is untouched and the word
-    goes out on ``MARK``."""
+    its band allows AND as wide as the steel between the front screw margin
+    and the guard's centreline allows (the E-stop is at the plate's front
+    corner since 2026-09-09; the word is centred on it and must not run onto
+    the margin). Marked, not carved: the solid is untouched and the word goes
+    out on ``MARK``."""
     y0, y1 = estop_callout_band(d)
-    return [callouts.Callout(CALLOUT_ESTOP, estop_callout_anchor(d), height=callouts.fit_height(y1 - y0))]
+    cx, cy = estop_callout_anchor(d)
+    h = callouts.fit_height(y1 - y0)
+    w_avail = 2 * (cx - LIP)
+    w = callouts.text_width(CALLOUT_ESTOP, h)
+    if w > w_avail:
+        h = h * w_avail / w
+    return [callouts.Callout(CALLOUT_ESTOP, (cx, cy), height=h)]
 
 
 def register(d: Datums = D) -> callouts.Register:
@@ -1212,22 +1227,15 @@ def gusset_land(d: Datums = D) -> tuple[float, float]:
 
 
 def _front_rect(dv: Device) -> tuple[tuple[float, float], tuple[float, float]]:
-    """What the device occupies on the outer face: its bezel/flange, or the
-    window for a display behind the plate."""
-    if dv.kind == "slot":
-        w, h = dv.slot
-    else:
-        w, h = max(dv.front[0], dv.bore_d), max(dv.front[1], dv.bore_d)
+    """What the device occupies on the outer face: its bezel/flange."""
+    w, h = max(dv.front[0], dv.bore_d), max(dv.front[1], dv.bore_d)
     return ((dv.cx - w / 2, dv.cy - h / 2), (dv.cx + w / 2, dv.cy + h / 2))
 
 
 def _cut_rect(dv: Device) -> tuple[tuple[float, float], tuple[float, float]]:
     """What the plate actually loses to the device on its outer face: the
-    window, or the bore and its screw and stud holes. The web rule is about
-    the steel between CUTS; a flange lying on the face is not a cut."""
-    if dv.kind == "slot":
-        w, h = dv.slot
-        return ((dv.cx - w / 2, dv.cy - h / 2), (dv.cx + w / 2, dv.cy + h / 2))
+    bore and its screw and stud holes. The web rule is about the steel
+    between CUTS; a flange lying on the face is not a cut."""
     x0 = x1 = dv.cx
     y0 = y1 = dv.cy
     r = dv.bore_d / 2
@@ -1345,15 +1353,13 @@ def check_console_plate(d: Datums = D) -> list[str]:
         "the waterjet's; MARK is the laser's; the countersinks are on neither."
     )
 
-    # -- 22mm bores are 22.3, windows longer than tall, one red
+    # -- 22mm bores are 22.3, one red
     reds = [dv for dv in DEVICES if dv.red]
     if len(reds) != 1:
         notes.append(f"{len(reds)} devices are tagged red; the E-stop is the budget")
     for dv in DEVICES:
         if dv.kind == "bore" and dv.front == (30.0, 30.0) and abs(dv.bore_d - BORE_22) > 0.05:
             notes.append(f"{dv.label} is a 22mm device bored {dv.bore_d:.2f}")
-        if dv.kind == "slot" and dv.slot[0] < dv.slot[1]:
-            notes.append(f"{dv.label} window is taller than it is long")
 
     # -- devices on the face: at least a cutter web between neighbours, and
     # 22mm devices at the maker's pitch
@@ -1394,13 +1400,14 @@ def check_console_plate(d: Datums = D) -> list[str]:
         if dv.behind[2] + CHASE_MARGIN > CHASE + 1e-9:
             notes.append(f"{dv.label} is {dv.behind[2]:.0f} deep behind the plate; the chase is {CHASE:.0f}")
     notes.append(
-        f"the Carbide E-stop module's envelope is not measured: {ESTOP_ALLOC[0]:.0f} x "
-        f"{ESTOP_ALLOC[1]:.0f} x {ESTOP_ALLOC[2]:.0f} behind the plate is an ALLOCATION "
-        f"on its bracket, {CHASE - ESTOP_ALLOC[2]:.0f}mm inside a chase the "
-        f"{CHASE_DRIVER.label} sets at {CHASE:.0f}. MEASURE THIS: calipers on the "
-        "pendant, W x H x D and where the mushroom sits on its face. If it is deeper "
-        f"than {CHASE - CHASE_MARGIN:.0f}mm the chase grows and every narrowed drawer "
-        "narrows again."
+        "the three Carbide buttons are cut to their MEASURED holes (E-stop and feed "
+        f"hold {CARBIDE_HOLE_22:.2f} -> {BORE_22:.1f}, spindle {CARBIDE_HOLE_19:.2f} -> "
+        f"{BORE_19:.1f}); the spindle button is measured behind too ({AV19_FLANGE:.2f} "
+        f"flange, {SPINDLE_BEHIND:.2f} deep). The E-stop and feed hold are not: depths "
+        f"{ESTOP_BEHIND:.0f} / {FEED_HOLD_BEHIND:.0f} behind the plate are assumptions "
+        f"under a chase the {CHASE_DRIVER.label} sets at {CHASE:.0f}. MEASURE THIS: "
+        "calipers on those two out of the pendant: flange dia, body W x H x D, panel "
+        f"range. Deeper than {CHASE - CHASE_MARGIN:.0f}mm and the chase grows."
     )
     notes.append(
         "PL183.cable_behind is None (params): the mating USB-C plug's straight length "
@@ -1620,10 +1627,9 @@ def export(d: Datums = D) -> list:
     written += export_part(build_rib(d), RIB_NAME)
     reveal = build_reveal(d)
     written += export_part(reveal, REVEAL_NAME, layers={"ACRYLIC": flat_pattern(reveal)["CUT"]})
-    for name, solid in ((KEEPOUT_NAME, build_keepout(d)), (ESTOP_ENV_NAME, build_estop_env(d))):
-        p = out_dir / f"{name}.step"
-        export_step(solid, p, unit=Unit.MM)
-        written.append(p)
+    p = out_dir / f"{KEEPOUT_NAME}.step"
+    export_step(build_keepout(d), p, unit=Unit.MM)
+    written.append(p)
     return written
 
 

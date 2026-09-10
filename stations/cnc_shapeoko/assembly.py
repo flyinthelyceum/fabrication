@@ -1038,7 +1038,6 @@ def main() -> None:
     (cy0, cy1), (cz0, cz1) = console_plate.console_band(d)
     pw, ph = console_plate.plate_size(d)
     kx0, kx1 = console_plate.chase_x(d)
-    eb = console_plate.build_estop_env(d).bounding_box()
     print(
         f"  {console_plate.PART_NAME}: {pw:.0f} x {ph:.0f} x {console_plate.PLATE_T:.0f} flush in the right end "
         f"wall, band y {cy0:.0f}..{cy1:.0f} z {cz0:.0f}..{cz1:.0f}; {len(console_plate.DEVICES)} "
@@ -1047,9 +1046,7 @@ def main() -> None:
     )
     print(
         f"  {console_plate.KEEPOUT_NAME}: x {kx0:.1f}..{kx1:.1f}  y {cy0:.0f}..{cy1:.0f}  "
-        f"z {cz0:.0f}..{cz1:.0f} (reference); {console_plate.ESTOP_ENV_NAME}: "
-        f"x {eb.min.X:.1f}..{eb.max.X:.1f}  y {eb.min.Y:.1f}..{eb.max.Y:.1f}  "
-        f"z {eb.min.Z:.1f}..{eb.max.Z:.1f} (ALLOCATION, not measured)"
+        f"z {cz0:.0f}..{cz1:.0f} (reference)"
     )
     worst = min(console_plate.leg_bolt_clearance(d), key=lambda t: t[1])
     print(

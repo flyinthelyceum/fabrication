@@ -95,6 +95,26 @@ SOURCES = {
     "hose_id": "https://carbide3d.com/hub/docs/sweepy-pro-s5-pro/",
     "hose_bend_mult": "UNSOURCED ASSUMPTION. No maker publishes a bend radius for D36/32.",
     "vfd_box": "MEASURED 2026-09-02, calipers. Carbide publishes nothing.",
+    "vfd_model": "CONFIRMED 2026-09-09, Jared, reading the drive: CDI Electric "
+                 "EM60G1R5S1 (EM60 series, 1.5 kW, SINGLE-PHASE 110 V in), P+ and "
+                 "PB solderable posts visible (braking resistor). EM60 manual, "
+                 "same day: ONE analog output FM1, P2.0.33 selects frequency OR "
+                 "output current (not both); one relay T1, P2.0.29 default = "
+                 "running. So SPEED reads FM1 as frequency and LOAD reads a "
+                 "split-core current transducer on a spindle phase; T1 is the "
+                 "AUTO contact for DUST_CONTROL.",
+    "STATION_SUPPLY": "RULED 2026-09-09, Jared: the station is fed by ONE "
+                      "dedicated 120 V / 20 A circuit. Drive, PC, extractor, "
+                      "lamps and controls all hang off it.",
+    "DUST_CONTROL": "RULED 2026-09-09, Jared: the CT 15 E does NOT re-energise "
+                    "on mains restore, so switching its mains cannot drive AUTO; "
+                    "it has a plug-in auto-start (current-sensing) socket. Every "
+                    "selector position acts through a TRIGGER LOAD in that socket, "
+                    "fed by the VFD's T1 relay (AUTO) and the selector's ON "
+                    "contact wired in PARALLEL; OFF opens both. The CT stays "
+                    "energised. Supersedes the brief's SSR-switched extractor "
+                    "receptacle. Trigger wattage vs the CT's auto threshold: "
+                    "UNVERIFIED.",
     "vfd_fan": "MEASURED 2026-09-02, calipers, two square fans on the left face.",
     "vfd_vent_clear": "https://carbide3d.com/hub/docs/65mm-er16-spindle/",
     "vfd_mount_pitch": "https://carbide3d.com/hub/docs/65mm-er16-spindle/",
@@ -434,13 +454,39 @@ CONSOLE_PLATE = {
                                     # 2-10, NAHDMI-W <=2). 3mm sits inside every
                                     # range the plate carries.
     "material": "304 stainless sheet, #4 brushed, 3.0 (11 ga nominal)",
-    "process": "waterjet in the IC, through cuts only (bores, D-types, the "
-               "state window, screw clearances); countersinks on the drill "
+    "process": "waterjet in the IC, through cuts only (bores, D-types, "
+               "screw clearances); countersinks on the drill "
                "press after; legends Enduramark black on the Universal laser, "
                "the plate located on its two short-edge screw holes (REGISTER)",
     "screw": "4 x 10 flat head countersunk wood screw, 10 off",
     "panel_t_range_note": "3mm is inside XB4 (1-6), PL183 (2-10) and the "
                           "meters' stud reach; console_plate checks each row",
+}
+
+DUST_CONTROL = {                    # the DUST selector's wiring (2026-09-09)
+    "extractor": "CT15",
+    "ct_mode": "AUTO, left there; the CT's own face switch is never touched",
+    "actuator": "a TRIGGER LOAD plugged into the CT 15's auto-start socket; "
+                "the CT sees current and runs. Not a contactor on its mains: "
+                "the CT 15 stays off after a mains cut, so mains switching "
+                "cannot give AUTO.",
+    "AUTO": "trigger load fed through the VFD's T1 relay (EM60 P2.0.29, "
+            "default = running)",
+    "ON": "trigger load fed through the selector's own contact, wired in "
+          "PARALLEL with T1",
+    "OFF": "both paths open; the trigger load is dead, the CT idles in AUTO",
+    "supersedes": "the SSR-switched extractor receptacle (parts/mains_backplate "
+                  "RECEPTACLE_NAME and its SSR): the CT stays energised and is "
+                  "never switched at its mains. Geometry left standing 2026-09-09; "
+                  "strike it on the next mains pass.",
+    "trigger_load_w": None,         # MEASURE/lookup: the CT 15's auto-start
+                                    # threshold and a load that clears it
+}
+
+STATION_SUPPLY = {                  # RULED 2026-09-09
+    "circuit": "one dedicated 120 V / 20 A branch circuit",
+    "loads": "VFD (EM60G1R5S1, single-phase 110 V), console PC, CT 15, "
+             "console lamps and controls",
 }
 
 METER_MOVEMENT = {                  # the two dials, SPEED and LOAD (2026-09-09)
@@ -452,10 +498,10 @@ METER_MOVEMENT = {                  # the two dials, SPEED and LOAD (2026-09-09)
                    "56, bezel 10 proud, body D48.5 x 50 behind, 2 x M3 studs "
                    "52.5 apart 15 below centre. The console cuts THIS footprint "
                    "until the pair lands.",
-    "drive": "0-10V from the VFD's analog outputs (frequency -> SPEED, output "
-             "current -> LOAD) through one series resistor each; a split-core "
-             "current transducer on one spindle phase is the VFD-independent "
-             "fallback for LOAD",
+    "drive": "SPEED: 0-10V from the EM60's single analog output FM1 set to "
+             "frequency (P2.0.33), one series resistor. LOAD: a split-core "
+             "current transducer on one spindle phase, 0-10V out, one series "
+             "resistor; FM1 cannot carry both (SOURCES['vfd_model'], 2026-09-09)",
     "panel_t_range": (1.0, 6.0),    # assumption: stud-mounted bezel, M3 studs
                                     # ~10 long on the 85C1; the 301's are
                                     # longer. Read the pair when it lands.
@@ -465,6 +511,8 @@ CATALOG = {
     "UPTJ14": UPTJ14,
     "PL183": PL183,
     "CONSOLE_PLATE": CONSOLE_PLATE,
+    "STATION_SUPPLY": STATION_SUPPLY,
+    "DUST_CONTROL": DUST_CONTROL,
     "METER_MOVEMENT": METER_MOVEMENT,
     "45-682-292": LX_PRO_ARM,
     "motion_controller_env": motion_controller_env,
@@ -492,6 +540,9 @@ def catalog_measure() -> list[str]:
 # What each open catalog value is FOR, so the tape is pointed at the right
 # thing. Keyed like catalog_measure() names them.
 CATALOG_MEASURE_HINTS = {
+    "DUST_CONTROL.trigger_load_w": "The CT 15's auto-start current threshold "
+                  "(manual) and a resistive load that clears it: what the "
+                  "DUST selector actually switches.",
     "UPTJ14.env": "Outside W x H of the chassis, kickstand folded: sizes the "
                   "console aperture and the drawer keep-out.",
     "UPTJ14.vesa_offset": "Centre of the two-hole 75mm pattern from the "
@@ -590,6 +641,10 @@ CONFIDENCE = {
     "PL183.cable_behind": "MEASURE",
     "CONSOLE_PLATE": "ruling",      # 2026-09-09, Jared: stainless, waterjet,
                                     # Enduramark
+    "STATION_SUPPLY": "ruling",     # 2026-09-09, Jared: one 120 V / 20 A circuit
+    "DUST_CONTROL": "ruling",       # 2026-09-09, Jared: through the auto socket
+    "DUST_CONTROL.trigger_load_w": "MEASURE",
+    "vfd_model": "confirmed",       # 2026-09-09, Jared read it off the drive
     "METER_MOVEMENT": "placeholder",    # 85C1 footprint stands in for the pair
     "METER_MOVEMENT.name": "MEASURE",
     "45-682-292": "datasheet",
@@ -1129,6 +1184,10 @@ class Station:
     choice."""
 
     # ---- components -------------------------------------------------------
+    vfd_model: str = "CDI Electric EM60G1R5S1"   # CONFIRMED 2026-09-09, Jared:
+                                    # EM60 1.5 kW, single-phase 110 V; P+ / PB
+                                    # posts seen. FM1 analog out (freq OR
+                                    # current), T1 relay = running. SOURCES.
     vfd_box: tuple[float, float, float] = (142.875, 184.15, 320.675)   # vertical.
                                     # CALIPERED 2026-09-02, w x d x h. Supersedes the
                                     # brief's 200 x 130 x 300 guess and the forum's
