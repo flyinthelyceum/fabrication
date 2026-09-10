@@ -65,7 +65,6 @@ from stations.cnc_shapeoko.parts import (
     spine_panel,
     stiles,
     stock_rails,
-    stock_wash,
     top_cap,
     trays,
     vfd_mount,
@@ -90,6 +89,13 @@ TODO_MARKS = (
     "UNMODELLED:",
 )
 
+# PARKED: a part the subtract pass of 2026-09-09 set aside with a date. It is
+# modelled or reserved so the carcass stays honest about the space, it is not
+# bought, not printed and not wired until the date, and it never gates a cut.
+PARKED_MARKS = (
+    "PARKED to ",
+)
+
 # Every part the build plan (C02..C18) still owes the model. Each task deletes
 # its own name when its part lands in assembly.py, so the closing line's count
 # falls to zero only when final assembly is actually modelled. Never let this
@@ -106,6 +112,8 @@ MEASURE_MARKS = (
 
 
 def classify(note: str) -> str:
+    if any(m in note for m in PARKED_MARKS):
+        return "PARKED"
     if any(m in note for m in TODO_MARKS):
         return "TODO"
     if any(m in note for m in STANDING_MARKS):
@@ -142,7 +150,6 @@ def collect() -> list[tuple[str, str, str]]:
         ("rear_door", rear_door.check_rear_door(d)),
         ("lungs_door", lungs_door.check_lungs_door(d)),
         ("signal_mounts", signal_mounts.check_signal_mounts(d)),
-        ("stock_wash", stock_wash.check_stock_wash(d)),
         ("exhaust_plenum", exhaust_plenum.check_exhaust_plenum(d)),
         ("assembly", check_assembly(comps, d)),
         ("machine", check_machine(comps, d)),
@@ -171,7 +178,7 @@ def collect() -> list[tuple[str, str, str]]:
 
 def main() -> int:
     rows = collect()
-    order = ("BLOCKING", "TODO", "MEASURE", "STANDING")
+    order = ("BLOCKING", "TODO", "PARKED", "MEASURE", "STANDING")
     d = DATUMS
     reveal = clear_over_relieved((d.x_left, d.x_right), (d.y_front, d.y_rear), d.s) - d.carcass_h
 
@@ -198,11 +205,12 @@ def main() -> int:
         print(f"NOT SAFE TO CUT: {blocking} blocking issue(s).")
     else:
         todo = sum(1 for r in rows if r[0] == "TODO")
+        parked = sum(1 for r in rows if r[0] == "PARKED")
         print(
             "SAFE TO CUT as modelled. The measurements above still gate the real "
             "sheet. UNMODELLED for final assembly: "
             + (", ".join(UNMODELLED) if UNMODELLED else "none")
-            + f" ({todo} TODO)."
+            + f" ({todo} TODO, {parked} PARKED)."
         )
     return 1 if blocking else 0
 

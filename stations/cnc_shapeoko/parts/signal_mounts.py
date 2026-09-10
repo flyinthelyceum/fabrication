@@ -36,7 +36,16 @@ side comes off as one unit the way the mains backplate does on the sealed side.
                           station that is 3D printed and the clip's hooks have
                           to be shown reaching behind the flanges.
 
-``esp32_carrier``         The PRINTED part. A flat carrier with a fixed hook
+``esp32_carrier``         PARKED to 2027-01-05 (subtract pass 2026-09-09,
+                          item 13) with the whole sensing layer: the ESP32,
+                          this carrier, the SDP810 and the firmware nobody
+                          has started. Still modelled so the rail seat and
+                          the transit stay honest; not printed, not bought,
+                          not wired until the date. Everything it was for
+                          is struck (ToF, stock wash dimming, state strip,
+                          state display) except the BAG jewel, which is cut
+                          in the console now and wired then.
+                          The PRINTED part. A flat carrier with a fixed hook
                           and a latch that snap over the rail and a flat front
                           face with four heat-set inserts for the station
                           controller's protoboard. Printed front face down,
@@ -1127,6 +1136,14 @@ def check_signal_mounts(d: Datums = D) -> list[str]:
         "board moves only the carrier's outline and insert pattern."
     )
 
+    # -- the sensing layer is parked, the seat is kept
+    notes.append(
+        "the ESP32 carrier, its board and the SDP810 sensor are PARKED to "
+        "2027-01-05 (subtract pass 2026-09-09, item 13): the rail seat, the "
+        "transit and the CONSOLE INSTRUMENT crossing stay cut for them; nothing "
+        "is printed, bought or wired until then. The BAG jewel is cut now."
+    )
+
     # -- the schedule, kept visible on every run
     notes.append("WIRE SCHEDULE, standing note. " + " | ".join(wire_schedule(d)))
 
@@ -1148,9 +1165,9 @@ def wire_schedule(d: Datums = D) -> list[str]:
         f"transit z {tz0:.0f}..{tz1:.0f} at x {d.brain_split_x:.0f}: PC brick DC (ALWAYS-LIVE) to the PC's rear at "
         f"z {pc_station(d)[2][0]:.0f}..{pc_station(d)[2][1]:.0f}; ESP32 supply DC (ALWAYS-LIVE) and the CT lead to the carrier; "
         "the motion controller's supply, contactor-fed, as the mains schedule has it",
-        "spine crossings, high row: CONSOLE STOP, CONSOLE CONTROL, CONSOLE INSTRUMENT (GX16) above the plate; "
-        "low row: PENDANT AND USB (gland) below it; pendant to the controller, USB to the PC",
-        "rear door: RJ45 to the PC's rear; GX16 pendant and mast-camera bulkheads; the reveal shows the PC",
+        "spine crossings, high row: CONSOLE STOP, CONSOLE CONTROL, CONSOLE INSTRUMENT (GX16, the last parked with the sensing layer) above the plate; "
+        "low row: PENDANT AND USB (gland) below it; the console's three USB-C couplers (pendant, two thumb-drive) to the PC",
+        "rear door: RJ45 to the PC's rear; the reveal shows the PC (the pendant and mast-camera GX16s were struck 2026-09-09)",
         "controller logic 0V never lands on the PE star (params.bond_excluded)",
     ]
 

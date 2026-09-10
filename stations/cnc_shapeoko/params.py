@@ -174,11 +174,15 @@ SOURCES = {
                      "waterjet/lasercut and enduramark etch the markings on.' "
                      "Enduramark: https://www.enduramark.com/ (CO2-laser marking "
                      "spray; black on stainless is its best case).",
-    "METER_MOVEMENT": "placeholder footprint: https://cdn-shop.adafruit.com/"
-                      "product-files/4404/C12723-001_datasheet_translate.pdf "
-                      "(85C1 outline). The real pair is a HUNT, not a datasheet: "
-                      "Weston Model 301 class, 3.5in round, 0-1 mA DC movement, "
-                      "on the analog hunt list 2026-09-09.",
+    "METER_MOVEMENT": "the pair is a HUNT, not a datasheet: Weston Model 301 "
+                      "class, 3.5in round, 0-1 mA DC movement, on the analog "
+                      "hunt list 2026-09-09. The 85C1 placeholder/fallback was "
+                      "struck 2026-09-09 (subtract pass, item 12).",
+    "MAST_BALANCER": "subtract pass 2026-09-09, item 05: the machined "
+                     "counterweight, its slot and the delrin pulleys are struck "
+                     "for a bought spring tool balancer at the mast tip, 1-3 kg "
+                     "class (a retractable balancer, not a zero-gravity arm). "
+                     "No SKU yet; envelope is the family's.",
     "45-682-292": "https://www.ergodirect.com/attachments/doc/e3df7e14535acb3b8540cb5b4845df8fa258d971/drawing-ergotron-lx-pro-desk-monitor-arm.pdf"
                   " -- Ergotron DIM-LXproArm dimensional illustrations rev "
                   "11/12/2024, plus the ErgoDirect spec table at "
@@ -495,8 +499,17 @@ DUST_CONTROL = {                    # the DUST selector's wiring (2026-09-09)
     "OFF": "both paths open; the trigger load is dead, the CT idles in AUTO",
     "supersedes": "the SSR-switched extractor receptacle (parts/mains_backplate "
                   "RECEPTACLE_NAME and its SSR): the CT stays energised and is "
-                  "never switched at its mains. Geometry left standing 2026-09-09; "
-                  "strike it on the next mains pass.",
+                  "never switched at its mains. SSR struck from the model "
+                  "2026-09-09 (subtract pass, item 10); the receptacle rides "
+                  "ALWAYS-LIVE and a 24 V interposing relay on that rail "
+                  "(mains_backplate.TRIGGER_RELAY_ENV) switches the load.",
+    "trigger_relay": "MY2NJ-class 24 V DC ice-cube relay in an 8-pin DIN socket; "
+                     "coil from the VFD's +24V through T1 (AUTO) and the DUST "
+                     "selector's ON contact in parallel; flyback diode across "
+                     "the coil; contact rated 10 A switches the 0.6 A load",
+    "trigger_load": "two 100 ohm 100 W aluminium-housed wirewound resistors in "
+                    "series (200 ohm, 72 W at 120 V) bolted to the steel mains "
+                    "backplate as their heatsink; fused at 1 A",
     "trigger_load_w": 60.0,         # MEASURED 2026-09-09: a 60 W resistive
                                     # load in the auto socket fired the CT 15
                                     # at once. Smaller not tested. Build the
@@ -522,8 +535,10 @@ VFD_WIRING = {                      # the EM60's control strip as built (2026-09
                      "DUST_AUTO": "trigger load across TA + TC (T1 NO), 120 V, "
                                   "routed out of the box on its own path",
                      "LOAD": "nothing in the box: split-core CT on U, V or W"},
-    "expansion": "JP1 2-row header = EM60-IO card slot (a second analog out); "
-                 "decision pending, not needed for the plate",
+    "expansion": "JP1 2-row header = the EM60 expansion slot (a fact of the "
+                 "board). The EM60-IO card that would give a second analog out "
+                 "has no purchase path (searched 2026-09-09) and was struck; "
+                 "LOAD reads the phase clamp",
     "untouched": "P+ / PB (braking resistor), +10V, OP, DI2-DI4, +24V",
 }
 
@@ -556,17 +571,23 @@ METER_MOVEMENT = {                  # the two dials, SPEED and LOAD (2026-09-09)
               "this footprint and cuts the two bores (console_plate.METER_*); "
               "stud holes are drilled from the movement when the pair lands. "
               "Assumption until then.",
-    "fallback": "85C1 moving-coil panel meter (Delixi drawing): face 64 x 56, "
-                "bezel 10 proud, body D48.5 x 50 behind, 2 x M3 studs 52.5 "
-                "apart 15 below centre. Documented fallback if the hunt fails "
-                "(console_plate.METER_85C1), no longer the default cut.",
     "drive": "SPEED: 0-10V from the EM60's single analog output FM1 set to "
              "frequency (P2.0.33), one series resistor. LOAD: a split-core "
              "current transducer on one spindle phase, 0-10V out, one series "
              "resistor; FM1 cannot carry both (SOURCES['vfd_model'], 2026-09-09)",
-    "panel_t_range": (1.0, 6.0),    # assumption: stud-mounted bezel, M3 studs
-                                    # ~10 long on the 85C1; the 301's are
-                                    # longer. Read the pair when it lands.
+    "panel_t_range": (1.0, 6.0),    # assumption: stud-mounted bezel, M3 studs;
+                                    # read the pair when it lands.
+}
+
+MAST_BALANCER = {                   # subtract pass 2026-09-09, item 05
+    "name": None,                   # MEASURE: a 1-3 kg retractable spring tool
+                                    # balancer, hung at the mast tip, hose on
+                                    # its hook. Replaces the machined
+                                    # counterweight, slot and delrin pulleys.
+    "envelope": None,               # MEASURE: body dia x height, hook drop,
+                                    # cable travel; the family runs ~60-80 dia
+                                    # x 100-130 tall, 1.5 m travel
+    "capacity_kg": (1.0, 3.0),      # the hose over the bed, estimate
 }
 
 CATALOG = {
@@ -576,6 +597,7 @@ CATALOG = {
     "STATION_SUPPLY": STATION_SUPPLY,
     "DUST_CONTROL": DUST_CONTROL,
     "METER_MOVEMENT": METER_MOVEMENT,
+    "MAST_BALANCER": MAST_BALANCER,
     "VFD_WIRING": VFD_WIRING,
     "JEWEL_LAMP": JEWEL_LAMP,
     "45-682-292": LX_PRO_ARM,
@@ -604,6 +626,11 @@ def catalog_measure() -> list[str]:
 # What each open catalog value is FOR, so the tape is pointed at the right
 # thing. Keyed like catalog_measure() names them.
 CATALOG_MEASURE_HINTS = {
+    "MAST_BALANCER.name": "Which spring balancer hangs the hose at the mast "
+                  "tip; sets the tip fitting and the hook drop.",
+    "MAST_BALANCER.envelope": "Body dia x height, hook drop and cable travel "
+                  "of the balancer: the mast's tip envelope and the hose's "
+                  "reach over the bed.",
     "DUST_CONTROL.trigger_load_w": "The CT 15's auto-start current threshold "
                   "(manual) and a resistive load that clears it: what the "
                   "DUST selector actually switches.",
@@ -711,6 +738,8 @@ CONFIDENCE = {
                                     # Enduramark
     "STATION_SUPPLY": "ruling",     # 2026-09-09, Jared: one 120 V / 20 A circuit
     "DUST_CONTROL": "ruling",       # 2026-09-09, Jared: through the auto socket
+    "MAST_BALANCER.name": "MEASURE",
+    "MAST_BALANCER.envelope": "MEASURE",
     "DUST_CONTROL.trigger_load_w": "measured",   # 2026-09-09, 60 W fires
     "vfd_model": "confirmed",       # 2026-09-09, Jared read it off the drive
     "METER_MOVEMENT": "assumption",     # 3.5in target footprint, composed around

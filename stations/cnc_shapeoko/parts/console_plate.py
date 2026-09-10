@@ -134,9 +134,10 @@ The three Carbide buttons (E-stop, feed hold, spindle) are ON HAND, pulled
 from the Shapeoko 5 Pro power pendant and the VFD box. Their HOLES are
 measured (2026-09-09, Jared, calipers); the buttons' bodies behind the plate,
 their flanges and the panel range they clamp are not, so those rows carry
-XB4-class figures marked assumption and the check reports MEASURE THIS. Their
-flanges read roughly 1.25in (2026-09-09, Jared): ``CARBIDE_FLANGE_22``. None
-of them drives ``CHASE``: the ARM selector does.
+XB4-class figures marked assumption and the check reports MEASURE THIS. The
+E-stop and feed hold read roughly 1.25in DEEP behind the panel (2026-09-09,
+Jared, a tape figure): ``CARBIDE_DEPTH_22``. None of them drives ``CHASE``:
+the ARM selector does.
 
 Nothing is recessed (2026-09-09). The two dials mount the way a panel meter
 does: body through a bore, bezel on the face, studs through the plate, and
@@ -453,13 +454,13 @@ JEWEL_22_PITCH_MIN = 32.0
 jewel's bezel is ~20); the composition set 32, which leaves a 9mm web between
 a 16 bore and a 22.3 bore. CONFIDENCE: chosen, this file's rule."""
 
-FLANGE_TO_BEZEL_MIN = 7.5
+FLANGE_TO_BEZEL_MIN = 8.0
 """Least steel on the face between any device's flange and a dial's bezel. The
-composition had 8.5 twice (FEED_HOLD under SPEED, DUST under LOAD) with a 30
-flange assumed; the feed hold's flange then read 31.75 (``CARBIDE_FLANGE_22``,
-2026-09-09) and the gap became 7.6. A measured flange outranks a chosen rule,
-so the rule moved to 7.5 rather than the composition; the composer's 10 was
-measured on the ARM switch, which has since moved down. Two proud rings 7.5mm
+composition has 8.5 twice (FEED_HOLD under SPEED, DUST under LOAD) with a 30
+flange assumed. On 2026-09-09 the feed hold's flange was briefly taken as
+31.75 and this rule dropped to 7.5 to fit it; that figure was the button's
+DEPTH, not its flange (``CARBIDE_DEPTH_22``), so the rule is back at 8. The
+composer's 10 was measured on the ARM switch, which has since moved down. Two proud rings 8mm
 apart still read as two rings. CONFIDENCE: chosen, this file's rule."""
 
 # -- the dials --------------------------------------------------------------
@@ -477,15 +478,6 @@ and bore are the composition's target (a 3.5in case, a 3in body); the studs
 are NOT cut until the pair is in hand (``METER_STUDS`` empty, MEASURE), so the
 waterjet file carries two clean bores and the stud holes are a drill-press
 step from the movement itself. CONFIDENCE: assumption, MEASURE the pair."""
-
-METER_85C1 = {
-    "front": (64.0, 56.0), "bore": 48.5 + 2 * DEVICE_CLEAR,
-    "behind": (48.5, 48.5, 50.0), "studs": ((-26.25, -15.0), (26.25, -15.0)),
-    "stud_d": 3.4,
-}
-"""The 85C1 footprint (Delixi drawing, ``params.METER_MOVEMENT['fallback']``)
-the plate was cut for until 2026-09-09: documented FALLBACK, not the default.
-If the hunt fails, the two ``METER_*`` above take these five numbers."""
 
 # -- the jewels -------------------------------------------------------------
 JEWEL_BORE = 16.0
@@ -510,20 +502,20 @@ BORE_19 = 19.0
 on hand has not been read for its thread OD, so the nominal stands.
 MEASURE THIS with the button. CONFIDENCE: assumption."""
 
-CARBIDE_FLANGE_22 = 31.75
-"""Front flange of the Carbide E-stop and feed-hold buttons, MEASURED-rough
-2026-09-09 (Jared: "roughly 1.25in D"). The E-stop's face allocation stays the
-40 mushroom guard, which is wider than its flange; the feed hold's face is this
-flange. CONFIDENCE: measured, rough (a tape figure, not calipers)."""
+CARBIDE_DEPTH_22 = 31.75
+"""Depth behind the panel of the Carbide E-stop and feed-hold buttons,
+MEASURED-rough 2026-09-09 (Jared: "roughly 1.25in D", clarified the same night
+as depth, not flange). Their flanges are still the XB4-class 30 assumption.
+CONFIDENCE: measured, rough (a tape figure, not calipers)."""
 
-ESTOP_BEHIND = 60.0
-FEED_HOLD_BEHIND = 57.0
+ESTOP_BEHIND = CARBIDE_DEPTH_22
+FEED_HOLD_BEHIND = CARBIDE_DEPTH_22
 SPINDLE_BEHIND = 39.37
 """Depth behind the plate of the three Carbide buttons. The spindle button is
-MEASURED 2026-09-09 (Jared, calipers): 1.55in behind its flange. The other
-two are NOT: the E-stop carries the brief's "~60mm behind panel", the feed
-hold an XB4 momentary's 57; MEASURE THIS with those two in hand. All under
-the ARM selector's 68, so none drives the chase. CONFIDENCE: measured (spindle),
+MEASURED 2026-09-09 (Jared, calipers): 1.55in behind its flange. The E-stop and
+feed hold are MEASURED-rough at 1.25in (``CARBIDE_DEPTH_22``); their flanges
+and panel range are still assumptions. All under the ARM selector's 68, so
+none drives the chase. CONFIDENCE: measured (spindle),
 assumption (E-stop, feed hold)."""
 
 AV19_FLANGE = 21.82
@@ -610,8 +602,7 @@ DEVICES: tuple[Device, ...] = (
         "LOAD", "moving-coil panel meter, spindle load, 0-100 scale card, "
         "split-core current transducer on a spindle phase (params.METER_MOVEMENT)",
         "bore", METER_X[1], METER_Y,
-        "as SPEED. The 85C1 (Adafruit 4404 drawing) is the documented fallback, "
-        "METER_85C1.",
+        "as SPEED.",
         "ruling (the dial); target footprint, MEASURE the pair",
         bore_d=METER_BORE, studs=METER_STUDS, stud_d=METER_STUD_D,
         front=METER_FRONT, behind=METER_BEHIND, panel_t=params.METER_MOVEMENT["panel_t_range"],
@@ -639,8 +630,8 @@ DEVICES: tuple[Device, ...] = (
         "MEASURED 2026-09-09 (Jared, calipers): the pendant's E-stop hole reads "
         "0.865in (CARBIDE_HOLE_22), the 22mm standard; cut BORE_22. The box "
         "itself is not on the plate (ruling console_subtract).",
-        "bore: measured (22mm standard); flange CARBIDE_FLANGE_22 measured-rough, "
-        "face = guard 40; body XB4-class, depth ESTOP_BEHIND, panel_t: assumption, "
+        "bore: measured (22mm standard); depth ESTOP_BEHIND measured-rough (1.25in); "
+        "face = guard 40; body XB4-class, flange and panel_t: assumption, "
         "MEASURE with the button",
         bore_d=BORE_22, front=(40.0, 40.0), behind=(XB4_BODY[0], XB4_BODY[1], ESTOP_BEHIND),
         panel_t=XB4_PANEL_T, red=True, family="22", group="MACHINE",
@@ -651,10 +642,10 @@ DEVICES: tuple[Device, ...] = (
         "bore", MACHINE_X[1], ROW_Y,
         "MEASURED 2026-09-09 (Jared, calipers): the pendant's feed-hold hole reads "
         "0.865in (CARBIDE_HOLE_22), the 22mm standard; cut BORE_22.",
-        "bore: measured (22mm standard); flange CARBIDE_FLANGE_22 measured-rough; "
-        "body XB4-class, depth FEED_HOLD_BEHIND, panel_t: assumption, MEASURE with "
+        "bore: measured (22mm standard); depth FEED_HOLD_BEHIND measured-rough (1.25in); "
+        "body XB4-class, flange and panel_t: assumption, MEASURE with "
         "the button",
-        bore_d=BORE_22, front=(CARBIDE_FLANGE_22, CARBIDE_FLANGE_22), behind=(XB4_BODY[0], XB4_BODY[1], FEED_HOLD_BEHIND),
+        bore_d=BORE_22, front=(30.0, 30.0), behind=(XB4_BODY[0], XB4_BODY[1], FEED_HOLD_BEHIND),
         panel_t=XB4_PANEL_T, family="22", group="MACHINE",
     ),
     Device(
@@ -1558,7 +1549,9 @@ def check_console_plate(d: Datums = D) -> list[str]:
         "DIALS, standing note. SPEED and LOAD are cut as two 76 bores for a 3.5in "
         f"movement with an {METER_BEZEL_D:.0f} bezel (Weston 301 class, a hunt). No "
         "stud holes are cut: the pattern is the movement's, MEASURE it and drill "
-        "from the part. The 85C1 footprint (METER_85C1) is the documented fallback."
+        "from the part. There is no fallback footprint: the 85C1 line was struck "
+        "2026-09-09 (subtract pass, item 12); if the hunt fails, pick a movement "
+        "and cut to it."
     )
     for dv in DEVICES:
         (bx0, by0_), (bx1, by1_) = _behind_rect(dv)
@@ -1580,11 +1573,10 @@ def check_console_plate(d: Datums = D) -> list[str]:
         "the three Carbide buttons are cut to their MEASURED holes (E-stop and feed "
         f"hold {CARBIDE_HOLE_22:.2f} -> {BORE_22:.1f}, spindle {CARBIDE_HOLE_19:.2f} -> "
         f"{BORE_19:.1f}); the spindle button is measured behind too ({AV19_FLANGE:.2f} "
-        f"flange, {SPINDLE_BEHIND:.2f} deep). The E-stop and feed hold are not: depths "
-        f"{ESTOP_BEHIND:.0f} / {FEED_HOLD_BEHIND:.0f} behind the plate are assumptions "
-        f"under a chase the {CHASE_DRIVER.label} sets at {CHASE:.0f}. MEASURE THIS: "
-        "calipers on those two out of the pendant: flange dia, body W x H x D, panel "
-        f"range. Deeper than {CHASE - CHASE_MARGIN:.0f}mm and the chase grows."
+        f"flange, {SPINDLE_BEHIND:.2f} deep). The E-stop and feed hold are "
+        f"{ESTOP_BEHIND:.2f} deep (a tape figure) under a chase the {CHASE_DRIVER.label} "
+        f"sets at {CHASE:.0f}; their flanges, body W x H and panel range are "
+        "assumptions. MEASURE THIS: calipers on those two out of the pendant."
     )
     notes.append(
         "PL183.cable_behind is None (params): the mating USB-C plug's straight length "
@@ -1887,8 +1879,6 @@ def export_svg(d: Datums = D, path=None):
             L.append(f'<rect x="{dv.cx - fw / 2:.2f}" y="{Y(dv.cy + fh / 2):.2f}" width="{fw:.2f}" height="{fh:.2f}"/>')
         else:
             L.append(f'<circle cx="{dv.cx:.2f}" cy="{Y(dv.cy):.2f}" r="{fw / 2:.2f}"/>')
-        if dv.label in ("E_STOP", "FEED_HOLD"):
-            L.append(f'<circle cx="{dv.cx:.2f}" cy="{Y(dv.cy):.2f}" r="{CARBIDE_FLANGE_22 / 2:.2f}"/>')
     L.append('</g>')
     # LEGEND
     L.append('<g id="LEGEND" fill="none" stroke="#06c" stroke-width="0.15">')

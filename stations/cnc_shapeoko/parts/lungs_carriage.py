@@ -22,9 +22,11 @@ Four panels of birch and three kinds of air.
                       the unit honestly instead of with a number in a docstring.
 
 
-``dp_sensor_pad``     The differential-pressure sensor's body on its pad on the
-                      lip's rear face, as a reference solid over the two holes
-                      the lip cuts for it. The tap itself is J13's; this part
+``dp_sensor_pad``     PARKED to 2027-01-05 with the sensing layer (subtract
+                      pass 2026-09-09, item 13). The differential-pressure
+                      sensor's body on its pad on the lip's rear face, as a
+                      reference solid over the two holes the lip cuts for it;
+                      the holes are cut now, the sensor is bought then. The tap itself is J13's; this part
                       gives it somewhere to land and a way through the lip.
 
 
@@ -873,6 +875,12 @@ def check_lungs_carriage(d: Datums = D) -> list[str]:
         bb = part.bounding_box()
         if not fits((bb.size.X, bb.size.Y), SHEET_4X8):
             notes.append(f"{label} blank does not come out of a 4x8 sheet")
+
+    notes.append(
+        f"the {DP_SENSOR} on the lip is PARKED to 2027-01-05 with the sensing "
+        "layer (subtract pass 2026-09-09, item 13): its two holes are cut now, "
+        "the sensor is bought and wired then."
+    )
 
     return notes
 
