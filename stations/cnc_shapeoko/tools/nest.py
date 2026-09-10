@@ -9,7 +9,7 @@ Every sheet part the assembly places, laid onto the stock it is cut from, and
 the count that comes out. Three materials, three nests:
 
     birch     every solid ``assembly.birch_components`` returns (groups
-              carcass, plinth, drawer, carriage), on 1525 x 1525 5x5 Baltic
+              carcass, plinth, drawer, carriage), on 2438 x 1219 4x8 Baltic
               birch at CARCASS_T.  ->  export/cnc_shapeoko/nest/sheet_NN.dxf
     acrylic   every solid in the assembly's ``acrylic`` group (the rear door's
               reveal, the console's reveal and three panes, the cradle's lip),
@@ -46,11 +46,11 @@ the parts are panels with joinery on their edges, and the 10mm gap between
 rectangles is the kerf and the clamp margin, not wasted material. The number
 this produces is a ceiling the shop can only beat.
 
-The machine's travel (1237 on both axes) is shorter than the sheet (1525) on
-both axes, so no 5x5 sheet goes on the Shapeoko whole. Every Shapeoko sheet
+The machine's travel (1237 on both axes) is shorter than the sheet's 2438
+length, so no 4x8 sheet goes on the Shapeoko whole. Every Shapeoko sheet
 is ripped first, on the track saw, into blanks the machine can reach across:
 
-    SHELVES run across the full 1525 width, as tall as their tallest part;
+    SHELVES run across the full 2438 width, as tall as their tallest part;
     a full-width rip lies in the gap between shelves.
     within a shelf, parts stand in COLUMNS, left to right, each column as
     wide as its first part and stacked upward with anything narrower that
@@ -72,7 +72,8 @@ the offcut is STRIP by house rule.
 GRAIN
 =====
 
-The 5x5 sheet's face grain lies along the nest's X (``GRAIN_AXIS``). Whether
+The sheet's face grain lies along the nest's X (``GRAIN_AXIS``, the 4x8's
+long edge). Whether
 a part may turn on the sheet is ``grain_rule``: a standing panel whose face
 is seen (walls, spine, partition, both doors) keeps its grain vertical; a
 rail, a stick, a drawer box panel and the console plate keep it along their
@@ -125,7 +126,7 @@ from build123d import (
     Unit,
 )
 
-from lib.house import CARCASS_T, LASER_BED_LARGE, PANEL_T, SHEET_5X5_BALTIC
+from lib.house import CARCASS_T, LASER_BED_LARGE, PANEL_T, SHEET_4X8
 from stations.cnc_shapeoko.assembly import (
     Component,
     acrylic_components,
@@ -176,10 +177,12 @@ D: Datums = DATUMS
 NEST_DIR = EXPORT_DIR / "nest"
 """Where the sheets go. SOURCE: task C18 acceptance, export/cnc_shapeoko/nest/."""
 
-SHEET = SHEET_5X5_BALTIC
+SHEET = (SHEET_4X8[1], SHEET_4X8[0])
 SHEET_T = CARCASS_T
-"""The birch stock: 5x5 Baltic at the carcass thickness. SOURCE: lib.house,
-the brief's BOM line. CONFIDENCE: catalog."""
+"""The birch stock: 4x8 Baltic at the carcass thickness, long edge along the
+nest's X so the sheet's grain lies along GRAIN_AXIS. RULED 2026-09-09: the
+project nests on 4x8, not 5x5 (Spellman stocks 4x8; the workbench nests on it
+too). SOURCE: lib.house, reference_spellman_hardwoods. CONFIDENCE: ruling."""
 
 LASER_BED = LASER_BED_LARGE
 LASER_T = PANEL_T
@@ -205,9 +208,9 @@ travel less this. SOURCE: carcass.ROUTER_D, the 1/4in carcass cutter.
 CONFIDENCE: rule."""
 
 GRAIN_AXIS = "X"
-"""The sheet's face grain runs along the nest's X. SOURCE: convention. A 5x5
-is square and the mill marks the grain on the face; the shop lays the sheet
-grain-along-X before the first rip and the drawing is right. CONFIDENCE:
+"""The sheet's face grain runs along the nest's X. SOURCE: convention. A 4x8's
+face grain runs its 8ft length; the sheet lies long-edge-along-X before the
+first rip and the drawing is right. CONFIDENCE:
 convention."""
 
 TRACK_SAW_PARTS = ("base_deck", top_cap.NAME)
@@ -561,8 +564,9 @@ def check_nest(comps: list[Component] | None = None, d: Datums = D) -> list[str]
     for b in n.unplaced:
         if b.material == "birch":
             notes.append(
-                f"nest: {b.label} is {b.a:.0f} x {b.b:.0f} and its outline path does not "
-                f"lie within {travel:.0f}mm of travel, and it is not on the track-saw ruling "
+                f"nest: {b.label} is {b.a:.0f} x {b.b:.0f} and has no place on a "
+                f"{SHEET[0]:.0f} x {SHEET[1]:.0f} sheet in its grain orientation within "
+                f"{travel:.0f}mm of travel, and it is not on the track-saw ruling "
                 f"({', '.join(TRACK_SAW_PARTS)}). It has no sheet."
             )
         elif b.material == "acrylic":
@@ -594,7 +598,7 @@ def check_nest(comps: list[Component] | None = None, d: Datums = D) -> list[str]
     shap = [s for s in birch if s.kind == "SHAPEOKO"]
     n_birch = sum(len(s.placements) for s in birch)
     notes.append(
-        f"nest: {len(birch)} sheets of 5x5 Baltic {SHEET_T:.0f}mm, standing note. "
+        f"nest: {len(birch)} sheets of 4x8 Baltic {SHEET_T:.0f}mm, standing note. "
         f"{len(track)} TRACK SAW ({', '.join(p.blank.label for s in track for p in s.placements)}, "
         f"a sheet each by ruling 2026-09-02) + {len(shap)} Shapeoko, ripped to blanks under "
         f"{travel:.0f} on the track saw first. {n_birch} birch parts, {GAP:.0f}mm kerf/margin, "
@@ -884,7 +888,7 @@ def main() -> int:
     print(report(n, d))
     birch = n.by_material("birch")
     print(
-        f"\nSHEET COUNT: {len(birch)} sheets of 5x5 Baltic {SHEET_T:.0f}mm "
+        f"\nSHEET COUNT: {len(birch)} sheets of 4x8 Baltic {SHEET_T:.0f}mm "
         f"({sum(1 for s in birch if s.kind == 'TRACK SAW')} track saw + "
         f"{sum(1 for s in birch if s.kind == 'SHAPEOKO')} Shapeoko), "
         f"{len(n.by_material('acrylic'))} laser bed of {LASER_T:.0f}mm clear, "

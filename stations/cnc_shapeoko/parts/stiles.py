@@ -63,7 +63,7 @@ from __future__ import annotations
 
 from build123d import Compound, Part, Plane
 
-from lib.house import SHEET_5X5_BALTIC, fits
+from lib.house import SHEET_4X8, fits
 from stations.cnc_shapeoko.carcass import (
     DATUMS,
     T,
@@ -230,8 +230,8 @@ def check_stiles(d: Datums = D) -> list[str]:
                 f"a {s.stile_toe_land:.1f} land"
             )
 
-    if not fits((w, hgt), SHEET_5X5_BALTIC):
-        notes.append(f"stile blank {w:.0f} x {hgt:.0f} does not come out of a 5x5 sheet")
+    if not fits((w, hgt), SHEET_4X8):
+        notes.append(f"stile blank {w:.0f} x {hgt:.0f} does not come out of a 4x8 sheet")
 
     for label in labels(d):
         (x0, x1), (y0, y1) = span(label, d)

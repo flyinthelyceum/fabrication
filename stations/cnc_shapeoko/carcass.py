@@ -126,7 +126,7 @@ from build123d import (
     extrude,
 )
 
-from lib.house import CARCASS_T, GRID, PANEL_T, SHEET_5X5_BALTIC, fits, on_grid
+from lib.house import CARCASS_T, GRID, PANEL_T, SHEET_4X8, fits, on_grid
 from stations.cnc_shapeoko.params import STATION, Gusset, Station
 
 __all__ = [
@@ -1418,16 +1418,16 @@ def check_carcass(d: Datums = DATUMS) -> list[str]:
         ("spine", d.spine_size),
         ("bay wall", d.wall_size),
     ):
-        if not fits(size, SHEET_5X5_BALTIC):
+        if not fits(size, SHEET_4X8):
             notes.append(
                 f"{label} blank {size[0]:.0f} x {size[1]:.0f} does not come out "
-                "of a 5x5 Baltic sheet"
+                "of a 4x8 Baltic sheet"
             )
 
     if not fits(d.deck_size, (600.0, 1200.0)):
         notes.append(
             f"deck {d.deck_size[0]:.0f} x {d.deck_size[1]:.0f} is bigger than a "
-            "FULL blank, so the carcass's own biggest panels come off the 5x5 "
+            "FULL blank, so the carcass's own biggest panels come off the 4x8 "
             "sheet directly and never touch the 600 stock module. Expected, and "
             "worth knowing before ordering."
         )

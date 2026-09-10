@@ -77,7 +77,7 @@ from __future__ import annotations
 
 from build123d import Location, Part, Plane
 
-from lib.house import GRID, SHEET_5X5_BALTIC, fits
+from lib.house import GRID, SHEET_4X8, fits
 from stations.cnc_shapeoko.carcass import (
     DADO_W,
     DATUMS,
@@ -281,9 +281,9 @@ def check_brain_partition(d: Datums = DATUMS) -> list[str]:
             "Cut on the track saw or Shaper Origin instead, by ruling, "
             "2026-09-02. Expected, and worth knowing before it goes to either tool."
         )
-    if not fits((w, h), SHEET_5X5_BALTIC):
+    if not fits((w, h), SHEET_4X8):
         notes.append(
-            f"partition blank {w:.0f} x {h:.0f} does not come out of a 5x5 Baltic sheet"
+            f"partition blank {w:.0f} x {h:.0f} does not come out of a 4x8 Baltic sheet"
         )
 
     return notes

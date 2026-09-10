@@ -181,7 +181,7 @@ from build123d import (
     extrude,
 )
 
-from lib.house import GRID, LASER_BED_SMALL, QUARTER, SHEET_5X5_BALTIC, fits
+from lib.house import GRID, LASER_BED_SMALL, QUARTER, SHEET_4X8, fits
 from stations.cnc_shapeoko.carcass import (
     DATUMS,
     EXPORT_DIR,
@@ -1243,8 +1243,8 @@ def check_rear_door(d: Datums = D) -> list[str]:
             "travel: cut on the track saw or Shaper Origin, by ruling, 2026-09-02. "
             "Expected, and worth knowing before it goes to either tool."
         )
-    if not fits((w, h), SHEET_5X5_BALTIC):
-        notes.append(f"door blank {w:.0f} x {h:.0f} does not come out of a 5x5 Baltic sheet")
+    if not fits((w, h), SHEET_4X8):
+        notes.append(f"door blank {w:.0f} x {h:.0f} does not come out of a 4x8 Baltic sheet")
 
     # -- the hinge -----------------------------------------------------------
     rise = swing_rise(d)

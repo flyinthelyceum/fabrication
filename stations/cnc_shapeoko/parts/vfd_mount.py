@@ -95,7 +95,7 @@ from __future__ import annotations
 
 from build123d import Align, Box, Location, Part, Plane
 
-from lib.house import GRID, SHEET_5X5_BALTIC, fits
+from lib.house import GRID, SHEET_4X8, fits
 from stations.cnc_shapeoko.carcass import (
     DATUMS,
     SCREW_CBORE_D,
@@ -474,8 +474,8 @@ def check_vfd_mount(d: Datums = DATUMS) -> list[str]:
             "does not pass. Step the insert down to M5."
         )
 
-    if not fits((w, h), SHEET_5X5_BALTIC):
-        notes.append(f"plate blank {w:.0f} x {h:.0f} does not come out of a 5x5 sheet")
+    if not fits((w, h), SHEET_4X8):
+        notes.append(f"plate blank {w:.0f} x {h:.0f} does not come out of a 4x8 sheet")
 
     return notes
 

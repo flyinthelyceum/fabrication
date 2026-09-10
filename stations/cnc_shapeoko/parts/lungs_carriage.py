@@ -123,7 +123,7 @@ from __future__ import annotations
 
 from build123d import Align, Box, GeomType, Location, Part, Plane, extrude
 
-from lib.house import GRID, SHEET_5X5_BALTIC, fits
+from lib.house import GRID, SHEET_4X8, fits
 from stations.cnc_shapeoko.carcass import (
     DADO_D,
     DADO_W,
@@ -871,8 +871,8 @@ def check_lungs_carriage(d: Datums = D) -> list[str]:
 
     for label, part, _plane in panels(d):
         bb = part.bounding_box()
-        if not fits((bb.size.X, bb.size.Y), SHEET_5X5_BALTIC):
-            notes.append(f"{label} blank does not come out of a 5x5 sheet")
+        if not fits((bb.size.X, bb.size.Y), SHEET_4X8):
+            notes.append(f"{label} blank does not come out of a 4x8 sheet")
 
     return notes
 

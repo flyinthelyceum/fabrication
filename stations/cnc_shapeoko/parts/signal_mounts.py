@@ -144,7 +144,7 @@ from lib.house import (
     PRINT_BED_MARGIN,
     PRINT_BED_MIN,
     QUARTER,
-    SHEET_5X5_BALTIC,
+    SHEET_4X8,
     export_stl,
     fits,
     printable,
@@ -1132,8 +1132,8 @@ def check_signal_mounts(d: Datums = D) -> list[str]:
 
     for label, size2 in ((PART_NAME, (w, h)), (SHELF_NAME, shelf_size(d)),
                          (f"{CHEEK_STEM}_l", (cheek_station('l', d)[1][1] - cheek_station('l', d)[1][0], CHEEK_H))):
-        if not fits(size2, SHEET_5X5_BALTIC):
-            notes.append(f"{label} blank {size2[0]:.0f} x {size2[1]:.0f} does not come out of a 5x5 sheet")
+        if not fits(size2, SHEET_4X8):
+            notes.append(f"{label} blank {size2[0]:.0f} x {size2[1]:.0f} does not come out of a 4x8 sheet")
     if not fits(lip_size(d), QUARTER):
         notes.append(f"the lip {lip_size(d)[0]:.0f} x {lip_size(d)[1]:.0f} does not come out of a QUARTER blank")
 

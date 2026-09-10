@@ -125,7 +125,7 @@ from dataclasses import dataclass
 
 from build123d import Align, Box, Location, Part, Plane
 
-from lib.house import GRID, SHEET_5X5_BALTIC, STOCK_MODULE, fits
+from lib.house import GRID, SHEET_4X8, STOCK_MODULE, fits
 from stations.cnc_shapeoko.carcass import (
     DADO_W,
     DATUMS,
@@ -800,8 +800,8 @@ def check_mains_backplate(d: Datums = DATUMS) -> list[str]:
     # -- the schedule, kept visible on every run
     notes.append("WIRE SCHEDULE, standing note. " + " | ".join(wire_schedule(d)))
 
-    if not fits((w, h), SHEET_5X5_BALTIC):
-        notes.append(f"plate blank {w:.0f} x {h:.0f} does not come out of a 5x5 sheet")
+    if not fits((w, h), SHEET_4X8):
+        notes.append(f"plate blank {w:.0f} x {h:.0f} does not come out of a 4x8 sheet")
 
     return notes
 
