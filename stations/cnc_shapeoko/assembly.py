@@ -95,7 +95,6 @@ from stations.cnc_shapeoko.parts import (
     spine_panel,
     stiles,
     stock_rails,
-    stock_wash,
     top_cap,
     trays,
     vfd_mount,
@@ -278,17 +277,11 @@ def components(d: Datums = DATUMS) -> list[Component]:
     # 17. the signal side (C13): the subplate on the spine's rear face right
     # of the partition, the PC's cradle (shelf, two cheeks, clear lip) and
     # the PC as a reference solid, the short DIN rail as a top-hat profile
-    # with the ONE printed part hooked on it, the board and the hub as
-    # references. The motion controller appears only once params carries its
+    # with the ONE printed part hooked on it and the board as a
+    # reference (the sensing layer is PARKED to 2027-01-05; the USB hub was
+    # struck 2026-09-09, the P350 has the ports). The motion controller appears only once params carries its
     # envelope; until then its seat is reserved and the check says so.
     for label, group, part in signal_mounts.placed_all(d):
-        out.append(Component(label, group, part))
-
-    # 18. the stock wash (C14): the LED channel under the cap in the band
-    # ahead of the comb, the GX16 plug on the STOCK WASH bore and the lead
-    # between them along the right divider, all reference solids, so the
-    # run is compared against the comb, the blanks and the divider here.
-    for label, group, part in stock_wash.placed_all(d):
         out.append(Component(label, group, part))
 
     # 19. the exhaust plenum (C08): the baffled birch box across the rear of
@@ -519,11 +512,6 @@ def joints(d: Datums = DATUMS) -> dict[frozenset[str], Joint]:
     # -- the signal side: the subplate on the spine, the cradle on the
     # subplate, the carrier on its rail; every joint a face.
     for a, b, kind, axis, lo, hi, note in signal_mounts.joint_table(d):
-        js.append(Joint(a, b, kind, axis, lo, hi, note))
-
-    # -- the stock wash: the channel bears on the cap; the plug and the lead
-    # are meant to touch nothing.
-    for a, b, kind, axis, lo, hi, note in stock_wash.joint_table(d):
         js.append(Joint(a, b, kind, axis, lo, hi, note))
 
     # -- the exhaust plenum: the floor, the top and both walls housed in the
@@ -1139,22 +1127,6 @@ def main() -> None:
         f"{signal_mounts.CARRIER_NAME} prints {cs[0]:.0f} x {cs[1]:.0f} x {cs[2]:.1f}; "
         f"controller seat {kx1 - kx0:.0f} x {kz1 - kz0:.0f} x {ky1 - ky0:.0f}, env = {signal_mounts.CONTROLLER_ENV}; "
         f"exhaust slots over the signal side: {len(signal_mounts.vent_slots_over_signal(d))}"
-    )
-
-    print("\nstock bay: the wash under the cap, and its feed")
-    (wx0, wx1), (wy0, wy1), (wz0, wz1) = (
-        stock_wash.channel_x(d), stock_wash.channel_y(d), stock_wash.channel_z(d)
-    )
-    top, bottom = stock_wash.rake_angles(d)
-    print(
-        f"  {stock_wash.LABEL}: {stock_wash.channel_length(d):.3f} x {stock_wash.CHANNEL_W:.0f} x "
-        f"{stock_wash.CHANNEL_H:.0f} at x {wx0:.1f}..{wx1:.1f} y {wy0:.1f}..{wy1:.1f} z {wz0:.1f}..{wz1:.1f}; "
-        f"{stock_wash.blank_clear(d):.0f} over a blank's top; rake {top:.0f}..{bottom:.1f} deg on an indexed edge"
-    )
-    print(
-        f"  feed {stock_wash.CROSSING} ({stock_wash.RAIL}): "
-        + " -> ".join(f"({x:.1f}, {y:.1f}, {z:.1f})" for x, y, z in stock_wash.route(d))
-        + f"; lead {stock_wash.route_length(d):.0f}mm"
     )
 
     print("\nstiles: the flange band as a fixed birch stile, four corners")

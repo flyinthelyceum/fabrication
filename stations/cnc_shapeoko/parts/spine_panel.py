@@ -115,8 +115,7 @@ SPLIT_TRANSIT_H = GRID * 2
 """Height of the ONE interruption in the partition housing.
 
 Every low-voltage lead that has to cross from sealed to signal -- the current
-transformer on the spindle leg, and the feed for the stock wash -- passes here
-and nowhere else. One gap, labelled, above the WAGO rails and below the top: a
+transformer on the spindle leg -- passes here and nowhere else. One gap, labelled, above the WAGO rails and below the top: a
 split with a single legible exception is a split a student can read. A split
 with leads wandering through it in three places is decoration."""
 
@@ -168,12 +167,10 @@ CROSSINGS: tuple[Crossing, ...] = (
     # Sealed side. Mains to the extractor, and the one low-voltage feed that
     # has to reach a bay sitting behind the sealed zone.
     Crossing("EXTRACTOR MAINS", "lungs", "sealed", "gland", "low"),
-    # The mast's two non-GX16 runs (USB camera lead, addressable strip 3-core,
-    # I91) drop through the top cap's feed slot at the mast pad and leave the
-    # band here for the lungs bay's always-live spur, never touching the
-    # signal side. One gland, one bundle: both leads are under the M20 range.
-    Crossing("MAST FEED", "lungs", "sealed", "gland", "high"),
-    Crossing("STOCK WASH", "stock", "sealed", "gx16", "high"),
+    # STRUCK 2026-09-09 (subtract pass, items 03/04/08/14): the MAST FEED
+    # gland (mast strip struck, mast camera parked to 2026-11-02) and the
+    # STOCK WASH GX16 (the wash struck with its ToF driver). The cap's feed
+    # slot stays cut for the camera's return; its crossing is re-added then.
     # Signal side. Everything the operator touches, at the operator's corner.
     Crossing("CONSOLE STOP", "hands", "signal", "gx16", "high"),
     Crossing("CONSOLE CONTROL", "hands", "signal", "gx16", "high"),
@@ -275,8 +272,9 @@ def sealed_x(d: Datums = DATUMS) -> tuple[float, float]:
 
 def signal_x(d: Datums = DATUMS) -> tuple[float, float]:
     """X span of the exposed-signal zone: right of the partition to the right
-    end wall. Mini PC, motion controller, station microcontroller, USB hub and
-    the ethernet bulkhead, at the operator's corner."""
+    end wall. Mini PC, motion controller, the station microcontroller's rail
+    seat (PARKED to 2027-01-05) and the ethernet bulkhead, at the operator's
+    corner."""
     return (x_split(d) + d.t, d.wall_x[3])
 
 

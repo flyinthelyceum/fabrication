@@ -8,7 +8,7 @@ One 18mm Baltic birch panel standing in the brain band on the plane
 door's landing and the full band height from the deck to the top cap's
 underside. Its left face looks at sealed power (contactor, fused inlet, WAGO
 rails); its right face looks at exposed signal (mini PC, motion controller,
-station microcontroller, hub, ethernet bulkhead) at the operator's corner.
+station microcontroller's parked seat, ethernet bulkhead) at the operator's corner.
 
 It is a BARRIER, not a brace. The carcass is stiff without it; what it does is
 turn "mains behind a driver, signal behind clear acrylic" from a wiring habit

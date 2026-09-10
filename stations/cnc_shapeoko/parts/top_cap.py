@@ -41,12 +41,12 @@ It does three jobs beyond closing the box:
     centre is one half-plate in from each face.  Anything closer and the plate
     would have to be notched round two housed panels.
 
-    THE MAST FEED SLOT.  The two runs the mast carries that are not GX16
-    (the USB camera lead and the addressable strip's 3-core, I91) enter the
-    carcass through a capsule slot at the plate's INBOARD edge, into the
-    sealed side of the brain band, and leave it through the spine's MAST FEED
-    gland into the lungs bay, which is where the always-live spur is.  The
-    run never touches the signal side.  The slot sits where the louvre
+    THE MAST FEED SLOT.  A capsule slot at the plate's INBOARD edge into the
+    sealed side of the brain band, cut for the mast camera's USB lead (I91).
+    2026-09-09 subtract pass: the addressable strip is STRUCK and the camera
+    is PARKED to 2026-11-02, so today nothing runs through it. It stays cut
+    because drilling it later means drilling under an assembled machine; the
+    spine's MAST FEED gland was struck and is re-added with the camera.  The slot sits where the louvre
     field's first slot would otherwise be and the field starts one rib
     inboard of it, so the slot reads as the first louvre, wider, at the
     mast's feet.
@@ -180,8 +180,9 @@ this one name. Must be a member of MAST_PADS."""
 
 MAST_BOLT_D = 8.0
 """M8 through the cap into the mast base plate. Bigger than the carcass's own
-SCREW_D because this one carries a cantilevered column, a counterweight and a
-hose under tension, not a glued panel joint."""
+SCREW_D because this one carries a cantilevered column, a spring tool
+balancer and a hose under tension, not a glued panel joint (the machined
+counterweight and delrin pulleys were struck 2026-09-09 for the balancer)."""
 
 MAST_BOLT_CLEAR_D = MAST_BOLT_D + (SCREW_CLEAR_D - SCREW_D)
 """Same clearance allowance the carcass uses on its own fasteners, scaled to the
@@ -231,7 +232,7 @@ sizes its sealed crossings for, 6-12mm cable (carcass.GLAND_M20_D).
 CONFIDENCE: high, a catalogue range, not a measurement."""
 
 MAST_FEED_SLOT_W = GLAND_M20_CABLE_MAX
-"""Width of the slot the camera lead and the strip's 3-core drop through.
+"""Width of the slot the camera lead drops through (the strip is struck).
 Whatever the M20 gland downstream will close on, the slot upstream must pass,
 and neither lead has a SKU yet to be sized smaller than that. Wider than
 ROUTER_D, so it cuts in two passes like the louvre slots."""

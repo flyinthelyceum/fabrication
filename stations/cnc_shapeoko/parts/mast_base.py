@@ -6,7 +6,8 @@ WHAT IT IS
 One square of 6mm mild steel under the top cap at the mast pad, four M8
 clearance holes on the pad's own 40mm square, nuts and washers on its
 underside. It is a large washer with an argument: the mast is a cantilevered
-column carrying a hose under tension, a camera and a counterweight, and four
+column carrying a hose under tension on a spring balancer (a camera parked
+to 2026-11-02; the counterweight struck 2026-09-09), and four
 M8 washers on 18mm of birch would crush and loosen inside a term. The plate
 turns four point loads into one bearing area the ply can carry.
 

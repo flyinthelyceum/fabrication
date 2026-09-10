@@ -19,13 +19,16 @@ One birch plate and a set of reference solids.
                         split is the whole point of the sealed zone (brief v6):
 
     ALWAYS-LIVE   upstream of the contactor, behind its own fuse. PC brick,
-                  ESP32 supply, mast feed, stock wash. Opening the rear door
-                  leaves the console reporting and the mast lit.
-    CONTACTOR     downstream of the contactor. VFD, motion controller,
-                  extractor through the SSR. Everything that moves or cuts.
+                  the extractor receptacle (the CT 15 E stays energised and
+                  is switched at its own auto-start socket by a trigger load,
+                  ``params.DUST_CONTROL``, 2026-09-09), the trigger relay,
+                  the ESP32 supply (PARKED to 2027-01-05). Opening the rear
+                  door leaves the PC up and the extractor able to run.
+    CONTACTOR     downstream of the contactor. VFD, motion controller.
+                  Everything that moves or cuts, and nothing else.
 
 ``contactor_env``       Reference solids, not birch, not cut, not on the
-``ssr_env``             cutting list: the DIN-standard envelope of each device
+``trigger_relay_env``   cutting list: the DIN-standard envelope of each device
 ``pe_busbar_env``       stood on its rail so every later brain-band layout
 ``fuse_env_*``          collides with the electrical honestly. Same idea as
 ``ct_env_spindle``      ``vfd_mount.vfd_keepout``.
@@ -56,8 +59,8 @@ Everything metal bonds to it: the drive's PE, the receptacle box (and through
 it the CT 15's chassis), the hose cuff lead, the mast, the carcass hardware.
 The motion controller's logic 0V NEVER lands on it, by doctrine: that is the
 path that turns a hose discharge into a false limit switch. The bar is at the
-left end of the ALWAYS-LIVE rail, directly above the EXTRACTOR MAINS gland and
-under the MAST FEED gland, so two of the five legs are the shortest possible.
+left end of the ALWAYS-LIVE rail, directly above the EXTRACTOR MAINS gland, so
+the receptacle leg is the shortest possible.
 
 ``PE_SWITCHED = False``. The contactor drops L and N only. Earth is continuous
 through every device on both rails, and through the interlock, so opening the
@@ -103,7 +106,7 @@ WHAT IS MEASURED, WHAT IS NOT
 
 The rail is a standard. The modular devices (contactor, fuse holders) are
 bounded by DIN 43880 whatever brand arrives, so their envelopes are the
-standard's and carry no MEASURE. The SSR-with-heatsink, the 8-way earth bar
+standard's and carry no MEASURE. The trigger relay, the 8-way earth bar
 and the CT are bought as generic Amazon lines with no SKU on the BOM, so each
 is modelled from a REPRESENTATIVE listing or datasheet, tagged as such, and
 ``check_mains_backplate`` carries them as MEASURE until the ordered parts are
@@ -240,13 +243,19 @@ FUSE_MODULES = 1
 fuse-holder family. CONFIDENCE: standard."""
 
 # ---- the representative parts: no SKU on the BOM ----------------------------
-SSR_ENV = (30.0, 91.0, 64.0)
-"""(along the rail, across the rail, depth off the RAIL face) of a 25A SSR
-with its heatsink on a DIN clip. SOURCE: Lorentzzi DSSR-25DA listing,
-"91*30*64 mm", a DIN-rail SSR with the heatsink fitted; orientation ASSUMED
-30 along the rail, and the 64 taken off the rail face rather than the plate. CONFIDENCE: representative, MEASURE when the ordered part
-is in hand. The BOM line is "Solid state relay, 25A, with heatsink" with no
-SKU. Drives only its own reference solid."""
+TRIGGER_RELAY_ENV = (22.0, 72.0, 62.0)
+"""(along the rail, across the rail, depth off the RAIL face) of the CT 15
+trigger relay: an MY2NJ-class 24 V DC ice-cube relay in its 8-pin DIN socket
+(Omron PYF08A class, 21.5 wide, ~70 across with the hold-down clip, relay
+plus socket ~62 off the rail). SOURCE: representative socket listings; no
+SKU on the BOM yet. CONFIDENCE: representative, MEASURE when the ordered
+part is in hand. Replaces the 25 A SSR (struck 2026-09-09, subtract pass
+item 10): the VFD's T1 relay switches +24 V into this coil, its contact
+switches the 120 V trigger load, so no mains lands on the VFD control strip
+(``params.DUST_CONTROL``). The DUST selector's ON contact drives the same
+coil in parallel. The two 100 ohm 100 W aluminium-housed resistors that ARE
+the load bolt to the plate face and are not modelled yet (see the check).
+Drives only its own reference solid."""
 
 BUSBAR_ENV = (78.0, 35.0, 10.0)
 """(along, across, depth off the RAIL face) of an 8-way brass earth bar on a
@@ -301,35 +310,36 @@ class Rail:
 
 RAILS: tuple[Rail, ...] = (
     Rail(RAIL_LIVE_NAME, "ALWAYS-LIVE", RAIL_LIVE_Y,
-         ("PC brick", "ESP32 supply", "mast feed", "stock wash",
-          "contactor coil (through the E-stop loop and the arm key)")),
+         ("PC brick", "extractor receptacle", "trigger relay coil",
+          "ESP32 supply (PARKED to 2027-01-05)",
+          "contactor coil (through the E-stop loop and the arm selector)")),
     Rail(RAIL_CONTACTOR_NAME, "CONTACTOR", RAIL_CONTACTOR_Y,
-         ("VFD", "motion controller", "extractor via SSR")),
+         ("VFD", "motion controller")),
 )
 """Which loads ride which rail. SOURCE: brief v6/v7 §distribution, "an
 always-live spur carries the mini PC, the station microcontroller, and the
-mast. The contactor carries only what moves or cuts." CONFIDENCE: ruling. The
-stock wash is a light in a bay, not a thing that moves or cuts, so it is
-always-live with the mast. The coil supply is always-live by necessity: a
-contactor whose coil is downstream of itself never pulls in."""
+mast. The contactor carries only what moves or cuts." CONFIDENCE: ruling.
+2026-09-09: the extractor moved to ALWAYS-LIVE. The CT 15 E does not
+re-energise after a mains cut (Jared, measured), so a contactor drop would
+leave it dead; it is switched at its auto-start socket instead
+(``params.DUST_CONTROL``), and an extractor is neither motion nor cutting.
+The mast feed and stock wash left the rail with their runs (struck). The
+coil supply is always-live by necessity: a contactor whose coil is
+downstream of itself never pulls in."""
 
 CROSSING_RAIL: dict[str, str] = {
-    "EXTRACTOR MAINS": "CONTACTOR",
-    "MAST FEED": "ALWAYS-LIVE",
-    "STOCK WASH": "ALWAYS-LIVE",
+    "EXTRACTOR MAINS": "ALWAYS-LIVE",
     "CONSOLE STOP": "ALWAYS-LIVE",
     "CONSOLE CONTROL": "CONTACTOR",
     "CONSOLE INSTRUMENT": "ALWAYS-LIVE",
     "PENDANT AND USB": "CONTACTOR + ALWAYS-LIVE",
 }
-"""Which rail each of the spine's seven crossings rides, by label. Keyed to
+"""Which rail each of the spine's five crossings rides, by label. Keyed to
 ``spine_panel.CROSSINGS`` and checked against it, so a crossing added there
 without a line here fails the gate rather than leaving the schedule short."""
 
 CROSSING_FEEDS: dict[str, str] = {
-    "EXTRACTOR MAINS": "the receptacle on the lungs face, from the SSR",
-    "MAST FEED": "mast strip 3-core and camera USB, from the always-live spur",
-    "STOCK WASH": "stock bay wash light, from the always-live spur",
+    "EXTRACTOR MAINS": "the receptacle on the lungs face, always live; the CT is switched by the trigger load in its auto-start socket",
     "CONSOLE STOP": "E-stop contacts in the contactor coil loop; the coil is always-live, the E-stop opens it",
     "CONSOLE CONTROL": "motion controller signals; the controller itself is contactor-fed",
     "CONSOLE INSTRUMENT": "ESP32 to the instrument panel; always-live so the panel reports with the door open",
@@ -441,9 +451,6 @@ def envelopes(d: Datums = DATUMS) -> list[Env]:
     out.append(Env("fuse_env_extractor", "FUSE EXTRACTOR", FUSE_MODULES * DIN_MODULE_W,
                    DIN_DEVICE_H, DIN_DEVICE_D, ctr.name, x, ctr.y_local))
     x += FUSE_MODULES * DIN_MODULE_W + GROUP_GAP
-    ssr = Env("ssr_env", "SSR EXTRACTOR", SSR_ENV[0], SSR_ENV[1], SSR_ENV[2],
-              ctr.name, x, ctr.y_local, depth_from_rail=True)
-    out.append(ssr)
 
     # The contactor: rightmost, nearest the transit and the operator (I74).
     cw = CONTACTOR_MODULES * DIN_MODULE_W
@@ -457,6 +464,10 @@ def envelopes(d: Datums = DATUMS) -> list[Env]:
     x += BUSBAR_ENV[0] + GROUP_GAP
     out.append(Env("fuse_env_spur", "FUSE ALWAYS-LIVE SPUR", FUSE_MODULES * DIN_MODULE_W,
                    DIN_DEVICE_H, DIN_DEVICE_D, live.name, x, live.y_local))
+    x += FUSE_MODULES * DIN_MODULE_W + GROUP_GAP
+    out.append(Env("trigger_relay_env", "TRIGGER RELAY", TRIGGER_RELAY_ENV[0],
+                   TRIGGER_RELAY_ENV[1], TRIGGER_RELAY_ENV[2], live.name, x,
+                   live.y_local, depth_from_rail=True))
 
     return out
 
@@ -694,12 +705,18 @@ def check_mains_backplate(d: Datums = DATUMS) -> list[str]:
                 f"the CONTACTOR rail carries '{compute}': guards kill motion and "
                 "cutting, never compute. Move it to ALWAYS-LIVE."
             )
-    for must in ("VFD", "motion controller", "extractor"):
+    for must in ("VFD", "motion controller"):
         if not any(must.lower() in l.lower() for l in _rail("CONTACTOR").loads):
             notes.append(f"'{must}' is not on the CONTACTOR rail; the interlock has to drop it")
-    for must in ("PC brick", "ESP32", "mast", "stock wash"):
+    for must in ("PC brick", "extractor", "trigger relay"):
         if not any(must.lower() in l.lower() for l in _rail("ALWAYS-LIVE").loads):
             notes.append(f"'{must}' is not on the ALWAYS-LIVE rail")
+    if any("extractor" in l.lower() for l in _rail("CONTACTOR").loads):
+        notes.append(
+            "the extractor is on the CONTACTOR rail: the CT 15 E does not "
+            "re-energise after a mains cut (measured 2026-09-09). It rides "
+            "ALWAYS-LIVE and is switched at its auto-start socket."
+        )
 
     # -- the schedule covers exactly the spine's crossings
     labels = {c.label for c in CROSSINGS}
@@ -790,8 +807,14 @@ def check_mains_backplate(d: Datums = DATUMS) -> list[str]:
 
     # -- what the ordered parts have not told us yet
     notes.append(
-        "the SSR-with-heatsink, the 8-way PE bar and the spindle CT are modelled "
-        f"from representative listings ({SSR_ENV[0]:.0f}x{SSR_ENV[1]:.0f}x{SSR_ENV[2]:.0f}, "
+        "UNMODELLED: the CT 15 trigger load, two 100 ohm 100 W aluminium-housed "
+        "wirewound resistors in series (200 ohm, 72 W at 120 V; the CT fired at "
+        "60 W, params.DUST_CONTROL), bolted to the plate face as their heatsink. "
+        "Place them on the plate once the resistor body is in hand."
+    )
+    notes.append(
+        "the trigger relay, the 8-way PE bar and the spindle CT are modelled "
+        f"from representative listings ({TRIGGER_RELAY_ENV[0]:.0f}x{TRIGGER_RELAY_ENV[1]:.0f}x{TRIGGER_RELAY_ENV[2]:.0f}, "
         f"{BUSBAR_ENV[0]:.0f}x{BUSBAR_ENV[1]:.0f}x{BUSBAR_ENV[2]:.0f}, "
         f"{CT_ENV[0]:.0f}x{CT_ENV[1]:.0f}x{CT_ENV[2]:.1f}) because the BOM lines carry "
         "no SKU. MEASURE THIS when they arrive; none of them moves the plate."

@@ -137,9 +137,9 @@ WHAT IT CLEARS
     the door      at 180 the lungs door lies against the front-left leg,
                   outboard of the bay's front; the plenum is the bay's whole
                   depth behind it and the check prints the figure
-    the mains crossings  the EXTRACTOR MAINS bore is under the floor and
-                  the MAST FEED bore is above the top; neither is inside
-                  the box
+    the mains crossing  the EXTRACTOR MAINS bore is under the floor, not
+                  inside the box (the MAST FEED bore above it was struck
+                  2026-09-09)
 
 
 JOINERY
