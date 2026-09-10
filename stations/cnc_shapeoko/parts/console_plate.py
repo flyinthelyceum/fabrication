@@ -20,14 +20,27 @@ front corner (``parts/stiles.py``), so the clear acrylic reveal over the
 chase runs from the cheek's front edge to the stile's inner edge, and the
 floor rib is notched around the stile's foot.
 
+Ruling 2026-09-09 (console_material): the plate is NOT birch. It is 3mm 304
+stainless, #4 brushed (``PLATE_T``, ``params.CONSOLE_PLATE``), waterjet cut in
+the Innovation Commons, its legends Enduramark black on the Universal laser.
+Jared: "The sheet shouldn't be birch. that makes no sense. We should spec a
+metal plate that we can waterjet/lasercut and enduramark etch the markings
+on." The 12mm plate was inherited from the carcass and fought every
+panel-mount device on it: the XB4s take 1-6, the PL183 2-10, the HDMI D-type
+that was tried on 09-09 takes 2. At 3mm every device is inside its range, the
+instrument recesses and their acrylic panes vanish (everything flush-mounts,
+the meter bezels stand proud), and the plate sits in a 3mm relief over the
+wall's aperture instead of a rabbeted tongue-and-lip. Same day: a second
+meter, SPEED beside LOAD, and the pendant port is USB-C, not GX16.
+
 
 WHAT THIS PART OWNS
 ===================
 
   * CONSOLE_BAND: the region of the right end wall the console may occupy
-  * the plate: 18mm birch, the same sheet as the carcass, set FLUSH with the
-    wall's outer face in a rabbeted through-aperture; every device cutout,
-    every instrument pocket, the three clear-acrylic panes over the pockets
+  * the plate: 3mm stainless (``PLATE_T``), set FLUSH with the wall's outer
+    face in a relief over a through-aperture; every device cutout, the two
+    meters' stud holes, the state display's window
   * the cutter the right end wall subtracts to receive the plate
     (``wall_cutter``), so the aperture and the plate are one set of numbers
   * the CHASE behind the plate: the air the devices need (``CHASE``), the
@@ -36,12 +49,12 @@ WHAT THIS PART OWNS
   * the keep-out the drawers are checked against, as a reference solid, and
     the E-stop module's ALLOCATED envelope inside it
   * ``narrowed_openings`` / ``DRAWER_GIVE``: what the drawers lose
-  * the E-stop's callout (C17), V-carved under the mushroom guard at
-    ``estop_callout_anchor``, sized by ``estop_callout_band`` to the birch
-    between the guard and the pendant socket's flange; the one word on the
-    red budget's device, itself raw birch through black like every other.
-    It goes out on the ``VCARVE`` layer, and the painted plate goes back on
-    the machine on its two short-edge lip screws (``REGISTER``).
+  * the E-stop's callout (C17), Enduramark-marked under the mushroom guard
+    at ``estop_callout_anchor``, sized by ``estop_callout_band`` to the steel
+    between the guard and the pendant port's flange; the one word on the red
+    budget's device, itself black on brushed steel like every other. It goes
+    out on the ``MARK`` layer, and the cut plate goes on the laser bed on its
+    two short-edge screw holes (``REGISTER``).
 
 It does NOT own the drawers (``drawers`` narrows itself by reading this file),
 the wall (``bay_walls`` subtracts ``wall_cutter``) or the spine's crossings
@@ -51,22 +64,25 @@ the wall (``bay_walls`` subtracts ``wall_cutter``) or the spine's crossings
 THE PLATE IS A FLUSH INSET, SCREWED FROM OUTSIDE
 ================================================
 
-The wall gets a through-aperture the size of the plate's TONGUE and, on its
-OUTER face, a rabbet ``DADO_D`` deep the size of the plate's outline. The plate
-is 18mm thick: its outer ``DADO_D`` is full outline (the LIP), its inner
-``T - DADO_D`` is the tongue that fills the aperture. Outer faces flush, inner
-faces flush. Ten screws through the lip into the wall's land, from the outside,
-one head type, exposed: the plate comes off the station without touching a
-drawer, and the harness comes out with it on its service loop.
+The wall gets a through-aperture ``LIP`` inside the plate's outline, for the
+device bodies, and on its OUTER face a relief ``PLATE_T`` deep the size of the
+plate's outline. The plate is a flat 3mm sheet: it lies in the relief, outer
+faces flush, and the ``LIP`` margin of wall behind its edge is the land its
+ten countersunk screws go into, from the outside, one head type, flush. The
+plate comes off the station without touching a drawer, and the harness comes
+out with it on its service loop. (Until 2026-09-09 the plate was 12mm birch
+with a tongue in the aperture and a lip in a rabbet; the relief is what is
+left of that.)
 
 Both wall cuts are JOINERY -- a square member seats in them -- so both stay
 square and get dogbone reliefs, per the rule in ``through_slot``'s docstring.
-The aperture's four reliefs are through and sit under the lip, invisible. The
-rabbet's four reliefs are blind, ``DADO_D`` deep, and SHOW as a crescent at
-each corner of the plate on the outer face. A matched ``ROUTER_R`` radius on
-the plate's corners would hide them; that trades the rule for a look, and the
-rule stands until Jared says otherwise. It is flagged in ``check_console_plate``
-as a standing note so the crescents are never a surprise on the day.
+The aperture's four reliefs are through and sit under the plate, invisible.
+The relief's four are blind, ``PLATE_T`` deep, and SHOW as a crescent at each
+corner of the plate on the outer face. A matched ``ROUTER_R`` radius on the
+plate's corners would hide them, and the waterjet cuts any radius for free;
+that trades the rule for a look, and the rule stands until Jared says
+otherwise. It is flagged in ``check_console_plate`` as a standing note so the
+crescents are never a surprise on the day.
 
 
 DEVICES, DEPTHS, AND WHERE THE CHASE'S WIDTH COMES FROM
@@ -88,14 +104,12 @@ bracket behind the plate -- not a measurement, and ``CONFIDENCE`` says so. It
 does not drive ``CHASE``; the check confirms the allocation fits inside the
 chase with the margin and reports MEASURE THIS until the pendant is calipered.
 
-The three instruments that read through clear acrylic (meter, state display,
-bag bar) are RECESSED: a capsule pocket in the plate's outer face, the
-instrument's face under a flush clear pane the size of the pocket, the body
-through a bore in the pocket floor. Pocket depth is instrument height plus
-``PT``. Capsule, not rectangle, because these are apertures nothing seats in
-and a round cutter leaves them that way: the radius is half the pocket's short
-side, and the pocket's length is whatever it takes for the instrument's
-rectangle to fit inside the capsule (``capsule_for``).
+Nothing is recessed (2026-09-09). The two meters mount the way a panel meter
+does: body through a bore, bezel on the face, two studs through the plate.
+The state display's PCB sits behind the plate on standoffs and its glass
+reads through a rectangular WINDOW (kind ``slot``) with a small corner radius
+the waterjet leaves anyway. There are no pockets and no panes; a 3mm plate
+has no depth to pocket.
 
 22mm-standard devices get a 22.3mm bore, which is Schneider's own "Ø 22.3 mm
 0/+0.4" figure and the lower edge of the band every 22mm maker quotes.
@@ -130,7 +144,7 @@ says which crossing does which.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import hypot, sqrt
+from math import hypot
 
 from build123d import (
     Align,
@@ -141,10 +155,8 @@ from build123d import (
     Location,
     Part,
     Plane,
-    Rectangle,
     Unit,
     export_step,
-    extrude,
 )
 
 from lib import house
@@ -154,7 +166,6 @@ from stations.cnc_shapeoko.carcass import (
     DADO_FIT,
     DATUMS,
     EXPORT_DIR,
-    GX16_PANEL_D,
     ROUTER_D,
     SCREW_CLEAR_D,
     SCREW_D,
@@ -168,12 +179,12 @@ from stations.cnc_shapeoko.carcass import (
     export_part,
     flat_pattern,
     panel,
-    rabbet,
     relief,
     screw_positions,
     snap_dn,
     through_slot,
 )
+from stations.cnc_shapeoko import params
 from stations.cnc_shapeoko.parts import callouts
 from stations.cnc_shapeoko.parts.leg_joint import END_WALL_T
 
@@ -198,7 +209,8 @@ __all__ = [
     "console_band",
     "plate_size",
     "narrowed_openings",
-    "capsule_for",
+    "PLATE_T",
+    "aperture_size",
     "build_plate",
     "wall_cutter",
     "build_cheek",
@@ -225,7 +237,7 @@ RIB_NAME = "console_rib"
 REVEAL_NAME = "console_reveal"
 KEEPOUT_NAME = "console_keepout"
 ESTOP_ENV_NAME = "estop_module_env"
-PANE_STEM = "console_pane"
+MARK_LAYER = "MARK"
 
 D: Datums = DATUMS
 PT = PANEL_T
@@ -287,26 +299,34 @@ LEG_LAND = T
 SOURCE: task C12 "18mm of land". CONFIDENCE: ruling."""
 
 # -- the plate and its inset --------------------------------------------
+PLATE_T: float = params.CONSOLE_PLATE["t"]
+"""Thickness of the plate: 3mm 304 stainless, ``params.CONSOLE_PLATE``. RULED
+2026-09-09. Deliberately not ``T``: the carcass is 12mm birch and the plate is
+not the carcass. CONFIDENCE: ruling."""
+
+PLATE_MATERIAL: str = params.CONSOLE_PLATE["material"]
+
 LIP = T
-"""Width of the plate's lip, the part that sits in the wall's rabbet and
-carries the screws. One thickness, so a screw on the lip's centreline is
-``SCREW_EDGE_OFF`` from the plate's edge. Derived."""
+"""Width of the plate's margin: the ring of wall behind the plate's edge that
+the aperture stops short of and the screws land in. One carcass thickness, so
+a screw on its centreline is ``SCREW_EDGE_OFF`` from the plate's edge. Derived."""
 
-LIP_T = DADO_D
-"""Thickness of the lip, which is the depth of the wall's outer-face rabbet.
-The standard third-of-thickness housing. Derived."""
+RELIEF_T = PLATE_T
+"""Depth of the wall's outer-face relief the plate lies in: the plate's own
+thickness, so the outer faces are flush. Derived."""
 
-TONGUE_T = T - LIP_T
-"""Thickness of the plate's tongue, the part inside the wall's aperture, and
-the wall's land under the rabbet. Derived; 12mm."""
+PLATE_SCREW_D = 4.0
+PLATE_SCREW_LEN = 10.0
+PLATE_SCREW = params.CONSOLE_PLATE["screw"]
+"""4 x 10 flat head, countersunk into the 3mm plate, into the wall's ``LIP``
+margin: 3 in the plate, 7 in a 12mm wall, 5mm short of the inner face. The
+house 5mm Confirmat is a pan head and stands proud of a 3mm plate, so the
+plate carries its own screw. CONFIDENCE: chosen."""
 
-PLATE_SCREW = f"{SCREW_D:.0f} x 16 pan head, the house screw, exposed"
-PLATE_SCREW_LEN = 16.0
-"""Through a ``LIP_T`` lip into a ``TONGUE_T`` land: 6 + 10 into 12, 2mm short
-of the wall's inner face. CONFIDENCE: chosen."""
-
-PLATE_SCREW_PILOT = PLATE_SCREW_LEN - LIP_T
-"""Depth of the pilot in the wall's land. Derived; 10mm."""
+PLATE_SCREW_CLEAR_D = 4.5
+PLATE_SCREW_PILOT_D = 2.5
+PLATE_SCREW_PILOT = PLATE_SCREW_LEN - PLATE_T
+"""Depth of the pilot in the wall's margin, under the relief. Derived; 7mm."""
 
 # -- devices ------------------------------------------------------------
 BORE_22 = 22.3
@@ -319,16 +339,12 @@ PITCH_22_MIN = 40.0
 (2): "40 mm min." CONFIDENCE: datasheet."""
 
 DEVICE_CLEAR = 1.0
-"""Air around an instrument inside its pocket, per side. CONFIDENCE: chosen."""
+"""Air around an instrument's body in its bore, and around a display's active
+area in its window, per side. CONFIDENCE: chosen."""
 
-POCKET_FLOOR_MIN = T / 4
-"""Least birch left under an instrument pocket. NOTE: the plate insets into the
-RIGHT end wall, which is a full-height doubler at 12mm house stock
-(``leg_joint.END_WALL_T``), so a deep instrument recesses into that doubled
-wall and its floor is measured against END_WALL_T, not the single plate.
-The floor is a ledge the instrument's bezel sits on and its studs clamp
-through, not a span, and the heaviest thing on any ledge here is a 200g
-meter. The meter's own pocket leaves 5mm. CONFIDENCE: chosen."""
+XB4_PANEL_T: tuple[float, float] = (1.0, 6.0)
+"""Panel thickness a Harmony XB4 22mm device clamps. SOURCE: the XB4 product
+data sheets, "panel thickness 1...6 mm". CONFIDENCE: datasheet."""
 
 CHASE_MARGIN = GRID / 2
 """Air behind the deepest device before the cheek. SOURCE: task C12 "plus
@@ -343,16 +359,30 @@ lowest opening that crosses the band. CONFIDENCE: ruling."""
 UPPER_ROW_Y = 78.0
 LOWER_ROW_Y = 37.0
 """Plate-local Y of the two 22mm/USB rows (0 at the plate's bottom edge), in a
-plate 120 tall whose usable field is LIP..h-LIP = 18..102. The upper row puts
-a 47mm XB4 body at 54.5..101.5, half a millimetre inside the land; the lower
-row puts the OLED's 33mm body at 20.5..53.5, a millimetre under the XB4s.
+plate 120 tall whose usable field is LIP..h-LIP = 12..108. The upper row puts
+a 47mm XB4 body at 54.5..101.5, inside the land; the lower row puts the
+OLED's 33mm body at 20.5..53.5, a millimetre under the XB4s.
 CONFIDENCE: chosen, checked by ``check_console_plate``."""
 
-ESTOP_Y = 70.0
+ROW_22_X: tuple[float, float, float, float] = (112.0, 152.0, 192.0, 232.0)
+"""Plate-local X of the four 22mm devices on the upper row: ARM, SPINDLE,
+DUST, BAG_LAMP, at ``PITCH_22_MIN`` exactly. Was 115/160/205/250 on a 45
+pitch; the SPEED meter (2026-09-09) takes the 70mm the row gave up, and 40 is
+the pitch the XB4 sheet allows. ARM's body stays 2mm clear of the E-stop's
+allocation behind the plate. CONFIDENCE: chosen, checked."""
+
+METER_X: tuple[float, float] = (285.0, 355.0)
+"""Plate-local X of the two meters, SPEED then LOAD, reading left to right the
+way the switch row does: the cause you set, then the effect you read. Faces
+64 wide with 6 between them, bores 19.5 apart; LOAD's face stops 1mm inside
+the margin. CONFIDENCE: chosen, checked."""
+
+ESTOP_Y = 76.0
 PENDANT_Y = 29.0
 """The E-stop's 60mm allocation is taller than an XB4 body, so its bore sits
-lower (allocation 40..100) and the pendant socket under it sits lower again
-(19.5..38.5) to stay out of the allocation. CONFIDENCE: chosen, checked."""
+where the allocation (46..106) clears the top margin by 2, and the pendant
+port under it (PL183 body 17..41, 2026-09-09) stays 5 under the allocation.
+The callout band between the two is 11.5. CONFIDENCE: chosen, checked."""
 
 CALLOUT_ESTOP = "EMERGENCY STOP"
 """The word under the mushroom guard, V-carved (C17). SOURCE: task C17, the
@@ -362,9 +392,20 @@ other word, never red. CONFIDENCE: spec. Its height is derived from
 flange, by ``callouts.fit_height``; the station's CALLOUT_H does not fit."""
 
 METER_Y = 50.0
-"""Plate-local Y of the meter: its 58mm pocket at 21..79 owns its own X band
-at the plate's right, nothing shares that band, and the ToF sits over it.
+"""Plate-local Y of the two meters: 56mm faces at 22..78 own the plate's right
+end, nothing shares that band, and the ToF sits over LOAD.
 CONFIDENCE: chosen, checked."""
+
+METER_FRONT: tuple[float, float] = (64.0, 56.0)
+METER_BORE = 48.5 + 2 * DEVICE_CLEAR
+METER_BEHIND: tuple[float, float, float] = (48.5, 48.5, 50.0)
+METER_STUDS: tuple[tuple[float, float], ...] = ((-26.25, -15.0), (26.25, -15.0))
+METER_STUD_D = 3.4
+"""The meter footprint both dials are cut for: ``params.METER_MOVEMENT``'s 85C1
+PLACEHOLDER (face 64 x 56, bezel 10 proud of the plate, body D48.5 x 50, two
+M3 studs 52.5 apart 15 below centre). The real pair (Weston 301 class) is a
+hunt; when it lands these five numbers change together. CONFIDENCE:
+datasheet for the placeholder, MEASURE for the pair."""
 
 TOF_Y = 93.0
 """Plate-local Y of the ToF bore, at the plate's top edge: the board's 17.5mm
@@ -396,10 +437,6 @@ TOF_BEHIND = 15.0
 """Cable and pin room behind the two PCB-mounted instruments. Neither
 approaches the chase driver. CONFIDENCE: assumption."""
 
-PANE_T = PT
-"""The panes are the house acrylic, CLEAR by the 2026-09-03 finish ruling."""
-
-
 @dataclass(frozen=True)
 class Device:
     """One console element and everything the plate has to cut for it.
@@ -409,13 +446,14 @@ class Device:
 
     kind      bore      a round through hole, ``bore_d``
               d_type    a round hole plus two diagonal screw holes (Neutrik D)
-              pocket    a capsule pocket ``pocket_depth`` deep from the outer
-                        face holding a ``face`` W x H instrument under a clear
-                        pane, with ``floor_bore`` (round) or ``floor_slot``
-                        (capsule W x H) through the floor
+              slot      a through window ``slot`` W x H, corners ``slot_r``,
+                        for an instrument mounted BEHIND the plate
+    studs     (dx, dy) of through holes ``stud_d`` for a stud-mounted bezel
     front     (W, H) the device occupies ON the outer face: bezel or flange
     behind    (W, H, depth) the device occupies behind the plate's inner face,
               centred on (cx, cy); depth measured from the inner face
+    panel_t   (min, max) panel thickness the device clamps; the plate has to
+              be inside it (``check_console_plate``)
     red       True for the one device that spends the red budget
     """
 
@@ -427,35 +465,16 @@ class Device:
     source: str
     confidence: str
     bore_d: float = 0.0
-    face: tuple[float, float] = (0.0, 0.0)
-    pocket_depth: float = 0.0
-    floor_bore: float = 0.0
-    floor_slot: tuple[float, float] = (0.0, 0.0)
+    slot: tuple[float, float] = (0.0, 0.0)
+    slot_r: float = 2.0
     studs: tuple[tuple[float, float], ...] = ()      # (dx, dy) + stud bore d
     stud_d: float = 0.0
     d_holes: tuple[tuple[float, float], ...] = ()    # D-type screw holes (dx, dy)
     d_hole_d: float = 0.0
     front: tuple[float, float] = (0.0, 0.0)
     behind: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    panel_t: tuple[float, float] = (0.0, 99.0)
     red: bool = False
-
-    @property
-    def pocket(self) -> tuple[float, float]:
-        """(L, H) of the capsule pocket that holds ``face`` with clearance."""
-        return capsule_for(self.face[0], self.face[1], DEVICE_CLEAR)
-
-
-def capsule_for(w: float, h: float, clear: float) -> tuple[float, float]:
-    """(length, height) of the smallest capsule whose corner radius is half its
-    height and which contains a ``w`` x ``h`` rectangle with ``clear`` around
-    it. The rectangle's corner has to lie inside the end semicircle, which is
-    what pushes the length past ``w + 2 * clear``."""
-    hh = h + 2 * clear
-    r = hh / 2
-    half_h = h / 2
-    if r <= half_h:
-        raise ValueError("capsule needs positive clearance")
-    return (w + 2 * r - 2 * sqrt(r * r - half_h * half_h), hh)
 
 
 _SE = "https://www.se.com/us/en/product/{}/ -- product data sheet PDF: "
@@ -468,75 +487,97 @@ DEVICES: tuple[Device, ...] = (
         "https://community.carbide3d.com/t/need-dimensions-of-so5-power-pendant-and-control-box/58934"
         " (asked, never answered); https://carbide3d.com/3d-print/power-pendant-home-base/"
         " (an STL, no drawing). Carbide publishes no envelope.",
-        "bore: datasheet (22mm standard); envelope: allocation, MEASURE THIS",
-        bore_d=BORE_22, front=(40.0, 40.0), behind=ESTOP_ALLOC, red=True,
+        "bore: datasheet (22mm standard); envelope: allocation, MEASURE THIS; "
+        "panel_t: assumption (a 22mm head), MEASURE with the pendant",
+        bore_d=BORE_22, front=(40.0, 40.0), behind=ESTOP_ALLOC, panel_t=XB4_PANEL_T, red=True,
     ),
     Device(
         "ARM", "Schneider Harmony XB4BG21, key switch selector, metal, black, "
         "22mm, key 455, 2 positions stay put, 1 NO",
-        "bore", 115.0, UPPER_ROW_Y,
+        "bore", ROW_22_X[0], UPPER_ROW_Y,
         _SE.format("XB4BG21") + "Mounting diameter 22.5 mm, Height 47 mm, "
         "Width 30 mm, Depth 86 mm (whole product, head included)",
         "chosen; dimensions datasheet",
         bore_d=BORE_22, front=(30.0, 30.0), behind=(XB4_BODY[0], XB4_BODY[1], 86.0),
+        panel_t=XB4_PANEL_T,
     ),
     Device(
         "SPINDLE", "Schneider Harmony ZB4BH033 head (green flush, illuminated, "
         "push-push) on the XB4BW33B5 body (universal LED 24V, 1NO+1NC)",
-        "bore", 160.0, UPPER_ROW_Y,
+        "bore", ROW_22_X[1], UPPER_ROW_Y,
         _SE.format("ZB4BH033") + "'Head for illuminated push button, Harmony XB4, "
         "metal, green flush, 22mm, universal LED, push push'; body figures from "
         + _SE.format("XB4BW33B5") + "Mounting diameter 22.5 mm, Height 47 mm, "
         "Width 30 mm, Depth 57 mm",
         "chosen; dimensions datasheet (body), head swap is in front of the plate",
         bore_d=BORE_22, front=(30.0, 30.0), behind=(XB4_BODY[0], XB4_BODY[1], 57.0),
+        panel_t=XB4_PANEL_T,
     ),
     Device(
         "DUST", "Schneider Harmony XB4BD33, 3-position selector switch, black, "
         "maintained, 2 NO: AUTO / ON / OFF",
-        "bore", 205.0, UPPER_ROW_Y,
+        "bore", ROW_22_X[2], UPPER_ROW_Y,
         _SE.format("XB4BD33") + "Mounting diameter 22.5 mm, Height 47 mm, "
         "Width 30 mm, Depth 68 mm",
         "chosen; dimensions datasheet",
         bore_d=BORE_22, front=(30.0, 30.0), behind=(XB4_BODY[0], XB4_BODY[1], 68.0),
+        panel_t=XB4_PANEL_T,
     ),
     Device(
         "BAG_LAMP", "Schneider Harmony XB4BVB5, pilot light, metal, orange, 22mm, "
         "universal LED, 24V AC/DC (the amber service lamp)",
-        "bore", 250.0, UPPER_ROW_Y,
+        "bore", ROW_22_X[3], UPPER_ROW_Y,
         _SE.format("XB4BVB5") + "Mounting diameter 22.5 mm, Height 47 mm, "
         "Width 30 mm, Depth 54 mm",
         "chosen; dimensions datasheet",
         bore_d=BORE_22, front=(30.0, 30.0), behind=(XB4_BODY[0], XB4_BODY[1], 54.0),
+        panel_t=XB4_PANEL_T,
     ),
     Device(
-        "LOAD", "85C1 moving-coil panel meter, 0-100 scale (Delixi drawing, the "
-        "Adafruit 4404 class of part), recessed under a clear pane",
-        "pocket", 327.0, METER_Y,
+        "SPEED", "moving-coil panel meter, spindle RPM, 0-24k scale card, VFD "
+        "frequency analog out (params.METER_MOVEMENT; 85C1 footprint until the "
+        "pair lands)",
+        "bore", METER_X[0], METER_Y,
+        "RULED 2026-09-09 (Jared): a second dial so SPEED and LOAD read as a "
+        "pair, the feeds-and-speeds teaching object. Footprint: "
+        "params.SOURCES['METER_MOVEMENT'] (85C1 outline)",
+        "ruling (the dial); placeholder footprint, MEASURE the pair",
+        bore_d=METER_BORE, studs=METER_STUDS, stud_d=METER_STUD_D,
+        front=METER_FRONT, behind=METER_BEHIND, panel_t=params.METER_MOVEMENT["panel_t_range"],
+    ),
+    Device(
+        "LOAD", "moving-coil panel meter, spindle load, 0-100 scale card, VFD "
+        "output-current analog out (params.METER_MOVEMENT; 85C1 footprint until "
+        "the pair lands)",
+        "bore", METER_X[1], METER_Y,
         "https://cdn-shop.adafruit.com/product-files/4404/C12723-001_datasheet_translate.pdf"
-        " -- 85C1-A/V outline: face 64 x 56, bezel 10 thick, body Ø48.5 x 50 "
+        " -- 85C1-A/V outline: face 64 x 56, bezel 10 thick, body D48.5 x 50 "
         "behind the bezel, 2 x M3 studs 52.5 apart 15 below centre",
-        "chosen; dimensions datasheet drawing",
-        face=(64.0, 56.0), pocket_depth=10.0 + PANE_T, floor_bore=48.5 + 2 * DEVICE_CLEAR,
-        studs=((-26.25, -15.0), (26.25, -15.0)), stud_d=3.4,
-        front=(0.0, 0.0), behind=(48.5, 48.5, 50.0 - (END_WALL_T - (10.0 + PANE_T))),
+        "chosen; placeholder footprint (datasheet drawing), MEASURE the pair",
+        bore_d=METER_BORE, studs=METER_STUDS, stud_d=METER_STUD_D,
+        front=METER_FRONT, behind=METER_BEHIND, panel_t=params.METER_MOVEMENT["panel_t_range"],
     ),
     Device(
-        "STATE", "Adafruit 938, Monochrome 1.3in 128x64 OLED, STEMMA QT, "
-        "recessed under a clear pane",
-        "pocket", 144.0, LOWER_ROW_Y,
+        "STATE", "Adafruit 938, Monochrome 1.3in 128x64 OLED, STEMMA QT, on "
+        "standoffs behind the plate, glass reading through a window",
+        "slot", 144.0, LOWER_ROW_Y,
         "https://www.adafruit.com/product/938 -- PCB 35.6 x 33 x 6.2 mm, "
         "active area 29.42 x 14.70 mm",
         "chosen; dimensions datasheet",
-        face=(35.6, 33.0), pocket_depth=6.2 + PANE_T, floor_slot=(20.0, 8.0),
+        slot=(29.42 + 2 * DEVICE_CLEAR, 14.70 + 2 * DEVICE_CLEAR),
         behind=(35.6, 33.0, OLED_BEHIND),
     ),
     Device(
-        "PENDANT", "GX16 panel socket, the house connector, pendant port",
-        "bore", 60.0, PENDANT_Y,
-        "carcass.GX16_PANEL_D; https://www.handsontec.com/dataspecs/connector/GX16.pdf",
-        "house standard; depth datasheet",
-        bore_d=GX16_PANEL_D, front=(19.0, 19.0), behind=(19.0, 19.0, GX16_BEHIND),
+        "PENDANT", "PENGLIN PL183 USB-C panel-mount coupler, D-type (params.PL183): "
+        "the jog pendant's port",
+        "d_type", 60.0, PENDANT_Y,
+        "RULED 2026-09-09 (Jared: 'Jog Remote USB-C'). The Carbide pendant is a "
+        "USB device on a removable USB-C to USB-A lead; the GX16 that stood here "
+        "as the house connector meant re-terminating USB into aircraft pins on "
+        "both sides. Cutout as USB_1.",
+        "ruling; dimensions datasheet (C00 capture)",
+        bore_d=24.0, d_holes=((-9.5, 12.0), (9.5, -12.0)), d_hole_d=3.5,
+        front=(26.0, 31.0), behind=(24.0, 24.0, 27.5), panel_t=params.PL183["panel_t_range"],
     ),
     Device(
         "USB_1", "PENGLIN PL183 USB-C panel-mount coupler, D-type (params.PL183)",
@@ -545,14 +586,14 @@ DEVICES: tuple[Device, ...] = (
         "diagonal, flange 26 x 31 x 2.2, body 27.5 behind the flange",
         "datasheet (C00 capture)",
         bore_d=24.0, d_holes=((-9.5, 12.0), (9.5, -12.0)), d_hole_d=3.5,
-        front=(26.0, 31.0), behind=(24.0, 24.0, 27.5),
+        front=(26.0, 31.0), behind=(24.0, 24.0, 27.5), panel_t=params.PL183["panel_t_range"],
     ),
     Device(
         "USB_2", "PENGLIN PL183 USB-C panel-mount coupler, D-type (params.PL183)",
         "d_type", 223.0, LOWER_ROW_Y,
         "as USB_1", "datasheet (C00 capture)",
         bore_d=24.0, d_holes=((-9.5, 12.0), (9.5, -12.0)), d_hole_d=3.5,
-        front=(26.0, 31.0), behind=(24.0, 24.0, 27.5),
+        front=(26.0, 31.0), behind=(24.0, 24.0, 27.5), panel_t=params.PL183["panel_t_range"],
     ),
     Device(
         "TOF", "Adafruit 3967, VL53L1X time-of-flight breakout, behind a 6mm "
@@ -645,7 +686,9 @@ def plate_z(d: Datums = D) -> tuple[float, float]:
     return (z0, z0 + plate_size(d)[1])
 
 
-def tongue_size(d: Datums = D) -> tuple[float, float]:
+def aperture_size(d: Datums = D) -> tuple[float, float]:
+    """(W, H) of the wall's through-aperture behind the plate: the plate less
+    its ``LIP`` margin all round."""
     w, h = plate_size(d)
     return (w - 2 * LIP, h - 2 * LIP)
 
@@ -780,19 +823,9 @@ def reveal_plane(d: Datums = D) -> Plane:
 # -- the plate -----------------------------------------------------------
 
 
-def _capsule_face(cx: float, cy: float, length: float, height: float) -> Face:
-    """A capsule outline as a flat face at Z = 0, for the DXF layers."""
-    r = height / 2
-    sk = Rectangle(max(length - 2 * r, 1e-6), height)
-    sk = sk + Circle(r).moved(Location((length / 2 - r, 0, 0))) + Circle(r).moved(
-        Location((-(length / 2 - r), 0, 0))
-    )
-    return sk.faces()[0].moved(Location((cx, cy, 0)))
-
-
 def lip_screws(d: Datums = D) -> list[tuple[float, float]]:
-    """Plate-local centres of the lip screws: the carcass rhythm along the two
-    long edges, one at the middle of each short edge."""
+    """Plate-local centres of the margin screws: the carcass rhythm along the
+    two long edges, one at the middle of each short edge."""
     w, h = plate_size(d)
     e = LIP / 2
     out: list[tuple[float, float]] = []
@@ -804,52 +837,29 @@ def lip_screws(d: Datums = D) -> list[tuple[float, float]]:
     return out
 
 
-def _pocket_cutter(dv: Device) -> Part:
-    """The capsule pocket alone, floor at ``T - pocket_depth``, running out
-    through the outer face."""
-    length, height = dv.pocket
-    depth = dv.pocket_depth
-    # through_slot built for a ``depth`` thick panel spans z -depth..2*depth;
-    # lifted by T its bottom face is the pocket floor at T - depth and its top
-    # runs out the outer face
-    c = through_slot((0.0, 0.0), length, height, thickness=depth, corner_r=height / 2)
-    return c.moved(Location((dv.cx, dv.cy, T)))
-
-
-def build_plate(d: Datums = D, *, carve: bool = True) -> Part:
-    """The plate, flat, plate-local. Z = 0 is the inner face, Z = T the outer
-    face the operator reads, which carries the E-stop's word unless ``carve``
-    is off (the DXF's CUT layers are read off the un-carved blank)."""
+def build_plate(d: Datums = D) -> Part:
+    """The plate, flat, plate-local: Z = 0 its inner face, Z = ``PLATE_T`` the
+    outer face the operator reads. Through cuts only, which is all a waterjet
+    makes; the ten countersinks are a drill-press step and the legends are a
+    laser layer (``MARK``), and neither is in the solid."""
     w, h = plate_size(d)
-    p = panel(w, h)
+    p = panel(w, h, PLATE_T)
 
-    # the lip: take the ring off the BACK face, TONGUE_T deep, LIP wide,
-    # counter-clockwise so "left" of each run is the inside of the outline
-    for a, b in (((0.0, 0.0), (w, 0.0)), ((w, 0.0), (w, h)), ((w, h), (0.0, h)), ((0.0, h), (0.0, 0.0))):
-        p -= rabbet(a, b, width=LIP, depth=TONGUE_T, side="back", toward="left")
-
-    # the lip screws, through
+    # the margin screws, through, countersunk after cutting
     for x, y in lip_screws(d):
-        p -= bore(x, y, SCREW_CLEAR_D)
+        p -= bore(x, y, PLATE_SCREW_CLEAR_D, thickness=PLATE_T)
 
     # the devices
     for dv in DEVICES:
-        if dv.kind == "pocket":
-            p -= _pocket_cutter(dv)
-            if dv.floor_bore:
-                p -= bore(dv.cx, dv.cy, dv.floor_bore)
-            if dv.floor_slot != (0.0, 0.0):
-                sl, sh = dv.floor_slot
-                p -= through_slot((dv.cx, dv.cy), sl, sh, corner_r=sh / 2)
-            for dx, dy in dv.studs:
-                p -= bore(dv.cx + dx, dv.cy + dy, dv.stud_d)
+        if dv.kind == "slot":
+            sl, sh = dv.slot
+            p -= through_slot((dv.cx, dv.cy), sl, sh, thickness=PLATE_T, corner_r=dv.slot_r)
         else:
-            p -= bore(dv.cx, dv.cy, dv.bore_d)
-            for dx, dy in dv.d_holes:
-                p -= bore(dv.cx + dx, dv.cy + dy, dv.d_hole_d)
-
-    if carve:
-        p = callouts.carve(p, callouts_local(d))
+            p -= bore(dv.cx, dv.cy, dv.bore_d, thickness=PLATE_T)
+        for dx, dy in dv.d_holes:
+            p -= bore(dv.cx + dx, dv.cy + dy, dv.d_hole_d, thickness=PLATE_T)
+        for dx, dy in dv.studs:
+            p -= bore(dv.cx + dx, dv.cy + dy, dv.stud_d, thickness=PLATE_T)
     return p
 
 
@@ -857,13 +867,13 @@ def wall_cutter(d: Datums = D) -> Part:
     """What the right end wall loses to the console, in STATION coordinates,
     for ``bay_walls`` to bring into its own frame and subtract.
 
-    JOINERY, both cuts, so square with dogbones: the through-aperture the
-    tongue fills, and the outer-face rabbet the lip sits in. Both ``DADO_FIT``
-    oversize, the way every housing in the carcass is. Plus the ten pilots for
-    the lip screws, blind from the outer face.
+    JOINERY, both cuts, so square with dogbones: the through-aperture behind
+    the plate for the device bodies, and the outer-face relief the plate lies
+    in. Both ``DADO_FIT`` oversize, the way every housing in the carcass is.
+    Plus the ten pilots for the margin screws, blind from the outer face.
     """
     w, h = plate_size(d)
-    tw, th = tongue_size(d)
+    tw, th = aperture_size(d)
     cx, cy = w / 2, h / 2
     cut: Part | None = None
 
@@ -871,27 +881,27 @@ def wall_cutter(d: Datums = D) -> Part:
         nonlocal cut
         cut = c if cut is None else cut + c
 
-    # through aperture, tongue + fit, square, four through reliefs
+    # through aperture, + fit, square, four through reliefs
     aw, ah = tw + DADO_FIT, th + DADO_FIT
     add(through_slot((cx, cy), aw, ah))
     for sx in (-1, 1):
         for sy in (-1, 1):
             add(relief(cx + sx * aw / 2, cy + sy * ah / 2))
 
-    # outer-face rabbet, outline + fit, LIP_T deep from the outer face
+    # outer-face relief, outline + fit, RELIEF_T (the plate) deep
     rw, rh = w + DADO_FIT, h + DADO_FIT
     over = T
-    rab = Box(rw, rh, LIP_T + over, align=(Align.CENTER, Align.CENTER, Align.MIN)).moved(
-        Location((cx, cy, T - LIP_T))
+    rab = Box(rw, rh, RELIEF_T + over, align=(Align.CENTER, Align.CENTER, Align.MIN)).moved(
+        Location((cx, cy, T - RELIEF_T))
     )
     add(rab)
     for sx in (-1, 1):
         for sy in (-1, 1):
-            add(relief(cx + sx * rw / 2, cy + sy * rh / 2, depth=LIP_T, side="front"))
+            add(relief(cx + sx * rw / 2, cy + sy * rh / 2, depth=RELIEF_T, side="front"))
 
-    # lip screw pilots, blind from the outer face into the land
+    # margin screw pilots, blind from the outer face into the land
     for x, y in lip_screws(d):
-        add(bore(x, y, SCREW_PILOT_D, depth=LIP_T + PLATE_SCREW_PILOT, side="front"))
+        add(bore(x, y, PLATE_SCREW_PILOT_D, depth=RELIEF_T + PLATE_SCREW_PILOT, side="front"))
 
     # the rib's screws, through the wall from outside into the rib's edge,
     # below the band on the same face
@@ -1033,55 +1043,38 @@ def build_estop_env(d: Datums = D) -> Part:
 
 
 def panes(d: Datums = D) -> list[tuple[str, Device, Part]]:
-    """(label, device, flat pane) for each recessed instrument: the pocket's
-    capsule outline, ``PANE_T`` thick, drawn flat at Z = 0."""
-    out: list[tuple[str, Device, Part]] = []
-    for dv in DEVICES:
-        if dv.kind != "pocket":
-            continue
-        length, height = dv.pocket
-        face = _capsule_face(0.0, 0.0, length, height)
-        out.append((f"{PANE_STEM}_{dv.label.lower()}", dv, extrude(face, amount=PANE_T)))
-    return out
-
-
-def _pane_plane(dv: Device, d: Datums = D) -> Plane:
-    """A pane sits in its pocket, flush with the outer face."""
-    base = plate_plane(d)
-    return Plane(
-        origin=base.origin + base.x_dir * dv.cx + base.y_dir * dv.cy + base.z_dir * (T - PANE_T),
-        x_dir=base.x_dir,
-        z_dir=base.z_dir,
-    )
+    """(label, device, flat pane) for each recessed instrument. Empty since
+    2026-09-09: a 3mm plate has no pockets and nothing reads through acrylic.
+    Kept so the nest and the assembly keep one call."""
+    return []
 
 
 def placed_all(d: Datums = D) -> list[tuple[str, str, Part]]:
     """(label, group, placed solid) for everything this module puts in the
-    assembly: birch, acrylic, and the two reference solids."""
+    assembly: the steel plate, birch, acrylic, and the two reference solids.
+    The plate lies in the wall's relief, its outer face at the wall's."""
     out: list[tuple[str, str, Part]] = [
-        (PART_NAME, "carcass", plate_plane(d) * build_plate(d)),
+        (PART_NAME, "steel", plate_plane(d) * build_plate(d).moved(Location((0.0, 0.0, T - PLATE_T)))),
         (CHEEK_NAME, "carcass", cheek_plane(d) * build_cheek(d)),
         (RIB_NAME, "carcass", rib_plane(d) * build_rib(d)),
         (REVEAL_NAME, "acrylic", reveal_plane(d) * build_reveal(d)),
         (KEEPOUT_NAME, "reference", build_keepout(d)),
         (ESTOP_ENV_NAME, "reference", build_estop_env(d)),
     ]
-    for label, dv, pane in panes(d):
-        out.append((label, "acrylic", _pane_plane(dv, d) * pane))
     return out
 
 
 def joint_table(d: Datums = D) -> list[tuple]:
     """Declared joints, as ``(a, b, kind, axis, lo, hi, note)`` tuples for
-    ``assembly.joints``. The plate and the panes are housed; everything else
-    in the chase meets on faces."""
+    ``assembly.joints``. The plate is housed in the wall's relief; everything
+    else in the chase meets on faces."""
     from stations.cnc_shapeoko.parts.bay_walls import WALLS
 
     wall = WALLS[3].name
     x0 = wall_inner_x(d)
     out: list[tuple] = [
-        (wall, PART_NAME, "housing", "x", x0, x0 + T,
-         "plate's tongue and lip in the wall's aperture and rabbet"),
+        (wall, PART_NAME, "housing", "x", x0 + T - PLATE_T, x0 + T,
+         "plate flush in the wall's outer-face relief, over the aperture"),
         (PART_NAME, KEEPOUT_NAME, "bearing", None, 0.0, 0.0,
          "the chase air starts at the plate's inner face"),
         (PART_NAME, ESTOP_ENV_NAME, "bearing", None, 0.0, 0.0,
@@ -1114,19 +1107,14 @@ def joint_table(d: Datums = D) -> list[tuple]:
         (RIB_NAME, REVEAL_NAME, "butt", None, 0.0, 0.0, "reveal on the rib's front end"),
         (wall, REVEAL_NAME, "butt", None, 0.0, 0.0, "reveal beside the wall's front edge"),
     ]
-    for label, dv, _pane in panes(d):
-        out.append(
-            (PART_NAME, label, "housing", "x", x0 + END_WALL_T - dv.pocket_depth, x0 + END_WALL_T,
-             f"{dv.label} pane flush in its pocket")
-        )
     return out
 
 
 def estop_callout_anchor(d: Datums = D) -> tuple[float, float]:
     """Plate-local centre for C17's EMERGENCY STOP callout: under the mushroom
-    guard, above the pendant socket's flange. Raw birch through black like
-    every other word; the red budget is the mushroom, not a letter (the brief
-    reads two ways on this, and ``check_console_plate`` asks)."""
+    guard, above the pendant port's flange. Enduramark black on brushed steel
+    like every other word; the red budget is the mushroom, not a letter (the
+    brief reads two ways on this, and ``check_console_plate`` asks)."""
     dv = next(v for v in DEVICES if v.red)
     below = next(v for v in DEVICES if v.label == "PENDANT")
     top = below.cy + below.front[1] / 2
@@ -1135,26 +1123,27 @@ def estop_callout_anchor(d: Datums = D) -> tuple[float, float]:
 
 
 def estop_callout_band(d: Datums = D) -> tuple[float, float]:
-    """Plate-local Y span of the birch the E-stop's word sits in: from the
-    pendant socket's flange top to the mushroom guard's bottom."""
+    """Plate-local Y span of the steel the E-stop's word sits in: from the
+    pendant port's flange top to the mushroom guard's bottom."""
     dv = next(v for v in DEVICES if v.red)
     below = next(v for v in DEVICES if v.label == "PENDANT")
     return (below.cy + below.front[1] / 2, dv.cy - dv.front[1] / 2)
 
 
 def callouts_local(d: Datums = D) -> list[callouts.Callout]:
-    """The plate's one word, on the Z = T face the operator reads, as tall as
-    its band allows."""
+    """The plate's one word, on the outer face the operator reads, as tall as
+    its band allows. Marked, not carved: the solid is untouched and the word
+    goes out on ``MARK``."""
     y0, y1 = estop_callout_band(d)
     return [callouts.Callout(CALLOUT_ESTOP, estop_callout_anchor(d), height=callouts.fit_height(y1 - y0))]
 
 
 def register(d: Datums = D) -> callouts.Register:
-    """The second fixture's datums: the two short-edge lip screws, through
-    holes the plate already has, one at each end of the plate."""
+    """The laser bed's datums: the two short-edge margin screws, through holes
+    the plate already has, one at each end of the plate."""
     (ax, ay), (bx, by) = lip_screws(d)[-2:]
     return callouts.Register(
-        (ax, ay, SCREW_CLEAR_D), (bx, by, SCREW_CLEAR_D), "the two short-edge lip screws"
+        (ax, ay, PLATE_SCREW_CLEAR_D), (bx, by, PLATE_SCREW_CLEAR_D), "the two short-edge margin screws"
     )
 
 
@@ -1199,7 +1188,7 @@ def gusset_land(d: Datums = D) -> tuple[float, float]:
     the wall's outer face and the gusset relief above them: the rabbet's top
     edge (``DADO_FIT`` oversize) and its two blind corner reliefs, against the
     gusset's underside where it crosses the wall's outer face (the machine's
-    own ceiling, sampled along the band). The rabbet is ``LIP_T`` deep and the
+    own ceiling, sampled along the band). The relief is ``RELIEF_T`` deep and the
     relief ``plate_t`` deep, so any overlap of the two outlines is a real
     intersection; this is the web between them, and it is held to the same
     ``ROUTER_D`` every other pair of cuts is."""
@@ -1224,9 +1213,9 @@ def gusset_land(d: Datums = D) -> tuple[float, float]:
 
 def _front_rect(dv: Device) -> tuple[tuple[float, float], tuple[float, float]]:
     """What the device occupies on the outer face: its bezel/flange, or the
-    pocket for a recessed instrument."""
-    if dv.kind == "pocket":
-        w, h = dv.pocket
+    window for a display behind the plate."""
+    if dv.kind == "slot":
+        w, h = dv.slot
     else:
         w, h = max(dv.front[0], dv.bore_d), max(dv.front[1], dv.bore_d)
     return ((dv.cx - w / 2, dv.cy - h / 2), (dv.cx + w / 2, dv.cy + h / 2))
@@ -1234,17 +1223,17 @@ def _front_rect(dv: Device) -> tuple[tuple[float, float], tuple[float, float]]:
 
 def _cut_rect(dv: Device) -> tuple[tuple[float, float], tuple[float, float]]:
     """What the plate actually loses to the device on its outer face: the
-    pocket, or the bore and its screw holes. The web rule is about the birch
-    between CUTS; a flange lying on the face is not a cut."""
-    if dv.kind == "pocket":
-        w, h = dv.pocket
+    window, or the bore and its screw and stud holes. The web rule is about
+    the steel between CUTS; a flange lying on the face is not a cut."""
+    if dv.kind == "slot":
+        w, h = dv.slot
         return ((dv.cx - w / 2, dv.cy - h / 2), (dv.cx + w / 2, dv.cy + h / 2))
     x0 = x1 = dv.cx
     y0 = y1 = dv.cy
     r = dv.bore_d / 2
     x0, x1, y0, y1 = x0 - r, x1 + r, y0 - r, y1 + r
-    for dx, dy in dv.d_holes:
-        hr = dv.d_hole_d / 2
+    for (dx, dy), hd in [(h_, dv.d_hole_d) for h_ in dv.d_holes] + [(s_, dv.stud_d) for s_ in dv.studs]:
+        hr = hd / 2
         x0, x1 = min(x0, dv.cx + dx - hr), max(x1, dv.cx + dx + hr)
         y0, y1 = min(y0, dv.cy + dy - hr), max(y1, dv.cy + dy + hr)
     return ((x0, y0), (x1, y1))
@@ -1291,7 +1280,7 @@ def check_console_plate(d: Datums = D) -> list[str]:
 
     notes: list[str] = []
     w, h = plate_size(d)
-    tw, th = tongue_size(d)
+    tw, th = aperture_size(d)
     (by0, by1), (bz0, bz1) = console_band(d)
     z0 = plate_z(d)[0]
 
@@ -1335,38 +1324,36 @@ def check_console_plate(d: Datums = D) -> list[str]:
             f"bolt {worst[0]}'s axis, under the {LEG_LAND:.0f}mm land"
         )
 
-    # -- deep instruments recess into the doubled right end wall (12mm stock)
-    if END_WALL_T > T:
-        deep = [dv.label for dv in DEVICES if dv.kind == "pocket" and dv.pocket_depth > T]
-        if deep:
+    # -- the plate is inside every device's panel-thickness range, and its
+    # screws stop short of the wall's inner face
+    for dv in DEVICES:
+        lo, hi = dv.panel_t
+        if not lo - 1e-9 <= PLATE_T <= hi + 1e-9:
             notes.append(
-                f"CONSOLE POCKETS, standing note. {', '.join(deep)} pocket deeper "
-                f"than one {T:.0f}mm plate; the plate insets into the right end "
-                f"wall, which is a full-height doubler at 12mm house stock "
-                f"({END_WALL_T:.0f}mm, leg_joint.END_WALL_T), so those bezels "
-                "recess into the doubled wall and their floor is birch, not air. "
-                "Expected, and worth knowing before the plate is cut."
+                f"{dv.label} clamps a {lo:.0f}-{hi:.0f}mm panel and the plate is "
+                f"{PLATE_T:.0f}mm ({PLATE_MATERIAL})"
             )
+    if PLATE_SCREW_PILOT > T - RELIEF_T - 2.0:
+        notes.append(
+            f"the plate screw's {PLATE_SCREW_PILOT:.0f}mm pilot runs within 2mm of "
+            f"the wall's inner face ({T - RELIEF_T:.0f} of wall under the relief)"
+        )
+    notes.append(
+        f"CONSOLE PLATE, standing note. {PLATE_MATERIAL}, RULED 2026-09-09: "
+        f"{params.CONSOLE_PLATE['process']}. The two meter bezels stand 10mm "
+        "proud of the flush plate (no recess, no panes). The DXF's CUT layer is "
+        "the waterjet's; MARK is the laser's; the countersinks are on neither."
+    )
 
-    # -- 22mm bores are 22.3, every rectangular cutout is a capsule, one red
+    # -- 22mm bores are 22.3, windows longer than tall, one red
     reds = [dv for dv in DEVICES if dv.red]
     if len(reds) != 1:
         notes.append(f"{len(reds)} devices are tagged red; the E-stop is the budget")
     for dv in DEVICES:
         if dv.kind == "bore" and dv.front == (30.0, 30.0) and abs(dv.bore_d - BORE_22) > 0.05:
             notes.append(f"{dv.label} is a 22mm device bored {dv.bore_d:.2f}")
-        if dv.kind == "pocket":
-            length, height = dv.pocket
-            if length < height:
-                notes.append(f"{dv.label} pocket is taller than it is long; the capsule turns")
-            if END_WALL_T - dv.pocket_depth < POCKET_FLOOR_MIN - 1e-9:
-                notes.append(
-                    f"{dv.label} pocket is {dv.pocket_depth:.1f} deep in a {END_WALL_T:.0f}mm "
-                    f"doubled wall, leaving {END_WALL_T - dv.pocket_depth:.1f} under the "
-                    f"{POCKET_FLOOR_MIN:.1f} floor"
-                )
-            if dv.floor_slot != (0.0, 0.0) and dv.floor_slot[0] < dv.floor_slot[1]:
-                notes.append(f"{dv.label} floor slot is taller than it is long")
+        if dv.kind == "slot" and dv.slot[0] < dv.slot[1]:
+            notes.append(f"{dv.label} window is taller than it is long")
 
     # -- devices on the face: at least a cutter web between neighbours, and
     # 22mm devices at the maker's pitch
@@ -1390,7 +1377,7 @@ def check_console_plate(d: Datums = D) -> list[str]:
     for dv in DEVICES:
         (fx0, fy0), (fx1, fy1) = _front_rect(dv)
         if fx0 < LIP or fy0 < LIP or fx1 > w - LIP or fy1 > h - LIP:
-            notes.append(f"{dv.label} reaches onto the plate's lip on the outer face")
+            notes.append(f"{dv.label} reaches onto the plate's screw margin on the outer face")
         (bx0, by0_), (bx1, by1_) = _behind_rect(dv)
         if bx0 < LIP or by0_ < LIP or bx1 > w - LIP or by1_ > h - LIP:
             notes.append(
@@ -1421,15 +1408,9 @@ def check_console_plate(d: Datums = D) -> list[str]:
         f"{CHASE - 27.5:.0f}mm. MEASURE THIS with the cable that will live there."
     )
     notes.append(
-        "both USB-C cutouts are cut as PL183, from the listing's 5-pack. "
+        "all three USB-C cutouts (PENDANT, USB_1, USB_2) are cut as PL183, from the listing's 5-pack. "
         "MEASURE THIS: read the number off the bulkheads; if they are not "
         "PL183 the cutouts are not cut."
-    )
-    notes.append(
-        f"PL183.panel_t_range is 2-10mm (params, listing) and the plate is "
-        f"{house.CARCASS_T:.0f}mm. "
-        "UNMODELLED: a rear counterbore around each D cutout, or a coupler rated for "
-        "the plate. Separate decision, 2026-09-09."
     )
     notes.append(
         "UNMODELLED: the screen cable gland. RULED 2026-09-09: the touchscreen's two "
@@ -1533,7 +1514,7 @@ def check_console_plate(d: Datums = D) -> list[str]:
     # -- the placement is a rotation; assert every bbox
     x_w = wall_inner_x(d)
     want = {
-        PART_NAME: ((x_w, x_w + T), (CONSOLE_Y[0], CONSOLE_Y[1]), (z0, z0 + h)),
+        PART_NAME: ((x_w + T - PLATE_T, x_w + T), (CONSOLE_Y[0], CONSOLE_Y[1]), (z0, z0 + h)),
         CHEEK_NAME: (cheek_x(d), chase_y(d), cheek_z(d)),
         RIB_NAME: (chase_x(d), chase_y(d), rib_z(d)),
         REVEAL_NAME: (reveal_span(d)[0], (d.y_front, d.y_front + PT), reveal_span(d)[1]),
@@ -1551,32 +1532,35 @@ def check_console_plate(d: Datums = D) -> list[str]:
                     f"{e[0]:.1f}..{e[1]:.1f}. Its plane is wrong."
                 )
 
-    # -- the wall's rabbet corners show
+    # -- the wall's relief corners show
     notes.append(
         "CONSOLE CORNERS, standing note. The plate's inset is joinery, so the wall's "
-        f"rabbet keeps square corners with four blind {ROUTER_D:.2f}mm reliefs, and "
+        f"relief keeps square corners with four blind {ROUTER_D:.2f}mm reliefs, and "
         "each shows as a crescent at a corner of the plate on the outer face. A "
-        "matched-radius corner would hide them; the rule stands until ruled on. "
-        "Expected, and worth knowing before the first cut."
+        "matched-radius corner would hide them (the waterjet cuts it for free); the "
+        "rule stands until ruled on. Expected, and worth knowing before the first cut."
     )
 
-    # -- the E-stop's word lands on birch, clear of every flange, and the plate
-    # goes back on its two end screws
+    # -- the E-stop's word lands on steel, clear of every flange, and the plate
+    # locates on its two end screws on the laser bed. The word is MARKED, not
+    # carved; the carve check runs on a stand-in carve VCARVE_D deep so its
+    # footprint rules (clear of cuts, inside the plate) still apply.
     notes += callouts.check_callouts(
-        build_plate(d),
+        callouts.carve(build_plate(d), callouts_local(d), thickness=PLATE_T),
         callouts_local(d),
         register(d),
         size=plate_size(d),
+        thickness=PLATE_T,
         keep_clear=[_front_rect(dv) for dv in DEVICES],
         label=PART_NAME,
     )
     notes.append(
         f"{CALLOUT_ESTOP} COLOUR, standing note. The brief v7 reads two ways: one line "
         "makes it 'the only red text on the station', two others say no red labels and no "
-        "fill. Built as the finish ruling says every callout is: V-carved through matte "
-        "black to raw birch, no fill, never red; the red budget stays the mushroom and the "
-        "mast's Fault state. RULING WANTED: raw birch as built, or a red fill in this one "
-        "word. Neither the carve nor the register moves either way."
+        "fill. Built as every legend on this plate is since 2026-09-09: Enduramark black "
+        "on brushed stainless, never red; the red budget stays the mushroom and the "
+        "mast's Fault state. RULING WANTED: black as built, or red in this one word. "
+        "Neither the mark nor the register moves either way."
     )
     return notes
 
@@ -1587,14 +1571,16 @@ def check_console_plate(d: Datums = D) -> list[str]:
 
 
 def _plate_layers(d: Datums = D) -> dict[str, list[Face]]:
-    """``flat_pattern`` off the un-carved blank, plus the layers it cannot
-    infer: E_STOP, the one red bore; ACRYLIC, the three pane outlines the
-    Universal cuts; VCARVE and REGISTER, the second fixture's word and pins."""
-    layers = flat_pattern(build_plate(d, carve=False))
+    """``flat_pattern`` off the plate (CUT: the waterjet's), plus the layers
+    it cannot infer: E_STOP, the one red bore; MARK, the word the Universal
+    lays down in Enduramark; REGISTER, the two holes the plate is located by
+    on the laser bed."""
+    layers = flat_pattern(build_plate(d))
     est = next(v for v in DEVICES if v.red)
     layers["E_STOP"] = [Circle(est.bore_d / 2).faces()[0].moved(Location((est.cx, est.cy, 0)))]
-    layers["ACRYLIC"] = [_capsule_face(dv.cx, dv.cy, *dv.pocket) for dv in DEVICES if dv.kind == "pocket"]
-    layers.update(callouts.layers(callouts_local(d), register(d), width=plate_size(d)[0]))
+    marked = callouts.layers(callouts_local(d), register(d), width=plate_size(d)[0])
+    layers[MARK_LAYER] = marked.pop(callouts.VCARVE_LAYER)
+    layers.update(marked)
     return layers
 
 
@@ -1606,8 +1592,8 @@ _RED_SWATCH = house.RED
 
 
 def export(d: Datums = D) -> list:
-    """STEP + DXF for the plate (birch on CUT, panes on ACRYLIC, the E-stop
-    bore on E_STOP), the cheek and rib (birch), the reveal and the panes
+    """STEP + DXF for the plate (stainless: CUT for the waterjet, MARK for the
+    laser, the E-stop bore on E_STOP), the cheek and rib (birch), the reveal
     (acrylic), and STEP alone for the two reference solids."""
     from build123d import ExportDXF
 
@@ -1634,8 +1620,6 @@ def export(d: Datums = D) -> list:
     written += export_part(build_rib(d), RIB_NAME)
     reveal = build_reveal(d)
     written += export_part(reveal, REVEAL_NAME, layers={"ACRYLIC": flat_pattern(reveal)["CUT"]})
-    for label, _dv, pane in panes(d):
-        written += export_part(pane, label, layers={"ACRYLIC": flat_pattern(pane)["CUT"]})
     for name, solid in ((KEEPOUT_NAME, build_keepout(d)), (ESTOP_ENV_NAME, build_estop_env(d))):
         p = out_dir / f"{name}.step"
         export_step(solid, p, unit=Unit.MM)
@@ -1654,8 +1638,8 @@ if __name__ == "__main__":
     print(
         f"{PART_NAME}: band y {y0:.0f}..{y1:.0f}, z {z0:.0f}..{z1:.0f} station "
         f"(top set by the {band_bound(d)}); "
-        f"plate {w:.0f} x {h:.0f} x {T:.0f} flush in the right end wall, tongue "
-        f"{tongue_size(d)[0]:.0f} x {tongue_size(d)[1]:.0f}"
+        f"plate {w:.0f} x {h:.0f} x {PLATE_T:.0f} ({PLATE_MATERIAL}) flush in the right "
+        f"end wall, aperture {aperture_size(d)[0]:.0f} x {aperture_size(d)[1]:.0f}"
     )
     print(
         f"  chase {CHASE:.0f} (driver {CHASE_DRIVER.label} at {CHASE_DRIVER.behind[2]:.0f} + "

@@ -136,6 +136,16 @@ SOURCES = {
              "SIZE drawing: 29.7 overall, flange 2.2 thick, 26 x 31 flange, "
              "round 24 cutout, two 3.5 holes on a 19 x 24 diagonal. thepenglin.com "
              "carries no drawings, only links back to Amazon.",
+    "CONSOLE_PLATE": "Jared, 2026-09-09, this thread: 'The sheet shouldn't be "
+                     "birch... We should spec a metal plate that we can "
+                     "waterjet/lasercut and enduramark etch the markings on.' "
+                     "Enduramark: https://www.enduramark.com/ (CO2-laser marking "
+                     "spray; black on stainless is its best case).",
+    "METER_MOVEMENT": "placeholder footprint: https://cdn-shop.adafruit.com/"
+                      "product-files/4404/C12723-001_datasheet_translate.pdf "
+                      "(85C1 outline). The real pair is a HUNT, not a datasheet: "
+                      "Weston Model 301 class, 3.5in round, 0-1 mA DC movement, "
+                      "on the analog hunt list 2026-09-09.",
     "45-682-292": "https://www.ergodirect.com/attachments/doc/e3df7e14535acb3b8540cb5b4845df8fa258d971/drawing-ergotron-lx-pro-desk-monitor-arm.pdf"
                   " -- Ergotron DIM-LXproArm dimensional illustrations rev "
                   "11/12/2024, plus the ErgoDirect spec table at "
@@ -414,9 +424,48 @@ ct15_plug_lead = {
     "exit": None,                   # MEASURE: where the lead leaves the head
 }
 
+CONSOLE_PLATE = {
+    "name": "Console plate: 3mm 304 stainless, #4 brushed, waterjet cut, "
+            "Enduramark legends",
+    "t": 3.0,                       # RULED 2026-09-09 (Jared). The plate is NOT
+                                    # birch: 12mm carcass stock was inherited
+                                    # from the carcass and fought every
+                                    # panel-mount device on it (XB4 1-6, PL183
+                                    # 2-10, NAHDMI-W <=2). 3mm sits inside every
+                                    # range the plate carries.
+    "material": "304 stainless sheet, #4 brushed, 3.0 (11 ga nominal)",
+    "process": "waterjet in the IC, through cuts only (bores, D-types, the "
+               "state window, screw clearances); countersinks on the drill "
+               "press after; legends Enduramark black on the Universal laser, "
+               "the plate located on its two short-edge screw holes (REGISTER)",
+    "screw": "4 x 10 flat head countersunk wood screw, 10 off",
+    "panel_t_range_note": "3mm is inside XB4 (1-6), PL183 (2-10) and the "
+                          "meters' stud reach; console_plate checks each row",
+}
+
+METER_MOVEMENT = {                  # the two dials, SPEED and LOAD (2026-09-09)
+    "name": None,                   # MEASURE (a hunt): a MATCHED PAIR of vintage
+                                    # 3.5in moving-coil movements, Weston 301
+                                    # class, 0-1 mA DC, custom scale cards
+                                    # (SPEED 0-24k RPM, LOAD 0-100 %). Model TBD.
+    "placeholder": "85C1 moving-coil panel meter (Delixi drawing): face 64 x "
+                   "56, bezel 10 proud, body D48.5 x 50 behind, 2 x M3 studs "
+                   "52.5 apart 15 below centre. The console cuts THIS footprint "
+                   "until the pair lands.",
+    "drive": "0-10V from the VFD's analog outputs (frequency -> SPEED, output "
+             "current -> LOAD) through one series resistor each; a split-core "
+             "current transducer on one spindle phase is the VFD-independent "
+             "fallback for LOAD",
+    "panel_t_range": (1.0, 6.0),    # assumption: stud-mounted bezel, M3 studs
+                                    # ~10 long on the 85C1; the 301's are
+                                    # longer. Read the pair when it lands.
+}
+
 CATALOG = {
     "UPTJ14": UPTJ14,
     "PL183": PL183,
+    "CONSOLE_PLATE": CONSOLE_PLATE,
+    "METER_MOVEMENT": METER_MOVEMENT,
     "45-682-292": LX_PRO_ARM,
     "motion_controller_env": motion_controller_env,
     "motion_controller_mount": motion_controller_mount,
@@ -451,6 +500,10 @@ CATALOG_MEASURE_HINTS = {
                   "face on the RIGHT edge: the cable exit and its bend room.",
     "PL183.cable_behind": "Straight length of the mating USB-C plug behind "
                   "the body: depth the console plate needs behind the panel.",
+    "METER_MOVEMENT.name": "Which matched pair of movements: sets the two "
+                  "meter cutouts on the console (bore, stud pitch, stud d, "
+                  "bezel, depth behind) and the scale cards. The 85C1 "
+                  "footprint is cut until then.",
     "45-682-292.clamp_plate_holes": "Hole field on the 2-piece clamp's "
                   "vertical plate: what J04 lands on the leg's 40x40 pattern "
                   "or the Carbide bracket.",
@@ -535,6 +588,10 @@ CONFIDENCE = {
     "UPTJ14.usb_c_offset": "MEASURE",
     "PL183": "datasheet",
     "PL183.cable_behind": "MEASURE",
+    "CONSOLE_PLATE": "ruling",      # 2026-09-09, Jared: stainless, waterjet,
+                                    # Enduramark
+    "METER_MOVEMENT": "placeholder",    # 85C1 footprint stands in for the pair
+    "METER_MOVEMENT.name": "MEASURE",
     "45-682-292": "datasheet",
     "45-682-292.clamp_plate_holes": "MEASURE",
     "motion_controller_env": "MEASURE",     # forum lead only, not a datasheet
