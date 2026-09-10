@@ -1040,7 +1040,7 @@ def main() -> None:
     kx0, kx1 = console_plate.chase_x(d)
     eb = console_plate.build_estop_env(d).bounding_box()
     print(
-        f"  {console_plate.PART_NAME}: {pw:.0f} x {ph:.0f} x {d.t:.0f} flush in the right end "
+        f"  {console_plate.PART_NAME}: {pw:.0f} x {ph:.0f} x {console_plate.PLATE_T:.0f} flush in the right end "
         f"wall, band y {cy0:.0f}..{cy1:.0f} z {cz0:.0f}..{cz1:.0f}; {len(console_plate.DEVICES)} "
         f"devices, chase {console_plate.CHASE:.0f} set by {console_plate.CHASE_DRIVER.label} "
         f"({console_plate.CHASE_DRIVER.behind[2]:.0f} + {console_plate.CHASE_MARGIN:.0f})"

@@ -76,7 +76,7 @@ The sheet's face grain lies along the nest's X (``GRAIN_AXIS``, the 4x8's
 long edge). Whether
 a part may turn on the sheet is ``grain_rule``: a standing panel whose face
 is seen (walls, spine, partition, both doors) keeps its grain vertical; a
-rail, a stick, a drawer box panel and the console plate keep it along their
+rail, a stick, a drawer box panel and the console rib keep it along their
 length; everything else (hidden plates, bottoms, shelves, the track-saw
 pair) may turn. None of that is measured, it is shop convention, and it is
 CONFIDENCE: convention with a standing RULING WANTED line until Jared
@@ -103,8 +103,8 @@ drawing; the second fixture flips the whole blank. On top of those:
 The rear door's word is carved on its OUTSIDE face and lives in its own
 flipped drawing (``rear_door_carve.dxf``, C17); a nest is the first fixture,
 so the door contributes its CUT frame here and the carve stays where it is.
-The console plate's ``ACRYLIC`` layer (its pane outlines) is dropped from the
-birch sheet: the panes are acrylic parts and ride the laser nest.
+The console plate is not on the birch sheets at all: it is 3mm stainless,
+waterjet cut from its own DXF; only its birch cheek and rib nest here.
 """
 
 from __future__ import annotations
@@ -250,13 +250,12 @@ GRAIN_LONG_PREFIXES = (
     "drawer",
     bay_walls.SPACER_STEM,
     stock_rails.LABEL,
-    console_plate.PART_NAME,
     console_plate.RIB_NAME,
     f"{lungs_carriage.PART_NAME}_lip",
     f"{lungs_carriage.PART_NAME}_cheek",
     signal_mounts.CHEEK_STEM,
 )
-"""Rails, sticks, drawer box panels and the console plate: grain runs along
+"""Rails, sticks, drawer box panels and the console rib: grain runs along
 the long edge. Matched by label prefix (``drawer`` covers all fifteen box
 panels; a bottom's grain is invisible and along-length costs nothing).
 SOURCE: shop convention. CONFIDENCE: convention, RULING WANTED."""
@@ -645,7 +644,7 @@ def check_nest(comps: list[Component] | None = None, d: Datums = D) -> list[str]
     notes.append(
         "nest: GRAIN, standing note. Grain along the sheet's X; standing seen panels "
         f"({', '.join(GRAIN_VERTICAL)}) keep it vertical, rails, sticks, drawer panels and "
-        "the console plate keep it along their length, the rest may turn. Shop convention, "
+        "the console rib keep it along their length, the rest may turn. Shop convention, "
         "CONFIDENCE convention. RULING WANTED: confirm, or name exceptions in "
         "nest.GRAIN_OVERRIDES; the count moves only if a fixed panel turns."
     )
@@ -703,9 +702,8 @@ def flats(d: Datums = D) -> dict[str, tuple[Part | None, dict[str, list[Face]]]]
         add(label, part)
     for label, part, _plane in exhaust_plenum.panels(d):
         add(label, part)
-    plate_layers = console_plate._plate_layers(d)
-    plate_layers.pop("ACRYLIC", None)      # the panes are their own acrylic parts
-    add(console_plate.PART_NAME, console_plate.build_plate(d), plate_layers)
+    # console_plate.PART_NAME is NOT nested: 3mm stainless, waterjet cut from
+    # its own DXF (console_plate.py, 2026-09-09). The cheek and rib stay birch.
     add(console_plate.CHEEK_NAME, console_plate.build_cheek(d))
     add(console_plate.RIB_NAME, console_plate.build_rib(d))
     add(rear_door.PART_NAME, rear_door.build(d), flat_pattern(rear_door.build(d, carve=False)))
