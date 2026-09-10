@@ -25,9 +25,13 @@ the cap, and its bottom edge sits ``HINGE_GAP`` above the deck, which is the
 gap the hinge's knuckle lies in.
 
 Everything on it obeys the split. ``Datums.brain_split_x`` divides the door
-as it divides the band: the IEC inlet, the two glands and the two lamps sit
-LEFT of it (sealed power); the RJ45, the two GX16 bulkheads and the clear
-reveal sit RIGHT of it (exposed signal). The VFD's keep-out (``vfd_keepout_x``)
+as it divides the band: the IEC inlet and the two glands sit LEFT of it
+(sealed power); the RJ45 and the clear reveal sit RIGHT of it (exposed
+signal). The two rail indicator lamps and the two GX16 bulkheads that were
+here were STRUCK 2026-09-09 (subtract pass, items 06 and 09): the lamps
+reported a rail state nothing else on the station reads, and the bulkheads
+served the pendant (now a USB-C coupler on the console) and the mast camera
+(parked to 2026-11-02). The VFD's keep-out (``vfd_keepout_x``)
 runs into the door's left end too: nothing is cut through the door there.
 
 THE JOINTS. ALL FACES, ONE HOUSING
@@ -96,20 +100,9 @@ standing note says so.
 THE INDICATORS
 ==============
 
-Two 22mm pilot lights, sealed side, high, cut THROUGH the door. RULED
-2026-09-04 (Jared): no aluminium bracket. Each lamp gets a ``LAMP_CBORE_D``
-counterbore from the INSIDE face that leaves a ``LAMP_LAND`` (6mm, the XB4
-collar's maximum panel) of birch at the outside face, and a ``LAMP_BORE``
-through-hole in that land. The head and bezel clamp the land from the ROOM
-side and the body hangs inside the sealed band, in and beyond the
-counterbore. A consequence of that geometry, stated so nobody reads the brief's
-older "on its inside face" and expects otherwise: the bezels face the ROOM,
-so a person standing behind the machine reads which rails are live BEFORE the
-door is opened, and once the door is a shelf they face the floor. White is
-ALWAYS-LIVE, amber is CONTACTOR. No red: the E-stop is the red budget. The
-lamp bodies are reference solids; the bezels stand ``LAMP_BEZEL_PROUD`` off
-the door's outside face and, like the hinge knuckle, are not assembly
-components, because they stand proud of the carcass envelope by design.
+STRUCK 2026-09-09. The two 22mm rail pilot lights (white ALWAYS-LIVE, amber
+CONTACTOR, counterbored from the inside to a 6mm land, ruled 2026-09-04) are
+gone with their cuts, envelopes and checks; git has the geometry.
 
 THE REVEAL (I27)
 ================
@@ -186,7 +179,6 @@ from stations.cnc_shapeoko.carcass import (
     DATUMS,
     EXPORT_DIR,
     GLAND_M25_D,
-    GX16_PANEL_D,
     ROUTER_R,
     SCREW_CLEAR_D,
     SCREW_PILOT_D,
@@ -213,7 +205,6 @@ KEY_ENV_NAME = "interlock_key_env"
 BLOCK_NAME = "interlock_block"
 """The switch's seat: a birch offcut, a real part with its own flat (DXF) and
 placed STEP, in the ``offcut`` group so the nest does not look for it."""
-LAMP_ENV_STEM = "indicator_env"
 STAY_STEM = "rear_door_stay"
 
 D: Datums = DATUMS
@@ -312,80 +303,6 @@ IEC_POS = (GRID * 15, GRID * 3)
 """Door-local centre. Low, so the cord drops along the door; above the hinge
 leaf; inside the sealed zone and clear of the VFD keep-out. SOURCE: layout.
 CONFIDENCE: chosen, checked."""
-
-# ---- the two lamps (sealed side, high, THROUGH the door) --------------------
-LAMP_SOURCE = "https://www.se.com/us/en/product/XB4BVB1/ (product data sheet, the XB4 Harmony pilot light)"
-LAMP_BORE = 22.5
-"""Through-hole in the land. SOURCE: XB4 product data sheet, "Fixing hole
-diameter 22.5 mm +/- 0.2 conforming to EN/IEC 60947-1"; the panel cut-out
-drawing recommends 22.5 (22.3 +0.4/0). Ruled 22.5 (Jared, 2026-09-04).
-CONFIDENCE: datasheet, ruling."""
-LAMP_BODY = (30.0, 47.0)
-"""Body W x H behind the panel. SOURCE: se.com XB4BVB1 / XB4BVB5 product
-sheets, "Width 30 mm, Height 47 mm", the figures console_plate captured for
-the same family. CONFIDENCE: datasheet."""
-LAMP_DEPTH = 54.0
-"""Whole-product depth, bezel face to the back of the block. SOURCE: se.com
-XB4BVB5, "Depth 54 mm". CONFIDENCE: datasheet."""
-LAMP_BEZEL_PROUD = 11.0
-"""The head in front of the panel. SOURCE: the XB4 pilot light dimension
-drawing (XB4BVBM4GEX data sheet p.3, the same ZB4 head: "11" ahead of the
-support, "58" behind it on that deeper block). CONFIDENCE: datasheet, sibling
-sheet. Replaces the 8mm assumption that stood here."""
-LAMP_PANEL_MAX = 6.0
-"""Thickest panel the XB4 fixing collar clamps. SOURCE: XB4 product data
-sheet, "support panel thickness 1...6 mm". CONFIDENCE: datasheet."""
-LAMP_LAND = LAMP_PANEL_MAX
-"""Birch left at the outside face under each lamp: the collar's maximum, so
-the collar clamps it. RULED 2026-09-04 (Jared): "counterbore from the inside
-face to leave a 6mm land". CONFIDENCE: ruling, datasheet."""
-LAMP_CBORE_D = 56.0
-"""Counterbore diameter from the inside face, down to the land. A round
-pocket has to clear the collar and the electrical block that clips to it,
-whose envelope in the panel plane is LAMP_BODY, 30 x 47: the rectangle's
-diagonal is 55.8, so 56. SOURCE: XB4 body W x H (datasheet), diagonal
-derived. CONFIDENCE: datasheet, derived. The collar alone would sit in a
-smaller bore; measure the first lamp in hand before shrinking it."""
-LAMP_X = GRID * 16.5
-LAMP_TOP = GRID * 3
-"""Door-local centre X of the pair and the drop of their centres below the
-door's top edge. High on the sealed side, clear of the VFD keep-out, above
-the glands and the drive callout. SOURCE: layout. CONFIDENCE: chosen,
-checked."""
-LAMP_PITCH = GRID * 4
-"""Centre to centre: two 56mm counterbores with a web between them wider
-than the cutter. SOURCE: LAMP_CBORE_D. CONFIDENCE: derived, checked."""
-LAMPS = (
-    ("always_live", "Schneider Harmony XB4BVB1, pilot light, white, 22mm, LED 24V", +1),
-    ("contactor", "Schneider Harmony XB4BVB5, pilot light, orange, 22mm, LED 24V", -1),
-)
-"""(rail, model, side of LAMP_X). The reading order for a person standing
-behind the machine is +X to -X, so white ALWAYS-LIVE takes the +X seat.
-Amber for CONTACTOR: no red on this door. SOURCE: brief "each rail gets its
-own indicator lamp on the rear door"; BOM "Indicator lamps, panel mount, per
-rail on the rear door, 2". CONFIDENCE: chosen (models), the same family as
-the console."""
-
-# ---- the two GX16 bulkheads (signal side, low) ------------------------------
-GX16_FLANGE_D = 19.0
-GX16_THREAD_L = 8.6
-"""SOURCE: handsontec GX16 sheet, as captured by console_plate (flange O19,
-M16x1 thread 8.6 long, S19 nut). CONFIDENCE: datasheet."""
-GX16_PANEL_MAX = 5.0
-"""Thickest panel an 8.6mm thread clamps with its nut on. SOURCE: derived,
-thread less a nut. CONFIDENCE: chosen. console_plate cuts the same socket
-through 18mm with no pocket; that plate's nut will not reach and is not this
-part's to fix."""
-GX16_POCKET_D = 26.0
-"""Inside-face pocket for the S19 nut: 22 across corners plus room for a
-spanner's jaw. CONFIDENCE: chosen."""
-GX16_Y = GRID * 3
-GX16S = (
-    ("pendant", "GX16 panel socket, the house connector: the pendant run", GRID * 47),
-    ("mast_camera", "GX16 panel socket, the house connector: the mast camera run", GRID * 50),
-)
-"""(run, model, door-local x). SOURCE: task C07 ("2x external GX16 bulkheads
-for the pendant and mast-camera runs"). CONFIDENCE: spec."""
 
 # ---- the RJ45 bulkhead (signal side, low) -----------------------------------
 RJ45 = "Neutrik NE8FDP, RJ45 feedthrough, D-shape chassis"
@@ -866,31 +783,6 @@ def key_radius(d: Datums = D) -> float:
     return hypot(d.y_rear - d.t - ax.position.Y, z - ax.position.Z)
 
 
-# -- the lamps, through the door ---------------------------------------------
-
-
-def lamp_local(side: int, d: Datums = D) -> tuple[float, float]:
-    """Door-local centre of one lamp's axis."""
-    _w, h = door_size(d)
-    return (LAMP_X + side * LAMP_PITCH / 2, h - LAMP_TOP)
-
-
-def build_lamp_env(side: int, d: Datums = D) -> Part:
-    """One lamp's BODY behind the land, station coordinates: from the land's
-    inside face, through the counterbore and on into the band, LAMP_BODY in
-    the door's plane with the 47 vertical. The bezel ahead of the land and
-    the collar in the counterbore are not drawn: the bezel stands proud of
-    the carcass envelope by design and the collar is inside the bore."""
-    lx, ly = lamp_local(side, d)
-    x, z = x_left(d) + lx, z_bottom(d) + ly
-    y_land = d.y_rear - LAMP_LAND
-    body_l = LAMP_DEPTH - LAMP_BEZEL_PROUD - LAMP_LAND
-    return Box(
-        LAMP_BODY[0], body_l, LAMP_BODY[1],
-        align=(Align.CENTER, Align.MAX, Align.CENTER),
-    ).moved(Location((x, y_land, z)))
-
-
 # -- the stays ----------------------------------------------------------
 
 
@@ -955,16 +847,6 @@ def cuts(d: Datums = D) -> list[Cut]:
     out: list[Cut] = []
     _w, h = door_size(d)
 
-    # -- sealed side: the two lamps, a counterbore from the inside face down
-    # to the land, then the collar's bore through the land
-    for rail, _model, side in LAMPS:
-        x, y = lamp_local(side, d)
-        out.append(Cut(f"lamp_{rail}_cbore", "sealed", "pocket_front", x, y,
-                       (LAMP_CBORE_D, LAMP_CBORE_D), corner_r=LAMP_CBORE_D / 2,
-                       depth=T - LAMP_LAND, note="counterbore, inside face, to the 6mm land"))
-        out.append(Cut(f"lamp_{rail}", "sealed", "bore", x, y, (LAMP_BORE, LAMP_BORE),
-                       corner_r=LAMP_BORE / 2, note="XB4 collar bore through the land"))
-
     # -- sealed side: IEC inlet, oversized so the body's square corners clear
     iw, ih = IEC_CUTOUT
     iw += 2 * DEVICE_CLEAR
@@ -990,14 +872,6 @@ def cuts(d: Datums = D) -> list[Cut]:
     for i, (dx, dy) in enumerate(RJ45_HOLES):
         out.append(Cut(f"rj45_screw_{i}", "signal", "bore", RJ45_POS[0] + dx, RJ45_POS[1] + dy,
                        (RJ45_HOLE_D, RJ45_HOLE_D), corner_r=RJ45_HOLE_D / 2))
-
-    # -- signal side: GX16s (pocket from the INSIDE for the nut)
-    for run, _model, x in GX16S:
-        out.append(Cut(f"gx16_{run}_pocket", "signal", "pocket_front", x, GX16_Y,
-                       (GX16_POCKET_D, GX16_POCKET_D), corner_r=GX16_POCKET_D / 2,
-                       depth=T - GX16_PANEL_MAX, note="S19 nut pocket, inside face"))
-        out.append(Cut(f"gx16_{run}", "signal", "bore", x, GX16_Y, (GX16_PANEL_D, GX16_PANEL_D),
-                       corner_r=GX16_PANEL_D / 2))
 
     # -- signal side: the reveal rabbet, then the window through it
     cx, cy = window_centre(d)
@@ -1094,8 +968,7 @@ def door_open(d: Datums = D) -> Part:
 def placed_all(d: Datums = D) -> list[tuple[str, str, Part]]:
     """(label, group, placed solid) for everything this module puts in the
     assembly: the door, the pane, the interlock block on the wall with the
-    switch on it and the key on the door, the two lamp bodies, the two
-    folded stays."""
+    switch on it and the key on the door, the two folded stays."""
     out: list[tuple[str, str, Part]] = [
         (PART_NAME, "carcass", place(d=d)),
         (REVEAL_NAME, "acrylic", place_reveal(d=d)),
@@ -1103,8 +976,6 @@ def placed_all(d: Datums = D) -> list[tuple[str, str, Part]]:
         (SWITCH_ENV_NAME, "reference", build_switch_env(d)),
         (KEY_ENV_NAME, "reference", build_key_env(d)),
     ]
-    for rail, _model, side in LAMPS:
-        out.append((f"{LAMP_ENV_STEM}_{rail}", "reference", build_lamp_env(side, d)))
     for end in ("l", "r"):
         out.append((f"{STAY_STEM}_{end}", "reference", build_stay(end, d)))
     return out
@@ -1131,9 +1002,6 @@ def joint_table(d: Datums = D) -> list[tuple]:
          switch_axis(d)[0] - SWITCH_SLOT_DEPTH, switch_axis(d)[0],
          "the tongue in the head's slot"),
     ]
-    for rail, _model, _side in LAMPS:
-        out.append((PART_NAME, f"{LAMP_ENV_STEM}_{rail}", "bearing", None, 0.0, 0.0,
-                    "lamp collar clamps the land; the body hangs in the counterbore"))
     for end in ("l", "r"):
         out.append((PART_NAME, f"{STAY_STEM}_{end}", "bearing", None, 0.0, 0.0,
                     "folded stay flat on the door's inside face"))
@@ -1253,31 +1121,6 @@ def check_rear_door(d: Datums = D) -> list[str]:
             f"the door's top corner rises {rise:.2f}mm on the swing and the top reveal "
             f"is {TOP_REVEAL:.1f}: the door hits the cap before it opens"
         )
-    # the lamp bodies reach furthest into the band of anything on the door
-    # and sit highest; their top corner's arc has to clear the cap's underside
-    _lx, ly = lamp_local(+1, d)
-    z_body = z_bottom(d) + ly + LAMP_BODY[1] / 2
-    dy = d.t + HINGE_AXIS_OFF + (LAMP_DEPTH - LAMP_BEZEL_PROUD - d.t)
-    dz = z_body - hinge_axis(d).position.Z
-    body_rise = hypot(dy, dz) - dz
-    if z_body + body_rise >= d.top_z[0]:
-        notes.append(
-            f"a lamp body tops out at z {z_body:.1f} and rises {body_rise:.1f} on the "
-            f"swing against the cap's underside at {d.top_z[0]:.1f}: the lamps are too high"
-        )
-    # the counterbore: a land the collar clamps, a bore the body's diagonal
-    # clears, a web the cutter can leave between the pair
-    if LAMP_LAND > LAMP_PANEL_MAX or LAMP_LAND < 1.0:
-        notes.append(f"the {LAMP_LAND:.1f}mm land is outside the XB4 collar's 1 to {LAMP_PANEL_MAX:.0f}mm")
-    if LAMP_CBORE_D < hypot(*LAMP_BODY):
-        notes.append(
-            f"the {LAMP_CBORE_D:.0f} counterbore does not clear the lamp body's "
-            f"{hypot(*LAMP_BODY):.1f} diagonal"
-        )
-    if LAMP_PITCH - LAMP_CBORE_D < ROUTER_R * 2:
-        notes.append("the web between the two counterbores is thinner than the cutter")
-    if ly + LAMP_CBORE_D / 2 > h:
-        notes.append("a counterbore runs out the door's top edge")
     if HINGE_LEAF_W > d.t:
         notes.append(
             f"the hinge leaf is {HINGE_LEAF_W:.1f} wide and the deck's rear edge is "
@@ -1331,7 +1174,7 @@ def check_rear_door(d: Datums = D) -> list[str]:
             f"zone is {sx0:.1f}..{sx1:.1f}: the reveal is not wholly over the signal side"
         )
     rw, rh = rabbet_size(d)
-    if wy0 - REVEAL_LIP <= GX16_Y + GX16_POCKET_D / 2 or wy0 - REVEAL_LIP <= RJ45_POS[1] + RJ45_FLANGE[1] / 2:
+    if wy0 - REVEAL_LIP <= RJ45_POS[1] + RJ45_FLANGE[1] / 2:
         notes.append("the reveal's rabbet runs into the signal row's flanges")
     (lx, _ly) = stay_local("r", d)
     if wx1 + REVEAL_LIP + PANE_FIT > lx:
@@ -1468,18 +1311,6 @@ def check_rear_door(d: Datums = D) -> list[str]:
             )
 
     # -- standing notes: what the geometry cannot enforce --------------------
-    notes.append(
-        f"LAMPS, standing note. RULED 2026-09-04: no bracket. Each rail lamp is counterbored "
-        f"{LAMP_CBORE_D:.0f} from the inside face to a {LAMP_LAND:.0f}mm land with a "
-        f"{LAMP_BORE:.1f} bore through it, at door x "
-        + ", ".join(f"{lamp_local(s, d)[0]:.0f}" for _r, _m, s in LAMPS)
-        + f" y {lamp_local(+1, d)[1]:.0f}. The collar clamps the land from the ROOM side: the "
-        f"bezels face the room, {LAMP_BEZEL_PROUD:.0f} proud of the door's outside face (not "
-        "assembly components, like the knuckle), and face the floor when the door is a shelf. "
-        "Read the rails before opening the door, not after. The body hangs "
-        f"{LAMP_DEPTH - LAMP_BEZEL_PROUD - T:.0f} into the band past the inside face. Expected, "
-        "and worth knowing before the door is painted: the bezel seats on the painted land."
-    )
     notes.append(
         f"GLANDS, standing note. Both glands are M{GLAND_D:.0f} by the C07 spec (I91, D01) "
         "where the BOM line reads 20mm; the spec wins and the BOM line follows. The "
