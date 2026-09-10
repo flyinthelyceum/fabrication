@@ -117,7 +117,20 @@ SOURCES = {
                     "UNVERIFIED.",
     "vfd_fan": "MEASURED 2026-09-02, calipers, two square fans on the left face.",
     "vfd_vent_clear": "https://carbide3d.com/hub/docs/65mm-er16-spindle/",
-    "vfd_mount_pitch": "https://carbide3d.com/hub/docs/65mm-er16-spindle/",
+    "vfd_mount_pitch": "MEASURED 2026-09-09, Jared, calipers on the drive's back: "
+                       "3.34in on centre, level pair of KEYHOLES (top 2.287in below "
+                       "the case top, 0.614in tall, slot 0.15in, round 0.28in). "
+                       "Carbide's doc (https://carbide3d.com/hub/docs/65mm-er16-spindle/) "
+                       "said 85 and 'slotted'. Geometry in parts/vfd_mount.py.",
+    "VFD_WIRING": "READ 2026-09-09 off the open drive (Jared's photos) and the EM60 "
+                  "manual. Control strip order and the relay block are read off the "
+                  "silkscreen; Carbide's four wire colours are read off ferrule "
+                  "positions in the photo (Jared to confirm by label). J5 and J6 "
+                  "both on V (Jared, same day).",
+    "JEWEL_LAMP": "RULED 2026-09-09, Jared: 'indicator on jewels for sure'. Dialco / "
+                  "Dialight faceted-jewel pilot light, amber, 120 V neon, from the "
+                  "Analog Hunt List (Personal Bench BOM - Master, rows 17-23). "
+                  "Footprint is the family's, not a part's, until the lamps land.",
     "mini_pc_env": "https://psref.lenovo.com/syspool/Sys/PDF/ThinkStation/ThinkStation_P350_Tiny/ThinkStation_P350_Tiny_Spec.PDF"
                    " -- Lenovo ThinkStation P350 Tiny, 1L Tiny chassis, PSREF "
                    "dimensions 179mm W x 182.9mm D x 36.5mm H (read 2026-09-04). "
@@ -458,7 +471,12 @@ CONSOLE_PLATE = {
                "screw clearances); countersinks on the drill "
                "press after; legends Enduramark black on the Universal laser, "
                "the plate located on its two short-edge screw holes (REGISTER)",
-    "screw": "4 x 10 flat head countersunk wood screw, 10 off",
+    "screw": "4 x 10 flat head countersunk wood screw, 12 off",
+    "size": (400.0, 200.0),         # RULED 2026-09-09: composition #3 needs 200
+                                    # tall (two 3.5in dials + a switch row + a
+                                    # port row); CONSOLE_Z0 GRID*24 -> GRID*20.
+    "composition": "five groups on one axis (READ / ARM / MACHINE / EXTRACTION "
+                   "/ PORTS), console_plate.py docstring; composed, not packed",
     "panel_t_range_note": "3mm is inside XB4 (1-6), PL183 (2-10) and the "
                           "meters' stud reach; console_plate checks each row",
 }
@@ -487,10 +505,45 @@ DUST_CONTROL = {                    # the DUST selector's wiring (2026-09-09)
                                     # switches 0.5 A directly, no relay.
 }
 
+VFD_WIRING = {                      # the EM60's control strip as built (2026-09-09)
+    "control_strip": ("+10V", "VF1", "FM1", "GND", "COM", "DI1", "DI2", "DI3",
+                      "DI4", "OP", "+24V"),      # top to bottom on the silkscreen
+    "relay_block": ("TA", "TB", "TC"),           # T1: TA-TC normally open per
+                                                 # the EM60 family; CONFIRM on
+                                                 # manual p.18 before mains
+    "jumpers": "J5 (VF1) on V, J6 (FM1) on V: analog in and out both 0-10 V "
+               "(Jared 2026-09-09)",
+    "carbide": {"red": "VF1", "black": "GND", "green": "COM", "blue": "DI1"},
+                                    # read off ferrule positions in the photo:
+                                    # 0-10 V speed, analog ground, digital
+                                    # common, run. Jared to CONFIRM by label.
+    "carbide_confirmed": None,      # MEASURE: read the label beside each ferrule
+    "station_adds": {"SPEED": "FM1 + GND, one series resistor at the meter",
+                     "DUST_AUTO": "trigger load across TA + TC (T1 NO), 120 V, "
+                                  "routed out of the box on its own path",
+                     "LOAD": "nothing in the box: split-core CT on U, V or W"},
+    "expansion": "JP1 2-row header = EM60-IO card slot (a second analog out); "
+                 "decision pending, not needed for the plate",
+    "untouched": "P+ / PB (braking resistor), +10V, OP, DI2-DI4, +24V",
+}
+
 STATION_SUPPLY = {                  # RULED 2026-09-09
     "circuit": "one dedicated 120 V / 20 A branch circuit",
     "loads": "VFD (EM60G1R5S1, single-phase 110 V), console PC, CT 15, "
              "console lamps and controls",
+}
+
+JEWEL_LAMP = {                      # the two console indicators (2026-09-09)
+    "name": None,                   # MEASURE (a hunt): Dialco / Dialight faceted
+                                    # jewel pilot light, amber, 120 V neon;
+                                    # Analog Hunt List rows 17-23
+    "supersedes": "Schneider XB4BVB5 (the 24 V LED pilot that stood as BAG_LAMP)",
+    "mount": "5/8in (16) hole, ~20 bezel, ~40 behind with leads, thin panel: "
+             "the family's numbers (console_plate.JEWEL_*), assumption",
+    "drive": {"BAG_LAMP": "station controller, filter differential pressure "
+                          "(nothing behind it until the controller exists)",
+              "EXTR_LAMP": "120 V neon in PARALLEL with the CT 15 trigger load "
+                           "(DUST_CONTROL): lit whenever the extractor is asked to run"},
 }
 
 METER_MOVEMENT = {                  # the two dials, SPEED and LOAD (2026-09-09)
@@ -498,10 +551,15 @@ METER_MOVEMENT = {                  # the two dials, SPEED and LOAD (2026-09-09)
                                     # 3.5in moving-coil movements, Weston 301
                                     # class, 0-1 mA DC, custom scale cards
                                     # (SPEED 0-24k RPM, LOAD 0-100 %). Model TBD.
-    "placeholder": "85C1 moving-coil panel meter (Delixi drawing): face 64 x "
-                   "56, bezel 10 proud, body D48.5 x 50 behind, 2 x M3 studs "
-                   "52.5 apart 15 below centre. The console cuts THIS footprint "
-                   "until the pair lands.",
+    "target": "3.5in round case, Weston 301 class: bezel ~89 on the face, body "
+              "through a ~76 bore, ~60 behind. The console is COMPOSED around "
+              "this footprint and cuts the two bores (console_plate.METER_*); "
+              "stud holes are drilled from the movement when the pair lands. "
+              "Assumption until then.",
+    "fallback": "85C1 moving-coil panel meter (Delixi drawing): face 64 x 56, "
+                "bezel 10 proud, body D48.5 x 50 behind, 2 x M3 studs 52.5 "
+                "apart 15 below centre. Documented fallback if the hunt fails "
+                "(console_plate.METER_85C1), no longer the default cut.",
     "drive": "SPEED: 0-10V from the EM60's single analog output FM1 set to "
              "frequency (P2.0.33), one series resistor. LOAD: a split-core "
              "current transducer on one spindle phase, 0-10V out, one series "
@@ -518,6 +576,8 @@ CATALOG = {
     "STATION_SUPPLY": STATION_SUPPLY,
     "DUST_CONTROL": DUST_CONTROL,
     "METER_MOVEMENT": METER_MOVEMENT,
+    "VFD_WIRING": VFD_WIRING,
+    "JEWEL_LAMP": JEWEL_LAMP,
     "45-682-292": LX_PRO_ARM,
     "motion_controller_env": motion_controller_env,
     "motion_controller_mount": motion_controller_mount,
@@ -555,10 +615,14 @@ CATALOG_MEASURE_HINTS = {
                   "face on the RIGHT edge: the cable exit and its bend room.",
     "PL183.cable_behind": "Straight length of the mating USB-C plug behind "
                   "the body: depth the console plate needs behind the panel.",
-    "METER_MOVEMENT.name": "Which matched pair of movements: sets the two "
-                  "meter cutouts on the console (bore, stud pitch, stud d, "
-                  "bezel, depth behind) and the scale cards. The 85C1 "
-                  "footprint is cut until then.",
+    "METER_MOVEMENT.name": "Which matched pair of movements: confirms the two "
+                  "76 bores on the console, sets the stud pattern (drilled from "
+                  "the part), bezel, depth behind and the scale cards.",
+    "JEWEL_LAMP.name": "Which jewel lamps: sets the two 16 bores on the console "
+                  "and what is behind them.",
+    "VFD_WIRING.carbide_confirmed": "Read the label beside each of Carbide's four "
+                  "ferrules (red/black/green/blue) on the EM60 strip; the photo "
+                  "reading is VF1/GND/COM/DI1.",
     "45-682-292.clamp_plate_holes": "Hole field on the 2-piece clamp's "
                   "vertical plate: what J04 lands on the leg's 40x40 pattern "
                   "or the Carbide bracket.",
@@ -632,7 +696,7 @@ CONFIDENCE = {
     "hose_id": "high",           # carbide sweepy pro doc, 35/36mm
     "hose_bend_mult": "assumption",  # nobody publishes one. Flagged, not sourced.
     "vfd_vent_clear": "high",    # carbide 65mm spindle doc, 30cm
-    "vfd_mount_pitch": "high",   # carbide 65mm spindle doc
+    "vfd_mount_pitch": "measured",   # 2026-09-09, calipers, 3.34in
     "mini_pc_env": "datasheet",  # Lenovo P350 Tiny, PSREF W x D x H
     # ---- catalog capture 2026-09-03 (C00). "datasheet" = read off the maker's
     # page or the listing SOURCES names. A dotted key is one value inside that
@@ -649,8 +713,12 @@ CONFIDENCE = {
     "DUST_CONTROL": "ruling",       # 2026-09-09, Jared: through the auto socket
     "DUST_CONTROL.trigger_load_w": "measured",   # 2026-09-09, 60 W fires
     "vfd_model": "confirmed",       # 2026-09-09, Jared read it off the drive
-    "METER_MOVEMENT": "placeholder",    # 85C1 footprint stands in for the pair
+    "METER_MOVEMENT": "assumption",     # 3.5in target footprint, composed around
     "METER_MOVEMENT.name": "MEASURE",
+    "JEWEL_LAMP": "ruling",             # 2026-09-09, Jared: jewels
+    "JEWEL_LAMP.name": "MEASURE",
+    "VFD_WIRING": "read",               # 2026-09-09, silkscreen + photos + manual
+    "VFD_WIRING.carbide_confirmed": "MEASURE",
     "45-682-292": "datasheet",
     "45-682-292.clamp_plate_holes": "MEASURE",
     "motion_controller_env": "MEASURE",     # forum lead only, not a datasheet
@@ -1200,7 +1268,9 @@ class Station:
     vfd_fan_count: int = 2          # both on the vented LEFT face
     vfd_vent_clear: float = 300.0   # carbide 65mm spindle doc, 30cm from the vented
                                     # (left) face to any obstruction
-    vfd_mount_pitch: float = 85.0   # two slotted wall-mount holes, carbide spindle doc
+    vfd_mount_pitch: float = 84.84  # MEASURED 2026-09-09 (Jared, calipers):
+                                    # 3.34in between the two keyholes on the
+                                    # back, level pair. Carbide's doc says 85.
 
     # ---- VFD ventilation: a knowing deviation -----------------------------
     # Ruling 2026-09-02, Jared: the drive vents THROUGH THE PANEL.

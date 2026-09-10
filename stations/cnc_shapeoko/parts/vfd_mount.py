@@ -61,8 +61,8 @@ THE JOINTS
     left edge    on the plane of the drive's vented face, ``Datums.vfd_x[0]``.
                  The plate reaches no further left, so no birch enters the
                  standoff slab.
-    rear face    the drive hangs on it: two E-Z LOK inserts, the leg joint's
-                 SKU, at ``vfd_mount_pitch``.
+    rear face    the drive hangs on it: two E-Z LOK 400-M3 inserts (the leg
+                 joint's family at the drive's slot size) at ``vfd_mount_pitch``.
 
 Screw heads sit in counterbores on the DRIVE face, under the drive, so the
 drive's back lands flat and the plate cannot come off while the drive is on
@@ -72,14 +72,17 @@ WHAT IS MEASURED, WHAT IS NOT
 =============================
 
 The drive was calipered 2026-09-02 (``params.vfd_box``, ``vfd_fan``) and its
-mount pitch is Carbide's own figure. Carbide's page says the two slotted holes
-are "on the back of the VFD enclosure, spaced 85mm apart" and are used "to
-hang the unit", and says nothing else: not which way the pair runs, not how
-far below the top it sits, not how wide the slot is. Those three drive only
-where the two insert bores land on the plate and what bolt goes through them.
-They are tagged below and ``check_vfd_mount`` carries them as MEASURE until
-they are read off the drive's back. The plate's outline, its place in the
-band and the keep-out do not depend on any of them.
+back was read 2026-09-09 (Jared, calipers, drive open on the bench): the two
+hanging holes are KEYHOLES, the pair runs ACROSS the back, 3.34in on centre
+(84.84, not Carbide's round 85), the top of each keyhole 2.287in (58.09)
+below the top of the case, each 0.614in (15.60) tall, the upper narrow slot
+0.15in (3.81) wide and the lower round 0.28in (7.11). So the drive hangs on a
+screw whose SHANK passes 3.81 and whose HEAD passes 7.11: an M3 pan head
+(DIN 7985: head 6.0, shank 3.0), not the M6 the leg joint uses, in an M3
+knife-thread insert of the same family (E-Z LOK 400-M3). Everything on the
+drive's back is measured; what is NOT is the case's sheet thickness, which
+sets how far the head stands off the plate (``HANG_STANDOFF``, an assumption
+carried as a build note).
 
 PANEL CONVENTION
 ================
@@ -110,14 +113,7 @@ from stations.cnc_shapeoko.carcass import (
 )
 from math import ceil
 
-from stations.cnc_shapeoko.parts.leg_joint import (
-    INSERT_PART,
-    INSERT_PILOT_D,
-    WALL_BACK_MIN,
-    WALL_CBORE_D,
-    WALL_CBORE_DEPTH,
-    WALL_PILOT_DEPTH,
-)
+from stations.cnc_shapeoko.parts.leg_joint import INSERT_PART  # noqa: F401  (the M6 family this part's M3 belongs to)
 
 PART_NAME = "vfd_mount"
 KEEPOUT_NAME = "vfd_keepout"
@@ -134,16 +130,6 @@ PLATE_T = DATUMS.t
 not the 3mm acrylic. CONFIDENCE: ruling. It carries a hung drive and takes
 knife-thread inserts; 3mm of anything would do neither."""
 
-INSERT_PLIES = max(1, ceil((WALL_CBORE_DEPTH + WALL_PILOT_DEPTH + WALL_BACK_MIN) / PLATE_T))
-INSERT_SUBSTRATE_T = INSERT_PLIES * PLATE_T
-"""Birch behind each hanging-bolt insert, and how many plies of house stock
-make it. DERIVED, the same rule as the leg joint's end wall: the bore is
-15.2mm and wants 2mm behind it, so 12mm house stock (ruling 18) is one ply
-short and each insert seats in a local DOUBLER PAD -- a second ply laminated
-to the plate behind the two boss holes before the inserts are driven. At 18mm
-one ply carried it and there is no pad. A build step the flat-panel model
-carries as a note, not a second solid."""
-
 LIFT = GRID * 3
 """Drive bottom above deck_top. SOURCE: design, on the bench grid; no ruling
 or datasheet supplies it. CONFIDENCE: design. Three modules, the plinth's own
@@ -158,42 +144,94 @@ distance, T/2. CONFIDENCE: derived. The plate's height is then snapped UP to
 the grid, so the real land is whatever the snap leaves, never less."""
 
 MOUNT_PITCH = DATUMS.s.vfd_mount_pitch
-"""Centre distance of the drive's two slotted hanging holes. SOURCE:
-params.vfd_mount_pitch, Carbide 65mm ER-16 spindle doc, 85mm. CONFIDENCE:
-high."""
+"""Centre distance of the drive's two keyholes. SOURCE: params.vfd_mount_pitch,
+MEASURED 2026-09-09 (3.34in = 84.84; Carbide's doc says 85). CONFIDENCE:
+measured."""
 
 MOUNT_PAIR_HORIZONTAL = True
-"""The pair runs ACROSS the drive, level, centred on its width. SOURCE:
-inference from Carbide's wording, "two slotted holes ... used to hang the
-unit": a hung box hangs level from a level pair, and 85 fits across a 143mm
-back with 29mm each side. CONFIDENCE: inference, NOT measured. If the pair
-turns out to run up the back, this flips and the bores follow."""
+"""The pair runs ACROSS the drive, level, centred on its width. MEASURED
+2026-09-09 (Jared, calipers): a level pair 3.34in on centre. CONFIDENCE:
+measured."""
 
-MOUNT_DROP = GRID * 2
-"""Slot centres below the drive's TOP face. SOURCE: none. CONFIDENCE: MEASURE,
-provisional. Carbide publishes nothing and the drive has not been turned over
-with calipers. The value here places the bores near the top of the back where
-a hanging pair lives; it is where the bores land on the plate and nothing
-else. ``check_vfd_mount`` carries it as MEASURE THIS until
-``MOUNT_DROP_MEASURED`` is set."""
+KEYHOLE_TOP_DROP = 58.09
+KEYHOLE_H = 15.60
+KEYHOLE_SLOT_W = 3.81
+KEYHOLE_ROUND_D = 7.11
+"""The drive's hanging keyholes. MEASURED 2026-09-09 (Jared, calipers): top of
+the keyhole 2.287in below the top of the case; keyhole 0.614in tall; upper
+(narrow) slot 0.15in wide; lower (round) 0.28in. The head goes in at the round
+end and the drive drops until the screw's shank sits at the slot's top.
+CONFIDENCE: measured."""
 
-MOUNT_DROP_MEASURED = False
-"""Flip to True when MOUNT_DROP and the slot width have been read off the
-drive's back and written into the two parameters above and below."""
+HANG_SCREW = "M3 x 10 pan head, DIN 7985, stainless"
+HANG_SCREW_D = 3.0
+HANG_HEAD_D = 6.0
+HANG_HEAD_H = 2.4
+"""What hangs the drive. The shank must pass the 3.81 slot and the head the
+7.11 round: M3 (3.0 shank, 6.0 head) does both with 0.4 and 0.55 a side. M4
+(4.0) does not pass the slot; a #6 pan (6.9 head) passes the round by 0.1,
+too little for a caliper reading. Head figures: DIN 7985 M3 (dk 6.0, k 2.4).
+CONFIDENCE: measured (the slot), datasheet (the screw)."""
 
-MOUNT_SLOT_W: float | None = None
-"""Width of the drive's slotted hole. SOURCE: none, Carbide does not publish
-it. CONFIDENCE: MEASURE. Decides whether the M6 bolt below passes; None until
-read."""
+HANG_STANDOFF = 2.0
+"""How far the head's underside stands off the plate when the drive hangs:
+the case's back sheet plus play. The sheet is NOT measured (~1.2 assumed); 2.0
+leaves the head bearing on the sheet with room and is a build note (drive the
+screw to a 2mm feeler under the head), not geometry. CONFIDENCE: assumption,
+MEASURE the sheet."""
 
-INSERT = INSERT_PART
-"""The hanging bolts' insert. SOURCE: leg_joint's SKU, E-Z LOK 400-M6, so the
-station carries one insert and one driver. CONFIDENCE: ruling by reuse. The
-bore is that insert's own pilot and counterbore, read from leg_joint."""
+MOUNT_DROP = KEYHOLE_TOP_DROP + HANG_SCREW_D / 2
+"""Screw centres below the drive's TOP face when it hangs: the shank rests at
+the slot's top end, so the centre is the keyhole's top plus the shank's
+radius. DERIVED from measured numbers: 59.6."""
 
-BOLT = "M6 pan head, DIN 125 washer under the head"
-"""What hangs the drive. SOURCE: the insert's thread. CONFIDENCE: pending
-MOUNT_SLOT_W: a pan head and washer bridge a slot, but only if M6 passes it."""
+MOUNT_DROP_MEASURED = True
+"""The keyholes were read 2026-09-09; every MEASURE note on them is retired."""
+
+MOUNT_SLOT_W: float = KEYHOLE_SLOT_W
+"""Width of the drive's slot: the keyhole's upper leg. MEASURED 2026-09-09."""
+
+INSERT = "E-Z LOK 400-M3, E-Z Knife brass insert for hard wood"
+INSERT_DRIVER = "E-Z LOK 500-006 drive tool (the chart's tool for the 400-M3)"
+INSERT_PILOT_D = 6.747
+INSERT_LEN = 9.53
+INSERT_OD = 7.94
+"""The hanging screws' insert: the leg joint's FAMILY (E-Z Knife 400, brass,
+hard wood) at M3, not its SKU: the drive's slot takes a 3mm shank and nothing
+larger. Pilot 17/64in from E-Z LOK's own drill chart for wood (400-M3, drive
+tool 500-006). Installed length 9.53 from a retail listing of the same part;
+the OD is NOT published on the page or the chart and 5/16in is taken from the
+17/64 pilot family (400-004/006/008 share it). Confirm both on the packet
+before drilling. CONFIDENCE: datasheet (pilot, tool), medium (length),
+inference (OD)."""
+
+BOLT = HANG_SCREW
+"""Kept under the old name for the report. The M6 pan head and DIN 125 washer
+of 2026-09-03 are gone: no washer, the head alone passes the round and bears
+on the sheet around the slot (1.1 a side)."""
+
+CBORE_CLEAR = 1.3
+WALL_CBORE_D = INSERT_OD + CBORE_CLEAR
+WALL_CBORE_DEPTH = 1.5
+WALL_PILOT_DEPTH = INSERT_LEN + GRID / 20
+WALL_BACK_MIN = 2.0
+"""The insert's seat in the plate, the leg joint's rules (a 1.5 seat so the
+head finishes below the bearing face, the pilot one millimetre deeper than
+the insert, 2mm of birch behind a blind bore) applied to the M3 insert's own
+numbers. Named as leg_joint names them so the arithmetic below reads the
+same. CONFIDENCE: derived."""
+
+INSERT_PLIES = max(1, ceil((WALL_CBORE_DEPTH + WALL_PILOT_DEPTH + WALL_BACK_MIN) / PLATE_T))
+INSERT_SUBSTRATE_T = INSERT_PLIES * PLATE_T
+"""Birch behind each hanging-screw insert, and how many plies of house stock
+make it. DERIVED, the same rule as the leg joint's end wall: seat plus pilot
+plus 2mm behind. With the M3 insert (2026-09-09) that is 1.5 + 10.5 + 2 =
+14.0, still over one 12mm ply by 2, so each insert still seats in a local
+DOUBLER PAD -- a second ply laminated to the plate behind the two boss holes
+before the inserts are driven. Dropping the 1.5 seat would bring it to 12.5,
+still over; the pad stays. A build step the flat-panel model carries as a
+note, not a second solid."""
+
 
 # ---- plate to spine ----------------------------------------------------
 SPINE_SCREW_D = SCREW_CLEAR_D
@@ -446,33 +484,40 @@ def check_vfd_mount(d: Datums = DATUMS) -> list[str]:
             f"INSERT DOUBLER PADS, standing note. Each of the two hanging-bolt "
             f"inserts seats in {INSERT_PLIES} plies of {PLATE_T:.0f}mm birch "
             f"({INSERT_SUBSTRATE_T:.0f}mm): a doubler pad laminated to the plate "
-            f"behind the boss hole, because a blind {INSERT_PART} bores "
+            f"behind the boss hole, because a blind {INSERT} bores "
             f"{WALL_CBORE_DEPTH + WALL_PILOT_DEPTH:.1f}mm and one {PLATE_T:.0f}mm "
             "ply cannot hold it at 12mm house stock. Laminate the pads, then "
             "drill. Expected, and worth knowing before the plate is cut."
         )
 
-    # -- what the drive's back has not told us yet
+    # -- the keyholes, measured: the screw passes the slot and the round
     if not MOUNT_DROP_MEASURED:
+        notes.append("the drive's keyholes are not measured; the insert bores are provisional")
+    if HANG_SCREW_D > KEYHOLE_SLOT_W - 0.5:
         notes.append(
-            f"the drive's hanging slots are placed {MOUNT_DROP:.0f}mm below its "
-            f"top, {'level' if MOUNT_PAIR_HORIZONTAL else 'vertical'} and centred, "
-            "from Carbide's wording alone (\"two slotted holes spaced 85mm apart "
-            "that can be used to hang the unit\"). MEASURE THIS on the drive's "
-            "back: drop from the top, which way the pair runs, slot width. The "
-            "plate's outline does not move; only the two insert bores do."
+            f"the hanging screw's {HANG_SCREW_D:.1f} shank does not pass the drive's "
+            f"{KEYHOLE_SLOT_W:.2f} slot with 0.25 a side"
         )
-    if MOUNT_SLOT_W is None:
+    if HANG_HEAD_D > KEYHOLE_ROUND_D - 0.5:
         notes.append(
-            "the drive's slot width is not measured, so whether an M6 pan head "
-            "passes it is not known. MEASURE THIS; if it is under 6.5mm the "
-            "insert steps down to the M5 of the same family."
+            f"the hanging screw's {HANG_HEAD_D:.1f} head does not pass the drive's "
+            f"{KEYHOLE_ROUND_D:.2f} round with 0.25 a side"
         )
-    elif MOUNT_SLOT_W < 6.5:
+    if HANG_HEAD_D <= KEYHOLE_SLOT_W + 1.0:
         notes.append(
-            f"the drive's slot is {MOUNT_SLOT_W:.1f}mm and the bolt is M6: it "
-            "does not pass. Step the insert down to M5."
+            f"the {HANG_HEAD_D:.1f} head bears less than 0.5 a side on the sheet "
+            f"around a {KEYHOLE_SLOT_W:.2f} slot"
         )
+    notes.append(
+        f"VFD HANG, standing note. Keyholes MEASURED 2026-09-09: pair across, "
+        f"{MOUNT_PITCH:.2f} on centre, top {KEYHOLE_TOP_DROP:.2f} below the case top, "
+        f"{KEYHOLE_H:.2f} tall, slot {KEYHOLE_SLOT_W:.2f} / round {KEYHOLE_ROUND_D:.2f}. "
+        f"Screw centres {MOUNT_DROP:.1f} below the top (shank at the slot's end). "
+        f"{HANG_SCREW} in {INSERT}; drive it to a {HANG_STANDOFF:.0f}mm feeler under "
+        "the head (the case sheet is not measured: MEASURE it, then set the "
+        "standoff to sheet + 0.5). No washer: nothing wider than the head passes "
+        "the round. Expected, and worth knowing before the inserts are driven."
+    )
 
     if not fits((w, h), SHEET_4X8):
         notes.append(f"plate blank {w:.0f} x {h:.0f} does not come out of a 4x8 sheet")

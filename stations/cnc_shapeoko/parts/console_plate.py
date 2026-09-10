@@ -42,7 +42,29 @@ and its reference solid are gone. The VFD box's spindle button reads 0.743in
 (18.87mm), a 19mm anti-vandal, so SPINDLE is that button, on hand, not a
 Schneider 22. The state display is struck ("carbide motion logs all of it"),
 the ToF sensor is struck, the two USB-C ports stay as thumb-drive ports to
-the PC. Reach order from the plate's front edge: STOP, HOLD, then the key.
+the PC.
+
+Ruling 2026-09-09 (console_composition, Jared): "the panel reads like a random
+in-fill of buttons and plugs. we need to be better at nesting in symmetrical
+and thoughtfully categorical ways." The plate is COMPOSED, not packed: five
+groups, one axis, and the pitch rules only check what the composition placed
+(``feedback_panel_layout_is_composition_not_packing``). Composition #3 of the
+three drawn to scale that day, with the key moved into the lower half:
+
+    group        devices                        zone
+    READ         SPEED, LOAD                    top: a centred pair on the axis
+    ARM          the key, alone                 lower half, on the axis
+    MACHINE      E_STOP, FEED_HOLD, SPINDLE     working row, operator's corner
+    EXTRACTION   EXTR_LAMP, DUST, BAG_LAMP      working row, far end; mirrors
+                                                MACHINE across the axis
+    PORTS        PENDANT, USB_1, USB_2          bottom edge, under MACHINE, the
+                                                pendant under the E-stop
+
+The plate grew to 400 x 200 for it (``CONSOLE_Z0`` GRID*24 -> GRID*20): two
+real 3.5in dials want ~92mm of field on their own and could not share 120
+with a switch row and a port row. Same day: the two lamps are JEWEL pilot
+lights (Dialco class, 120 V neon), the bag lamp and a new EXTRACTOR lamp in
+parallel with the CT 15's trigger load; the Schneider XB4BVB5 is superseded.
 
 
 WHAT THIS PART OWNS
@@ -113,10 +135,12 @@ their flanges and the panel range they clamp are not, so those rows carry
 XB4-class figures marked assumption and the check reports MEASURE THIS. None
 of them drives ``CHASE``: the key switch does.
 
-Nothing is recessed (2026-09-09). The two meters mount the way a panel meter
-does: body through a bore, bezel on the face, two studs through the plate.
-There are no pockets, no panes and no windows; a 3mm plate has no depth to
-pocket, and nothing reads through it since the state display was struck.
+Nothing is recessed (2026-09-09). The two dials mount the way a panel meter
+does: body through a bore, bezel on the face, studs through the plate, and
+the studs are drilled from the movement once the pair is in hand (the plate
+cuts the two bores only). There are no pockets, no panes and no windows; a
+3mm plate has no depth to pocket, and nothing reads through it since the
+state display was struck.
 
 22mm-standard devices get a 22.3mm bore, which is Schneider's own "Ø 22.3 mm
 0/+0.4" figure and the lower edge of the band every 22mm maker quotes.
@@ -262,14 +286,16 @@ CONSOLE_Y: tuple[float, float] = (GRID * 5, GRID * 25)
 SOURCE: task C12 (Ruling console_location). CONFIDENCE: ruling. Starts clear
 of the front leg's bolt columns (y 22.9 and 63.0) by more than ``LEG_LAND``."""
 
-CONSOLE_Z0 = GRID * 24
-"""Bottom of the band, STATION Z (480 off the floor, 402 above the deck). The
-top is derived: see ``console_z``.
-SOURCE: task C12 "z from GRID*24". CONFIDENCE: ruling, read as station Z: the
-band has to clear the leg insert rows at z 400.05 / 440.18 by a land, which is
-the check the task asks for and which is trivial under the other reading; and
-read above the deck the band would be 99mm tall, which does not hold two rows
-of 22mm bezels at the 40mm pitch Schneider's sheet asks for."""
+CONSOLE_Z0 = GRID * 20
+"""Bottom of the band, STATION Z (400 off the floor, 328 above the deck). The
+top is derived: see ``console_z``, and it is the gusset that sets it (z ~600),
+so the plate is 200 tall.
+SOURCE: task C12 put it at GRID*24 (480, a 120 plate). RULED 2026-09-09
+(console_composition): GRID*20, because two 3.5in dials plus a switch row plus
+a port row do not compose in 120 and the top cannot rise (the gusset). Read as
+station Z. The leg insert rows at z 400.05 / 440.18 sit at y 56.9, forward of
+the band's front edge at ``CONSOLE_Y[0]`` = 100, so the band's bottom at 400 is
+not near them: ``leg_bolt_clearance`` measures it. CONFIDENCE: ruling."""
 
 CAP_TIE_SCREW_LEN = 50.0
 """Length of the top cap's tie screws into the walls' top edges. The cap's file
@@ -360,71 +386,109 @@ CHEEK_TO_DECK = True
 extended to the deck". False restores the C12 reading: the cheek from the
 lowest opening that crosses the band. CONFIDENCE: ruling."""
 
-UPPER_ROW_Y = 78.0
-LOWER_ROW_Y = 37.0
-"""Plate-local Y of the two 22mm/USB rows (0 at the plate's bottom edge), in a
-plate 120 tall whose usable field is LIP..h-LIP = 12..108. The upper row puts
-a 47mm XB4 body at 54.5..101.5, inside the land; the lower row carries the
-three PL183 couplers (24mm bodies at 25..49) and nothing else since the state
-display was struck (2026-09-09).
-CONFIDENCE: chosen, checked by ``check_console_plate``."""
+# -- the composition ------------------------------------------------------
+# RULED 2026-09-09 (Jared). The groups and the axis ARE the design; every
+# pitch rule below only checks it. Plate-local frame: X from the plate's FRONT
+# edge (the operator's corner is x = 0; station +Y), Y up from the bottom edge.
+# Composition #3 of three drawn to scale, ARM moved to (200, 50) by Jared.
 
-ESTOP_X = 38.0
-FEED_HOLD_X = 78.0
-"""Plate-local X of the two Carbide buttons on the upper row, RULED 2026-09-09:
-the E-stop at the plate's front corner, the feed hold inboard of it, both at
-``PITCH_22_MIN`` to each other and to ARM at ``ROW_22_X[0]``. 38 is as far
-forward as the EMERGENCY STOP word lets it go at a legible height: the word
-is fit to the steel between the front screw margin and the guard's centreline
-(``callouts_local``). Reach order from where the operator stands: STOP is
-the corner you slap without looking, HOLD the button you use every job, then
-the key. CONFIDENCE: chosen, checked."""
+AXIS_X = 200.0
+"""The plate's axis of symmetry, plate-local: half of the band's 400. The two
+dials and the key sit on it; MACHINE and EXTRACTION mirror across it, triplet
+centre to triplet centre. CONFIDENCE: ruling."""
 
-ROW_22_X: tuple[float, float, float, float] = (118.0, 158.0, 198.0, 238.0)
-"""Plate-local X of the four switch-row devices inboard of the Carbide pair:
-ARM, SPINDLE, DUST, BAG_LAMP, at ``PITCH_22_MIN`` exactly. Was 115/160/205/250
-on a 45 pitch; the SPEED meter (2026-09-09) takes the 70mm the row gave up,
-and 40 is the pitch the XB4 sheet allows. Then 112/152/192/232; the row moved
-6 inboard the same day so the E-stop's word clears the plate's front edge,
-which puts the lamp's bezel edge on SPEED's bezel edge (253, touching, not
-overlapping) and its bore 7.9 from SPEED's stud hole (web 6.35). SPINDLE
-is a 19 since 2026-09-09 and could sit closer; it keeps the 40 so the row
-reads as one row. CONFIDENCE: chosen, checked."""
+ROW_Y = 78.0
+"""Plate-local Y of the WORKING ROW: the MACHINE triplet at the operator's
+corner and the EXTRACTION triplet at the far end. An XB4 body (47 tall,
+centred) spans 54.5..101.5 behind the plate; the dials' bodies start at 108.
+CONFIDENCE: ruling (composition #3), checked."""
 
-METER_X: tuple[float, float] = (285.0, 355.0)
-"""Plate-local X of the two meters, SPEED then LOAD, reading left to right the
-way the switch row does: the cause you set, then the effect you read. Faces
-64 wide with 6 between them, bores 19.5 apart; LOAD's face stops 1mm inside
-the margin. CONFIDENCE: chosen, checked."""
+MACHINE_X: tuple[float, float, float] = (44.0, 84.0, 124.0)
+"""Plate-local X of E_STOP, FEED_HOLD, SPINDLE on the working row, at
+``PITCH_22_MIN`` exactly. STOP is the corner you slap without looking, HOLD
+the button used every job, then the spindle: the machine's three buttons as
+one block. Centre 84 = ``AXIS_X`` - 116. CONFIDENCE: ruling, checked."""
 
-PENDANT_Y = 29.0
-"""The pendant port sits under the E-stop on the lower row's line for a
-PL183 (body 17..41); the E-stop itself is on ``UPPER_ROW_Y`` with the other
-22s since 2026-09-09 (it is a 22mm device, not a box). The callout band
-between the port's flange and the mushroom guard is 13.5.
-CONFIDENCE: chosen, checked."""
+EXTRACTION_X: tuple[float, float, float] = (284.0, 316.0, 348.0)
+"""Plate-local X of EXTR_LAMP, DUST, BAG_LAMP on the working row: the selector
+with a jewel each side at ``JEWEL_22_PITCH_MIN``. Centre 316 = ``AXIS_X`` + 116,
+the mirror of MACHINE. CONFIDENCE: ruling, checked."""
+
+METER_X: tuple[float, float] = (130.0, 270.0)
+METER_Y = 146.0
+"""Plate-local centres of the two dials, SPEED left and LOAD right, 70 either
+side of the axis: the cause you set, then the effect you read. 89 bezels at 140
+pitch leave 51 of steel between them. CONFIDENCE: ruling, checked."""
+
+ARM_XY: tuple[float, float] = (200.0, 50.0)
+"""Plate-local centre of the key switch, ALONE, on the axis, centred in the
+lower half: the one keyed act (arming the station) is not on the row a hand
+sweeps. Jared 2026-09-09: "move the ARM switch down to about (200, 50) so it
+is centered in the lower half". Nothing within 40 of it. CONFIDENCE: ruling."""
+
+PORTS_X: tuple[float, float, float] = (44.0, 75.0, 106.0)
+PORTS_Y = 30.0
+"""Plate-local centres of PENDANT, USB_1, USB_2: one row of three D-types on
+the bottom edge under MACHINE, the pendant under the E-stop (same X), at 31
+pitch (PL183 flange 26, 5 between). Composition #3 drew the row at y 34; it is
+at 30 so the E-stop's word has 12.5 of steel between the port's flange and
+the guard instead of 8.5 (``estop_callout_band``): 4mm lower buys a legible
+word and costs nothing, the flange's foot sits 2.5 above the margin.
+CONFIDENCE: ruling (the row), chosen (the 4mm)."""
 
 CALLOUT_ESTOP = "EMERGENCY STOP"
-"""The word under the mushroom guard, V-carved (C17). SOURCE: task C17, the
-one callout on the E-stop; it names the device and is raw birch like every
-other word, never red. CONFIDENCE: spec. Its height is derived from
+"""The word under the mushroom guard, marked (C17). SOURCE: task C17, the
+one callout on the E-stop; it names the device and is black on brushed steel
+like every other word, never red. CONFIDENCE: spec. Its height is derived from
 ``estop_callout_band``, the steel between the guard and the pendant's
 flange, by ``callouts.fit_height``; the station's CALLOUT_H does not fit."""
 
-METER_Y = 50.0
-"""Plate-local Y of the two meters: 56mm faces at 22..78 own the plate's right
-end, nothing shares that band. CONFIDENCE: chosen, checked."""
+# -- composition rules: what the check holds between groups ---------------
+JEWEL_22_PITCH_MIN = 32.0
+"""Centre spacing between a jewel lamp and a 22mm device. No maker rule (a
+jewel's bezel is ~20); the composition set 32, which leaves a 9mm web between
+a 16 bore and a 22.3 bore. CONFIDENCE: chosen, this file's rule."""
 
-METER_FRONT: tuple[float, float] = (64.0, 56.0)
-METER_BORE = 48.5 + 2 * DEVICE_CLEAR
-METER_BEHIND: tuple[float, float, float] = (48.5, 48.5, 50.0)
-METER_STUDS: tuple[tuple[float, float], ...] = ((-26.25, -15.0), (26.25, -15.0))
-METER_STUD_D = 3.4
-"""The meter footprint both dials are cut for: ``params.METER_MOVEMENT``'s 85C1
-PLACEHOLDER (face 64 x 56, bezel 10 proud of the plate, body D48.5 x 50, two
-M3 studs 52.5 apart 15 below centre). The real pair (Weston 301 class) is a
-hunt; when it lands these five numbers change together. CONFIDENCE:
-datasheet for the placeholder, MEASURE for the pair."""
+FLANGE_TO_BEZEL_MIN = 8.0
+"""Least steel on the face between any device's flange and a dial's bezel. The
+composition has 8.5 twice (FEED_HOLD under SPEED, DUST under LOAD); the
+composer's 10 was measured on the key, which has since moved down. Two proud
+rings 8mm apart read as two rings. CONFIDENCE: chosen, this file's rule."""
+
+# -- the dials --------------------------------------------------------------
+METER_BEZEL_D = 89.0
+METER_BORE = 76.0
+METER_BEHIND: tuple[float, float, float] = (76.0, 76.0, 60.0)
+METER_STUDS: tuple[tuple[float, float], ...] = ()
+METER_STUD_D = 0.0
+METER_FRONT: tuple[float, float] = (METER_BEZEL_D, METER_BEZEL_D)
+"""The dial footprint the plate is composed around and cut for: a 3.5in
+round movement, Weston 301 class (``params.METER_MOVEMENT``). Bezel 89 on the
+face, body through a 76 bore, ~60 behind. NONE of it is a datasheet: the pair
+is a hunt, and 3.5in meters vary by maker in bore and stud pattern. The bezel
+and bore are the composition's target (a 3.5in case, a 3in body); the studs
+are NOT cut until the pair is in hand (``METER_STUDS`` empty, MEASURE), so the
+waterjet file carries two clean bores and the stud holes are a drill-press
+step from the movement itself. CONFIDENCE: assumption, MEASURE the pair."""
+
+METER_85C1 = {
+    "front": (64.0, 56.0), "bore": 48.5 + 2 * DEVICE_CLEAR,
+    "behind": (48.5, 48.5, 50.0), "studs": ((-26.25, -15.0), (26.25, -15.0)),
+    "stud_d": 3.4,
+}
+"""The 85C1 footprint (Delixi drawing, ``params.METER_MOVEMENT['fallback']``)
+the plate was cut for until 2026-09-09: documented FALLBACK, not the default.
+If the hunt fails, the two ``METER_*`` above take these five numbers."""
+
+# -- the jewels -------------------------------------------------------------
+JEWEL_BORE = 16.0
+JEWEL_FLANGE = 20.0
+JEWEL_BEHIND: tuple[float, float, float] = (20.0, 20.0, 40.0)
+JEWEL_PANEL_T: tuple[float, float] = (1.0, 6.0)
+"""A faceted-jewel pilot light, Dialco/Dialight class, 120 V neon
+(``params.JEWEL_LAMP``): 5/8in mounting hole (16), ~20 bezel, ~40 behind with
+its leads, clamps a thin panel. A HUNT, so every number is the family's, not a
+part's. CONFIDENCE: assumption, MEASURE the lamps when they land."""
 
 CARBIDE_HOLE_22 = 21.97
 CARBIDE_HOLE_19 = 18.87
@@ -488,6 +552,9 @@ class Device:
     panel_t   (min, max) panel thickness the device clamps; the plate has to
               be inside it (``check_console_plate``)
     red       True for the one device that spends the red budget
+    family    "22" (22mm standard), "19" (anti-vandal), "jewel", "meter",
+              "d_type": which pitch rule applies between two devices
+    group     READ / ARM / MACHINE / EXTRACTION / PORTS: the composition
     """
 
     label: str
@@ -506,133 +573,163 @@ class Device:
     behind: tuple[float, float, float] = (0.0, 0.0, 0.0)
     panel_t: tuple[float, float] = (0.0, 99.0)
     red: bool = False
+    family: str = ""
+    group: str = ""
 
 
 _SE = "https://www.se.com/us/en/product/{}/ -- product data sheet PDF: "
 
 DEVICES: tuple[Device, ...] = (
+    # READ: the pair, on the axis
+    Device(
+        "SPEED", "moving-coil panel meter, spindle RPM, 0-24k scale card, VFD "
+        "FM1 frequency out (params.METER_MOVEMENT; Weston 301 class target)",
+        "bore", METER_X[0], METER_Y,
+        "RULED 2026-09-09 (Jared): a second dial so SPEED and LOAD read as a "
+        "pair, the feeds-and-speeds teaching object. Footprint: METER_* (3.5in "
+        "target); studs not cut until the pair is measured.",
+        "ruling (the dial); target footprint, MEASURE the pair",
+        bore_d=METER_BORE, studs=METER_STUDS, stud_d=METER_STUD_D,
+        front=METER_FRONT, behind=METER_BEHIND, panel_t=params.METER_MOVEMENT["panel_t_range"],
+        family="meter", group="READ",
+    ),
+    Device(
+        "LOAD", "moving-coil panel meter, spindle load, 0-100 scale card, "
+        "split-core current transducer on a spindle phase (params.METER_MOVEMENT)",
+        "bore", METER_X[1], METER_Y,
+        "as SPEED. The 85C1 (Adafruit 4404 drawing) is the documented fallback, "
+        "METER_85C1.",
+        "ruling (the dial); target footprint, MEASURE the pair",
+        bore_d=METER_BORE, studs=METER_STUDS, stud_d=METER_STUD_D,
+        front=METER_FRONT, behind=METER_BEHIND, panel_t=params.METER_MOVEMENT["panel_t_range"],
+        family="meter", group="READ",
+    ),
+    # ARM: alone, on the axis, lower half
+    Device(
+        "ARM", "Schneider Harmony XB4BG21, key switch selector, metal, black, "
+        "22mm, key 455, 2 positions stay put, 1 NO",
+        "bore", ARM_XY[0], ARM_XY[1],
+        _SE.format("XB4BG21") + "Mounting diameter 22.5 mm, Height 47 mm, "
+        "Width 30 mm, Depth 86 mm (whole product, head included)",
+        "chosen; dimensions datasheet; place ruled 2026-09-09",
+        bore_d=BORE_22, front=(30.0, 30.0), behind=(XB4_BODY[0], XB4_BODY[1], 86.0),
+        panel_t=XB4_PANEL_T, family="22", group="ARM",
+    ),
+    # MACHINE: the operator's corner, working row
     Device(
         "E_STOP", "22mm mushroom E-stop, ON HAND, pulled from the Carbide 3D "
         "Shapeoko 5 Pro power pendant; its own leads back to the Carbide controller",
-        "bore", ESTOP_X, UPPER_ROW_Y,
+        "bore", MACHINE_X[0], ROW_Y,
         "MEASURED 2026-09-09 (Jared, calipers): the pendant's E-stop hole reads "
         "0.865in (CARBIDE_HOLE_22), the 22mm standard; cut BORE_22. The box "
         "itself is not on the plate (ruling console_subtract).",
         "bore: measured (22mm standard); guard 40, body XB4-class, depth "
         "ESTOP_BEHIND, panel_t: assumption, MEASURE with the button",
         bore_d=BORE_22, front=(40.0, 40.0), behind=(XB4_BODY[0], XB4_BODY[1], ESTOP_BEHIND),
-        panel_t=XB4_PANEL_T, red=True,
+        panel_t=XB4_PANEL_T, red=True, family="22", group="MACHINE",
     ),
     Device(
         "FEED_HOLD", "22mm push button, ON HAND, pulled from the Carbide power "
         "pendant (feed hold); its own leads back to the Carbide controller",
-        "bore", FEED_HOLD_X, UPPER_ROW_Y,
+        "bore", MACHINE_X[1], ROW_Y,
         "MEASURED 2026-09-09 (Jared, calipers): the pendant's feed-hold hole reads "
         "0.865in (CARBIDE_HOLE_22), the 22mm standard; cut BORE_22.",
         "bore: measured (22mm standard); body XB4-class, depth FEED_HOLD_BEHIND, "
         "panel_t: assumption, MEASURE with the button",
         bore_d=BORE_22, front=(30.0, 30.0), behind=(XB4_BODY[0], XB4_BODY[1], FEED_HOLD_BEHIND),
-        panel_t=XB4_PANEL_T,
-    ),
-    Device(
-        "ARM", "Schneider Harmony XB4BG21, key switch selector, metal, black, "
-        "22mm, key 455, 2 positions stay put, 1 NO",
-        "bore", ROW_22_X[0], UPPER_ROW_Y,
-        _SE.format("XB4BG21") + "Mounting diameter 22.5 mm, Height 47 mm, "
-        "Width 30 mm, Depth 86 mm (whole product, head included)",
-        "chosen; dimensions datasheet",
-        bore_d=BORE_22, front=(30.0, 30.0), behind=(XB4_BODY[0], XB4_BODY[1], 86.0),
-        panel_t=XB4_PANEL_T,
+        panel_t=XB4_PANEL_T, family="22", group="MACHINE",
     ),
     Device(
         "SPINDLE", "19mm anti-vandal push button, ON HAND, pulled from the Carbide "
         "VFD box (spindle enable); the Schneider ZB4BH033 that stood here is superseded",
-        "bore", ROW_22_X[1], UPPER_ROW_Y,
+        "bore", MACHINE_X[2], ROW_Y,
         "MEASURED 2026-09-09 (Jared, calipers): the VFD box's spindle-button hole "
         "reads 0.743in (CARBIDE_HOLE_19), a 19mm anti-vandal; cut BORE_19. Flange "
-        "0.859in (AV19_FLANGE), 1.55in behind the flange (SPINDLE_BEHIND). Kept "
-        "on the 22 row's 40 pitch: a 19 among 22s reads as one row.",
+        "0.859in (AV19_FLANGE), 1.55in behind the flange (SPINDLE_BEHIND). Third "
+        "button of the MACHINE block (Jared: 'move the spindle button with the "
+        "estop and feed hold'), on the 22 row's 40 pitch.",
         "bore, flange, depth: measured; body width and panel_t: assumption",
         bore_d=BORE_19, front=AV19_BODY, behind=(AV19_BODY[0], AV19_BODY[1], SPINDLE_BEHIND),
-        panel_t=AV19_PANEL_T,
+        panel_t=AV19_PANEL_T, family="19", group="MACHINE",
+    ),
+    # EXTRACTION: the far end, working row, mirrors MACHINE
+    Device(
+        "EXTR_LAMP", "jewel pilot light, amber, 120 V neon, Dialco class "
+        "(params.JEWEL_LAMP): EXTRACTOR CALLED, in parallel with the CT 15's "
+        "trigger load, so it lights whenever the extractor is being asked to run",
+        "bore", EXTRACTION_X[0], ROW_Y,
+        "RULED 2026-09-09 (Jared: 'indicator on jewels for sure'). The trigger load "
+        "is a resistor (params.DUST_CONTROL); the lamp is its face. A HUNT; "
+        "JEWEL_* are the family's numbers.",
+        "ruling (the lamp); footprint assumption, MEASURE the lamps",
+        bore_d=JEWEL_BORE, front=(JEWEL_FLANGE, JEWEL_FLANGE), behind=JEWEL_BEHIND,
+        panel_t=JEWEL_PANEL_T, family="jewel", group="EXTRACTION",
     ),
     Device(
         "DUST", "Schneider Harmony XB4BD33, 3-position selector switch, black, "
         "maintained, 2 NO: AUTO / ON / OFF, acting on a trigger load in the CT 15's "
         "auto-start socket (params.DUST_CONTROL), never on the extractor's mains",
-        "bore", ROW_22_X[2], UPPER_ROW_Y,
+        "bore", EXTRACTION_X[1], ROW_Y,
         _SE.format("XB4BD33") + "Mounting diameter 22.5 mm, Height 47 mm, "
         "Width 30 mm, Depth 68 mm. Wiring: params.SOURCES['DUST_CONTROL']",
         "chosen; dimensions datasheet; wiring ruling 2026-09-09",
         bore_d=BORE_22, front=(30.0, 30.0), behind=(XB4_BODY[0], XB4_BODY[1], 68.0),
-        panel_t=XB4_PANEL_T,
+        panel_t=XB4_PANEL_T, family="22", group="EXTRACTION",
     ),
     Device(
-        "BAG_LAMP", "Schneider Harmony XB4BVB5, pilot light, metal, orange, 22mm, "
-        "universal LED, 24V AC/DC (the amber service lamp)",
-        "bore", ROW_22_X[3], UPPER_ROW_Y,
-        _SE.format("XB4BVB5") + "Mounting diameter 22.5 mm, Height 47 mm, "
-        "Width 30 mm, Depth 54 mm",
-        "chosen; dimensions datasheet",
-        bore_d=BORE_22, front=(30.0, 30.0), behind=(XB4_BODY[0], XB4_BODY[1], 54.0),
-        panel_t=XB4_PANEL_T,
+        "BAG_LAMP", "jewel pilot light, amber, Dialco class (params.JEWEL_LAMP): "
+        "the bag/filter service lamp, differential pressure across the filter; "
+        "the Schneider XB4BVB5 that stood here is superseded",
+        "bore", EXTRACTION_X[2], ROW_Y,
+        "RULED 2026-09-09 (Jared: 'indicator on jewels for sure'). Driven by the "
+        "station controller when it exists; until then a lamp with nothing behind "
+        "it, cut anyway because the plate is composed once. A HUNT.",
+        "ruling (the lamp); footprint assumption, MEASURE the lamps",
+        bore_d=JEWEL_BORE, front=(JEWEL_FLANGE, JEWEL_FLANGE), behind=JEWEL_BEHIND,
+        panel_t=JEWEL_PANEL_T, family="jewel", group="EXTRACTION",
     ),
-    Device(
-        "SPEED", "moving-coil panel meter, spindle RPM, 0-24k scale card, VFD "
-        "frequency analog out (params.METER_MOVEMENT; 85C1 footprint until the "
-        "pair lands)",
-        "bore", METER_X[0], METER_Y,
-        "RULED 2026-09-09 (Jared): a second dial so SPEED and LOAD read as a "
-        "pair, the feeds-and-speeds teaching object. Footprint: "
-        "params.SOURCES['METER_MOVEMENT'] (85C1 outline)",
-        "ruling (the dial); placeholder footprint, MEASURE the pair",
-        bore_d=METER_BORE, studs=METER_STUDS, stud_d=METER_STUD_D,
-        front=METER_FRONT, behind=METER_BEHIND, panel_t=params.METER_MOVEMENT["panel_t_range"],
-    ),
-    Device(
-        "LOAD", "moving-coil panel meter, spindle load, 0-100 scale card, VFD "
-        "output-current analog out (params.METER_MOVEMENT; 85C1 footprint until "
-        "the pair lands)",
-        "bore", METER_X[1], METER_Y,
-        "https://cdn-shop.adafruit.com/product-files/4404/C12723-001_datasheet_translate.pdf"
-        " -- 85C1-A/V outline: face 64 x 56, bezel 10 thick, body D48.5 x 50 "
-        "behind the bezel, 2 x M3 studs 52.5 apart 15 below centre",
-        "chosen; placeholder footprint (datasheet drawing), MEASURE the pair",
-        bore_d=METER_BORE, studs=METER_STUDS, stud_d=METER_STUD_D,
-        front=METER_FRONT, behind=METER_BEHIND, panel_t=params.METER_MOVEMENT["panel_t_range"],
-    ),
+    # PORTS: the bottom edge under MACHINE
     Device(
         "PENDANT", "PENGLIN PL183 USB-C panel-mount coupler, D-type (params.PL183): "
-        "the jog pendant's port",
-        "d_type", ESTOP_X, PENDANT_Y,
-        "RULED 2026-09-09 (Jared: 'Jog Remote USB-C'). The Carbide pendant is a "
-        "USB device on a removable USB-C to USB-A lead; the GX16 that stood here "
-        "as the house connector meant re-terminating USB into aircraft pins on "
-        "both sides. Cutout as USB_1.",
+        "the jog pendant's port, under the E-stop",
+        "d_type", PORTS_X[0], PORTS_Y,
+        "RULED 2026-09-09 (Jared: 'Jog Remote USB-C'; 'group the pendant with the "
+        "two usb plugs'). The Carbide pendant is a USB device on a removable USB-C "
+        "to USB-A lead; the GX16 that stood here as the house connector meant "
+        "re-terminating USB into aircraft pins on both sides. Cutout as USB_1.",
         "ruling; dimensions datasheet (C00 capture)",
         bore_d=24.0, d_holes=((-9.5, 12.0), (9.5, -12.0)), d_hole_d=3.5,
         front=(26.0, 31.0), behind=(24.0, 24.0, 27.5), panel_t=params.PL183["panel_t_range"],
+        family="d_type", group="PORTS",
     ),
     Device(
         "USB_1", "PENGLIN PL183 USB-C panel-mount coupler, D-type (params.PL183): "
         "thumb-drive port to the PC (RULED 2026-09-09: keep, two hosts on a passive "
         "cable do nothing, so never a laptop)",
-        "d_type", 192.0, LOWER_ROW_Y,
+        "d_type", PORTS_X[1], PORTS_Y,
         "params.SOURCES['PL183']: round 24 cutout, 2 x 3.5 on a 19 x 24 "
         "diagonal, flange 26 x 31 x 2.2, body 27.5 behind the flange",
         "datasheet (C00 capture)",
         bore_d=24.0, d_holes=((-9.5, 12.0), (9.5, -12.0)), d_hole_d=3.5,
         front=(26.0, 31.0), behind=(24.0, 24.0, 27.5), panel_t=params.PL183["panel_t_range"],
+        family="d_type", group="PORTS",
     ),
     Device(
         "USB_2", "PENGLIN PL183 USB-C panel-mount coupler, D-type (params.PL183): "
         "second thumb-drive port to the PC",
-        "d_type", 223.0, LOWER_ROW_Y,
+        "d_type", PORTS_X[2], PORTS_Y,
         "as USB_1", "datasheet (C00 capture)",
         bore_d=24.0, d_holes=((-9.5, 12.0), (9.5, -12.0)), d_hole_d=3.5,
         front=(26.0, 31.0), behind=(24.0, 24.0, 27.5), panel_t=params.PL183["panel_t_range"],
+        family="d_type", group="PORTS",
     ),
 )
+
+GROUPS: dict[str, tuple[str, ...]] = {
+    g: tuple(dv.label for dv in DEVICES if dv.group == g)
+    for g in ("READ", "ARM", "MACHINE", "EXTRACTION", "PORTS")
+}
+"""The composition's five groups, read off the table."""
 
 # -- what the chase is, derived from the table ----------------------------
 CHASE_DRIVER: Device = max(DEVICES, key=lambda dv: dv.behind[2])
@@ -1358,11 +1455,15 @@ def check_console_plate(d: Datums = D) -> list[str]:
     if len(reds) != 1:
         notes.append(f"{len(reds)} devices are tagged red; the E-stop is the budget")
     for dv in DEVICES:
-        if dv.kind == "bore" and dv.front == (30.0, 30.0) and abs(dv.bore_d - BORE_22) > 0.05:
+        if dv.family == "22" and abs(dv.bore_d - BORE_22) > 0.05:
             notes.append(f"{dv.label} is a 22mm device bored {dv.bore_d:.2f}")
+        if not dv.family or not dv.group:
+            notes.append(f"{dv.label} has no family or group: it is not in the composition")
 
-    # -- devices on the face: at least a cutter web between neighbours, and
-    # 22mm devices at the maker's pitch
+    # -- devices on the face: at least a cutter web between neighbours, 22mm
+    # and 19mm buttons at the maker's pitch, jewels at the composition's pitch
+    # to a button, every flange FLANGE_TO_BEZEL_MIN off a dial's bezel
+    buttons = {"22", "19"}
     for i, a in enumerate(DEVICES):
         for b in DEVICES[i + 1:]:
             gap = _rect_gap(_cut_rect(a), _cut_rect(b))
@@ -1371,19 +1472,76 @@ def check_console_plate(d: Datums = D) -> list[str]:
                     f"{a.label} and {b.label} are cut {gap:.1f}mm apart on the plate's "
                     f"face, under a {ROUTER_D:.2f}mm web"
                 )
-            if _rect_gap(_front_rect(a), _front_rect(b)) < 0:
+            face = _rect_gap(_front_rect(a), _front_rect(b))
+            if face < 0:
                 notes.append(f"{a.label} and {b.label} overlap on the plate's outer face")
-            if a.front == (30.0, 30.0) and b.front == (30.0, 30.0):
-                pitch = hypot(a.cx - b.cx, a.cy - b.cy)
-                if pitch < PITCH_22_MIN:
-                    notes.append(
-                        f"{a.label} and {b.label} are {pitch:.0f}mm apart, under the "
-                        f"{PITCH_22_MIN:.0f}mm the XB4 sheet asks for"
-                    )
+            pitch = hypot(a.cx - b.cx, a.cy - b.cy)
+            if a.family in buttons and b.family in buttons and pitch < PITCH_22_MIN:
+                notes.append(
+                    f"{a.label} and {b.label} are {pitch:.0f}mm apart, under the "
+                    f"{PITCH_22_MIN:.0f}mm the XB4 sheet asks for"
+                )
+            if {a.family, b.family} == {"jewel", "22"} and pitch < JEWEL_22_PITCH_MIN:
+                notes.append(
+                    f"{a.label} and {b.label} are {pitch:.0f}mm apart, under the "
+                    f"composition's {JEWEL_22_PITCH_MIN:.0f} between a jewel and a 22"
+                )
+            if "meter" in (a.family, b.family) and a.family != b.family and face < FLANGE_TO_BEZEL_MIN:
+                notes.append(
+                    f"{a.label}'s flange is {face:.1f}mm from {b.label}'s bezel on the "
+                    f"face, under FLANGE_TO_BEZEL_MIN {FLANGE_TO_BEZEL_MIN:.0f}"
+                )
     for dv in DEVICES:
         (fx0, fy0), (fx1, fy1) = _front_rect(dv)
-        if fx0 < LIP or fy0 < LIP or fx1 > w - LIP or fy1 > h - LIP:
+        if dv.family == "meter":
+            # a proud bezel may overhang the margin strip; it may not cover a
+            # screw. What is CUT (the bore) stays inside the field.
+            (cx0, cy0), (cx1, cy1) = _cut_rect(dv)
+            if cx0 < LIP or cy0 < LIP or cx1 > w - LIP or cy1 > h - LIP:
+                notes.append(f"{dv.label}'s bore reaches into the plate's screw margin")
+            r = dv.front[0] / 2
+            for sx, sy in lip_screws(d):
+                if hypot(sx - dv.cx, sy - dv.cy) < r + PLATE_SCREW_CLEAR_D / 2:
+                    notes.append(
+                        f"{dv.label}'s bezel covers the margin screw at ({sx:.0f}, {sy:.0f})"
+                    )
+        elif fx0 < LIP or fy0 < LIP or fx1 > w - LIP or fy1 > h - LIP:
             notes.append(f"{dv.label} reaches onto the plate's screw margin on the outer face")
+
+    # -- the composition: groups where the ruling put them, mirrored on the axis
+    by = {dv.label: dv for dv in DEVICES}
+    def _cx(labels: tuple[str, ...]) -> float:
+        return sum(by[l].cx for l in labels) / len(labels)
+    if abs(_cx(GROUPS["MACHINE"]) + _cx(GROUPS["EXTRACTION"]) - 2 * AXIS_X) > 1e-6:
+        notes.append(
+            f"MACHINE (centre {_cx(GROUPS['MACHINE']):.1f}) and EXTRACTION (centre "
+            f"{_cx(GROUPS['EXTRACTION']):.1f}) do not mirror about the axis at {AXIS_X:.0f}"
+        )
+    if abs(by["SPEED"].cx + by["LOAD"].cx - 2 * AXIS_X) > 1e-6 or by["SPEED"].cy != by["LOAD"].cy:
+        notes.append("the two dials are not a pair centred on the axis")
+    if abs(by["ARM"].cx - AXIS_X) > 1e-6:
+        notes.append(f"ARM is at x {by['ARM'].cx:.1f}, off the axis at {AXIS_X:.0f}")
+    for other in DEVICES:
+        if other.label != "ARM" and hypot(other.cx - by["ARM"].cx, other.cy - by["ARM"].cy) < PITCH_22_MIN:
+            notes.append(f"{other.label} is within {PITCH_22_MIN:.0f} of ARM, which stands alone")
+    if len({by[l].cy for l in GROUPS["MACHINE"] + GROUPS["EXTRACTION"]}) != 1:
+        notes.append("MACHINE and EXTRACTION are not on one row")
+    if len({by[l].cy for l in GROUPS["PORTS"]}) != 1 or by["PENDANT"].cx != by["E_STOP"].cx:
+        notes.append("PORTS are not one row with the pendant under the E-stop")
+    notes.append(
+        "CONSOLE COMPOSITION, standing note. RULED 2026-09-09: composed, not packed. "
+        + "; ".join(f"{g}: {', '.join(ls)}" for g, ls in GROUPS.items())
+        + f". Axis x {AXIS_X:.0f}; MACHINE and EXTRACTION centres {AXIS_X - _cx(GROUPS['MACHINE']):.0f} "
+        "either side; dials 70 either side; the key alone on the axis at y "
+        f"{by['ARM'].cy:.0f}. The pitch rules check this; they did not place it."
+    )
+    notes.append(
+        "DIALS, standing note. SPEED and LOAD are cut as two 76 bores for a 3.5in "
+        f"movement with an {METER_BEZEL_D:.0f} bezel (Weston 301 class, a hunt). No "
+        "stud holes are cut: the pattern is the movement's, MEASURE it and drill "
+        "from the part. The 85C1 footprint (METER_85C1) is the documented fallback."
+    )
+    for dv in DEVICES:
         (bx0, by0_), (bx1, by1_) = _behind_rect(dv)
         if bx0 < LIP or by0_ < LIP or bx1 > w - LIP or by1_ > h - LIP:
             notes.append(
