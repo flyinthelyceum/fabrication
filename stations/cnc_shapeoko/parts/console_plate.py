@@ -49,11 +49,11 @@ in-fill of buttons and plugs. we need to be better at nesting in symmetrical
 and thoughtfully categorical ways." The plate is COMPOSED, not packed: five
 groups, one axis, and the pitch rules only check what the composition placed
 (``feedback_panel_layout_is_composition_not_packing``). Composition #3 of the
-three drawn to scale that day, with the key moved into the lower half:
+three drawn to scale that day, with the ARM switch moved into the lower half:
 
     group        devices                        zone
     READ         SPEED, LOAD                    top: a centred pair on the axis
-    ARM          the key, alone                 lower half, on the axis
+    ARM          the selector, alone            lower half, on the axis
     MACHINE      E_STOP, FEED_HOLD, SPINDLE     working row, operator's corner
     EXTRACTION   EXTR_LAMP, DUST, BAG_LAMP      working row, far end; mirrors
                                                 MACHINE across the axis
@@ -123,17 +123,20 @@ DEVICES, DEPTHS, AND WHERE THE CHASE'S WIDTH COMES FROM
 Every device is a row in ``DEVICES`` with a model number, the cutout it wants,
 what it occupies in front of and behind the plate, and where each number came
 from. ``CHASE`` is the deepest datasheet depth behind the plate plus
-``CHASE_MARGIN``. Today that is the key switch: Schneider quotes the XB4's
-Depth as the whole product, head included, and the sheet does not split front
-from back, so the whole figure is taken as behind-plate. Conservative by the
-head's projection, and it drives the chase honestly rather than by a guess.
+``CHASE_MARGIN``. Today that is the ARM selector (XB4BD21, 68; it was the
+XB4BG21 key at 86 until Eden declined a keyed switch, 2026-09-09): Schneider
+quotes the XB4's Depth as the whole product, handle included, and the sheet
+does not split front from back, so the whole figure is taken as behind-plate.
+Conservative by the handle's projection, and it drives the chase honestly
+rather than by a guess.
 
 The three Carbide buttons (E-stop, feed hold, spindle) are ON HAND, pulled
 from the Shapeoko 5 Pro power pendant and the VFD box. Their HOLES are
 measured (2026-09-09, Jared, calipers); the buttons' bodies behind the plate,
 their flanges and the panel range they clamp are not, so those rows carry
-XB4-class figures marked assumption and the check reports MEASURE THIS. None
-of them drives ``CHASE``: the key switch does.
+XB4-class figures marked assumption and the check reports MEASURE THIS. Their
+flanges read roughly 1.25in (2026-09-09, Jared): ``CARBIDE_FLANGE_22``. None
+of them drives ``CHASE``: the ARM selector does.
 
 Nothing is recessed (2026-09-09). The two dials mount the way a panel meter
 does: body through a bore, bezel on the face, studs through the plate, and
@@ -394,7 +397,7 @@ lowest opening that crosses the band. CONFIDENCE: ruling."""
 
 AXIS_X = 200.0
 """The plate's axis of symmetry, plate-local: half of the band's 400. The two
-dials and the key sit on it; MACHINE and EXTRACTION mirror across it, triplet
+dials and the ARM selector sit on it; MACHINE and EXTRACTION mirror across it, triplet
 centre to triplet centre. CONFIDENCE: ruling."""
 
 ROW_Y = 78.0
@@ -421,9 +424,10 @@ side of the axis: the cause you set, then the effect you read. 89 bezels at 140
 pitch leave 51 of steel between them. CONFIDENCE: ruling, checked."""
 
 ARM_XY: tuple[float, float] = (200.0, 50.0)
-"""Plate-local centre of the key switch, ALONE, on the axis, centred in the
-lower half: the one keyed act (arming the station) is not on the row a hand
-sweeps. Jared 2026-09-09: "move the ARM switch down to about (200, 50) so it
+"""Plate-local centre of the ARM selector, ALONE, on the axis, centred in the
+lower half: the one deliberate act (arming the station) is not on the row a
+hand sweeps. It was a key switch until Eden declined a keyed part (2026-09-09);
+the XB4BD21 selector is the same cutout and body, so nothing here moved. Jared 2026-09-09: "move the ARM switch down to about (200, 50) so it
 is centered in the lower half". Nothing within 40 of it. CONFIDENCE: ruling."""
 
 PORTS_X: tuple[float, float, float] = (44.0, 75.0, 106.0)
@@ -449,11 +453,14 @@ JEWEL_22_PITCH_MIN = 32.0
 jewel's bezel is ~20); the composition set 32, which leaves a 9mm web between
 a 16 bore and a 22.3 bore. CONFIDENCE: chosen, this file's rule."""
 
-FLANGE_TO_BEZEL_MIN = 8.0
+FLANGE_TO_BEZEL_MIN = 7.5
 """Least steel on the face between any device's flange and a dial's bezel. The
-composition has 8.5 twice (FEED_HOLD under SPEED, DUST under LOAD); the
-composer's 10 was measured on the key, which has since moved down. Two proud
-rings 8mm apart read as two rings. CONFIDENCE: chosen, this file's rule."""
+composition had 8.5 twice (FEED_HOLD under SPEED, DUST under LOAD) with a 30
+flange assumed; the feed hold's flange then read 31.75 (``CARBIDE_FLANGE_22``,
+2026-09-09) and the gap became 7.6. A measured flange outranks a chosen rule,
+so the rule moved to 7.5 rather than the composition; the composer's 10 was
+measured on the ARM switch, which has since moved down. Two proud rings 7.5mm
+apart still read as two rings. CONFIDENCE: chosen, this file's rule."""
 
 # -- the dials --------------------------------------------------------------
 METER_BEZEL_D = 89.0
@@ -503,6 +510,12 @@ BORE_19 = 19.0
 on hand has not been read for its thread OD, so the nominal stands.
 MEASURE THIS with the button. CONFIDENCE: assumption."""
 
+CARBIDE_FLANGE_22 = 31.75
+"""Front flange of the Carbide E-stop and feed-hold buttons, MEASURED-rough
+2026-09-09 (Jared: "roughly 1.25in D"). The E-stop's face allocation stays the
+40 mushroom guard, which is wider than its flange; the feed hold's face is this
+flange. CONFIDENCE: measured, rough (a tape figure, not calipers)."""
+
 ESTOP_BEHIND = 60.0
 FEED_HOLD_BEHIND = 57.0
 SPINDLE_BEHIND = 39.37
@@ -510,7 +523,7 @@ SPINDLE_BEHIND = 39.37
 MEASURED 2026-09-09 (Jared, calipers): 1.55in behind its flange. The other
 two are NOT: the E-stop carries the brief's "~60mm behind panel", the feed
 hold an XB4 momentary's 57; MEASURE THIS with those two in hand. All under
-the key switch's 86, so none drives the chase. CONFIDENCE: measured (spindle),
+the ARM selector's 68, so none drives the chase. CONFIDENCE: measured (spindle),
 assumption (E-stop, feed hold)."""
 
 AV19_FLANGE = 21.82
@@ -606,13 +619,16 @@ DEVICES: tuple[Device, ...] = (
     ),
     # ARM: alone, on the axis, lower half
     Device(
-        "ARM", "Schneider Harmony XB4BG21, key switch selector, metal, black, "
-        "22mm, key 455, 2 positions stay put, 1 NO",
+        "ARM", "Schneider Harmony XB4BD21, selector switch, metal, black, "
+        "22mm, standard handle, 2 positions stay put, 1 NO. NOT keyed: Eden "
+        "(purchasing) declined a keyed switch 2026-09-09; XB4BG21 key "
+        "selector superseded, same cutout and body",
         "bore", ARM_XY[0], ARM_XY[1],
-        _SE.format("XB4BG21") + "Mounting diameter 22.5 mm, Height 47 mm, "
-        "Width 30 mm, Depth 86 mm (whole product, head included)",
+        _SE.format("XB4BD21") + "Mounting diameter 22.5 mm, Height 47 mm, "
+        "Width 30 mm, Depth 68 mm (whole product, handle included; the key "
+        "head was 86)",
         "chosen; dimensions datasheet; place ruled 2026-09-09",
-        bore_d=BORE_22, front=(30.0, 30.0), behind=(XB4_BODY[0], XB4_BODY[1], 86.0),
+        bore_d=BORE_22, front=(30.0, 30.0), behind=(XB4_BODY[0], XB4_BODY[1], 68.0),
         panel_t=XB4_PANEL_T, family="22", group="ARM",
     ),
     # MACHINE: the operator's corner, working row
@@ -623,8 +639,9 @@ DEVICES: tuple[Device, ...] = (
         "MEASURED 2026-09-09 (Jared, calipers): the pendant's E-stop hole reads "
         "0.865in (CARBIDE_HOLE_22), the 22mm standard; cut BORE_22. The box "
         "itself is not on the plate (ruling console_subtract).",
-        "bore: measured (22mm standard); guard 40, body XB4-class, depth "
-        "ESTOP_BEHIND, panel_t: assumption, MEASURE with the button",
+        "bore: measured (22mm standard); flange CARBIDE_FLANGE_22 measured-rough, "
+        "face = guard 40; body XB4-class, depth ESTOP_BEHIND, panel_t: assumption, "
+        "MEASURE with the button",
         bore_d=BORE_22, front=(40.0, 40.0), behind=(XB4_BODY[0], XB4_BODY[1], ESTOP_BEHIND),
         panel_t=XB4_PANEL_T, red=True, family="22", group="MACHINE",
     ),
@@ -634,9 +651,10 @@ DEVICES: tuple[Device, ...] = (
         "bore", MACHINE_X[1], ROW_Y,
         "MEASURED 2026-09-09 (Jared, calipers): the pendant's feed-hold hole reads "
         "0.865in (CARBIDE_HOLE_22), the 22mm standard; cut BORE_22.",
-        "bore: measured (22mm standard); body XB4-class, depth FEED_HOLD_BEHIND, "
-        "panel_t: assumption, MEASURE with the button",
-        bore_d=BORE_22, front=(30.0, 30.0), behind=(XB4_BODY[0], XB4_BODY[1], FEED_HOLD_BEHIND),
+        "bore: measured (22mm standard); flange CARBIDE_FLANGE_22 measured-rough; "
+        "body XB4-class, depth FEED_HOLD_BEHIND, panel_t: assumption, MEASURE with "
+        "the button",
+        bore_d=BORE_22, front=(CARBIDE_FLANGE_22, CARBIDE_FLANGE_22), behind=(XB4_BODY[0], XB4_BODY[1], FEED_HOLD_BEHIND),
         panel_t=XB4_PANEL_T, family="22", group="MACHINE",
     ),
     Device(
@@ -733,14 +751,15 @@ GROUPS: dict[str, tuple[str, ...]] = {
 
 # -- what the chase is, derived from the table ----------------------------
 CHASE_DRIVER: Device = max(DEVICES, key=lambda dv: dv.behind[2])
-"""The device that sets the chase. Today the key switch."""
+"""The device that sets the chase. Today the ARM selector (68 + 10 = 78; it
+was the key switch's 86 + 10 = 96 until 2026-09-09)."""
 
 CHASE = CHASE_DRIVER.behind[2] + CHASE_MARGIN
-"""Air between the wall's inner face and the cheek: 96mm at today's table."""
+"""Air between the wall's inner face and the cheek: 78mm at today's table."""
 
 CONSOLE_KEEPOUT = CHASE
 """The keep-out the spec defines: the deepest device plus ``CHASE_MARGIN``,
-96mm at today's table. The chase air, and the reference solid the drawers are
+78mm at today's table. The chase air, and the reference solid the drawers are
 checked against. SOURCE: task C12. CONFIDENCE: ruling (the formula), datasheet
 (the number)."""
 
@@ -1532,7 +1551,7 @@ def check_console_plate(d: Datums = D) -> list[str]:
         "CONSOLE COMPOSITION, standing note. RULED 2026-09-09: composed, not packed. "
         + "; ".join(f"{g}: {', '.join(ls)}" for g, ls in GROUPS.items())
         + f". Axis x {AXIS_X:.0f}; MACHINE and EXTRACTION centres {AXIS_X - _cx(GROUPS['MACHINE']):.0f} "
-        "either side; dials 70 either side; the key alone on the axis at y "
+        "either side; dials 70 either side; the ARM selector alone on the axis at y "
         f"{by['ARM'].cy:.0f}. The pitch rules check this; they did not place it."
     )
     notes.append(
@@ -1756,6 +1775,144 @@ drawing and knows which bore it is."""
 _RED_SWATCH = house.RED
 
 
+
+# ====================================================================
+# ILLUSTRATOR BASE (SVG)
+# ====================================================================
+
+SVG_NAME = f"{PART_NAME}_v4.svg"
+LEGEND_H = 8.0
+"""Height of a device legend band, mm. Placeholder; the final words, faces and
+sizes are set in Illustrator (ruling 2026-09-09: "final needs to be done in
+illustrator to get fonts and wording correct"). CONFIDENCE: chosen."""
+
+TITLE_BAND: tuple[float, float, float, float] = (130.0, 14.0, 388.0, 28.0)
+"""Plate-local (x0, y0, x1, y1) of the strip along the bottom edge, right of
+the ports and under the ARM selector, that the composition leaves free: the
+build's name, date and whatever whimsy the plate carries go here. Clear of
+the ARM flange (35 up) and the bottom margin screws (8.25 up). CONFIDENCE:
+chosen (the band); ruling (that the plate carries a name and date)."""
+
+
+def legend_bands(d: Datums = D) -> list[tuple[str, tuple[float, float, float, float], str]]:
+    """(id, (x0, y0, x1, y1) plate-local, placeholder text) for every word the
+    plate might carry. Anchors only: the module does not set type. The
+    E-stop's band is the one ``callouts_local`` already computes, as wide as
+    the steel between the front margin and twice the guard's centreline; the
+    dials' words live on their scale cards (a Weston 301 carries its own
+    legend), so their anchor is the card, not the steel. On the working row
+    the words stagger: a jewel's word sits higher than the selector's between
+    them, the spindle's higher than the feed hold's, so 32 and 40 pitches do
+    not collide. The pendant carries no word: it sits under the E-stop's,
+    with 2.5mm of steel under its flange, and its cable names it."""
+    by = {dv.label: dv for dv in DEVICES}
+    out: list[tuple[str, tuple[float, float, float, float], str]] = []
+    y0, y1 = estop_callout_band(d)
+    est = by["E_STOP"]
+    out.append(("E_STOP", (LIP, y0, 2 * est.cx - LIP, y1), CALLOUT_ESTOP))
+    for label, word, half in (("FEED_HOLD", "FEED HOLD", 18.0), ("SPINDLE", "SPINDLE", 16.0),
+                              ("EXTR_LAMP", "EXTRACTOR", 15.0), ("DUST", "DUST", 15.0),
+                              ("BAG_LAMP", "FILTER", 15.0)):
+        dv = by[label]
+        top = dv.cy - dv.front[1] / 2 - 2.0
+        out.append((label, (dv.cx - half, top - LEGEND_H, dv.cx + half, top), word))
+    arm = by["ARM"]
+    bot = arm.cy + arm.front[1] / 2 + 2.0
+    out.append(("ARM", (arm.cx - 20.0, bot, arm.cx + 20.0, bot + LEGEND_H), "ARM"))
+    u1, u2 = by["USB_1"], by["USB_2"]
+    top = u1.cy + u1.front[1] / 2 + 1.0
+    out.append(("USB", (u1.cx - 13.0, top, u2.cx + 13.0, top + 5.0), "USB   .   USB"))
+    for label, word in (("SPEED", "SPEED  rpm x1000"), ("LOAD", "LOAD  %")):
+        dv = by[label]
+        r = METER_BORE / 2 - 6.0
+        out.append((label + "_CARD", (dv.cx - r, dv.cy - r, dv.cx + r, dv.cy + r), word))
+    out.append(("TITLE", TITLE_BAND, "BUILD NAME  .  DATE  .  a line of whimsy"))
+    return out
+
+
+def group_zones(d: Datums = D) -> dict[str, tuple[float, float, float, float]]:
+    """Plate-local (x0, y0, x1, y1) of each group's zone: the union of its
+    devices' faces plus 6mm, for the designer's eye, not for the check."""
+    zones: dict[str, tuple[float, float, float, float]] = {}
+    for g, labels in GROUPS.items():
+        xs0, ys0, xs1, ys1 = [], [], [], []
+        for dv in DEVICES:
+            if dv.label not in labels:
+                continue
+            w, h = dv.front
+            if dv.family == "meter":
+                w = h = METER_BEZEL_D
+            xs0.append(dv.cx - w / 2); xs1.append(dv.cx + w / 2)
+            ys0.append(dv.cy - h / 2); ys1.append(dv.cy + h / 2)
+        zones[g] = (min(xs0) - 6.0, min(ys0) - 6.0, max(xs1) + 6.0, max(ys1) + 6.0)
+    return zones
+
+
+def export_svg(d: Datums = D, path=None):
+    """The Illustrator base: the plate at 1:1 mm, one top-level group per
+    layer (PLATE, CUT, DEVICE, LEGEND, AXIS). Illustrator opens the groups as
+    groups; Release to Layers (Sequence) makes them layers. Y is plate-local
+    (up); the SVG flips it. CUT is the waterjet's geometry, the same circles
+    the DXF carries; DEVICE is reference (flanges, bezels, the E-stop guard);
+    LEGEND is anchor rectangles with placeholder words in a neutral face."""
+    w, h = plate_size(d)
+    Y = lambda y: h - y
+    L: list[str] = []
+    L.append(f'<svg xmlns="http://www.w3.org/2000/svg" width="{w:.0f}mm" height="{h:.0f}mm" '
+             f'viewBox="0 0 {w:.0f} {h:.0f}">')
+    L.append(f'<title>{PART_NAME} v4, {w:.0f} x {h:.0f} x {PLATE_T:.0f} {PLATE_MATERIAL}, plate-local mm, y up</title>')
+    # PLATE
+    L.append('<g id="PLATE" fill="none" stroke="#000" stroke-width="0.3">')
+    L.append(f'<rect x="0" y="0" width="{w:.2f}" height="{h:.2f}"/>')
+    L.append('</g>')
+    # CUT
+    L.append('<g id="CUT" fill="none" stroke="#000" stroke-width="0.2">')
+    for x, y in lip_screws(d):
+        L.append(f'<circle cx="{x:.2f}" cy="{Y(y):.2f}" r="{PLATE_SCREW_CLEAR_D / 2:.2f}"/>')
+    for dv in DEVICES:
+        col = ' stroke="#c00"' if dv.red else ""
+        L.append(f'<circle id="cut_{dv.label}" cx="{dv.cx:.2f}" cy="{Y(dv.cy):.2f}" r="{dv.bore_d / 2:.2f}"{col}/>')
+        for dx, dy in dv.d_holes:
+            L.append(f'<circle cx="{dv.cx + dx:.2f}" cy="{Y(dv.cy + dy):.2f}" r="{dv.d_hole_d / 2:.2f}"/>')
+        for dx, dy in dv.studs:
+            L.append(f'<circle cx="{dv.cx + dx:.2f}" cy="{Y(dv.cy + dy):.2f}" r="{dv.stud_d / 2:.2f}"/>')
+    L.append('</g>')
+    # DEVICE (reference)
+    L.append('<g id="DEVICE" fill="none" stroke="#888" stroke-width="0.15" stroke-dasharray="1 1">')
+    for dv in DEVICES:
+        fw, fh = dv.front
+        if dv.family == "meter":
+            L.append(f'<circle cx="{dv.cx:.2f}" cy="{Y(dv.cy):.2f}" r="{METER_BEZEL_D / 2:.2f}"/>')
+        elif dv.kind == "d_type":
+            L.append(f'<rect x="{dv.cx - fw / 2:.2f}" y="{Y(dv.cy + fh / 2):.2f}" width="{fw:.2f}" height="{fh:.2f}"/>')
+        else:
+            L.append(f'<circle cx="{dv.cx:.2f}" cy="{Y(dv.cy):.2f}" r="{fw / 2:.2f}"/>')
+        if dv.label in ("E_STOP", "FEED_HOLD"):
+            L.append(f'<circle cx="{dv.cx:.2f}" cy="{Y(dv.cy):.2f}" r="{CARBIDE_FLANGE_22 / 2:.2f}"/>')
+    L.append('</g>')
+    # LEGEND
+    L.append('<g id="LEGEND" fill="none" stroke="#06c" stroke-width="0.15">')
+    for g, (x0, y0, x1, y1) in group_zones(d).items():
+        L.append(f'<rect id="zone_{g}" x="{x0:.2f}" y="{Y(y1):.2f}" width="{x1 - x0:.2f}" height="{y1 - y0:.2f}" stroke-dasharray="2 1"/>')
+        L.append(f'<text x="{x0 + 1:.2f}" y="{Y(y1) + 3:.2f}" font-family="Helvetica, Arial, sans-serif" font-size="2.5" fill="#06c" stroke="none">{g}</text>')
+    for label, (x0, y0, x1, y1), word in legend_bands(d):
+        bh = y1 - y0
+        fs = min(bh * 0.7, 6.0, (x1 - x0) / (0.62 * len(word)))
+        L.append(f'<rect id="band_{label}" x="{x0:.2f}" y="{Y(y1):.2f}" width="{x1 - x0:.2f}" height="{bh:.2f}"/>')
+        L.append(f'<text x="{(x0 + x1) / 2:.2f}" y="{Y((y0 + y1) / 2) + fs * 0.35:.2f}" text-anchor="middle" '
+                 f'font-family="Helvetica, Arial, sans-serif" font-size="{fs:.2f}" fill="#000" stroke="none">{word}</text>')
+    L.append('</g>')
+    # AXIS
+    L.append('<g id="AXIS" stroke="#06c" stroke-width="0.15" stroke-dasharray="4 2">')
+    L.append(f'<line x1="{AXIS_X:.2f}" y1="0" x2="{AXIS_X:.2f}" y2="{h:.2f}"/>')
+    L.append('</g>')
+    L.append('</svg>')
+    path = path or (EXPORT_DIR / SVG_NAME)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(L))
+    return path
+
+
 def export(d: Datums = D) -> list:
     """STEP + DXF for the plate (stainless: CUT for the waterjet, MARK for the
     laser, the E-stop bore on E_STOP), the cheek and rib (birch), the reveal
@@ -1788,6 +1945,7 @@ def export(d: Datums = D) -> list:
     p = out_dir / f"{KEEPOUT_NAME}.step"
     export_step(build_keepout(d), p, unit=Unit.MM)
     written.append(p)
+    written.append(export_svg(d))
     return written
 
 
