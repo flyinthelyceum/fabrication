@@ -479,8 +479,12 @@ DUST_CONTROL = {                    # the DUST selector's wiring (2026-09-09)
                   "RECEPTACLE_NAME and its SSR): the CT stays energised and is "
                   "never switched at its mains. Geometry left standing 2026-09-09; "
                   "strike it on the next mains pass.",
-    "trigger_load_w": None,         # MEASURE/lookup: the CT 15's auto-start
-                                    # threshold and a load that clears it
+    "trigger_load_w": 60.0,         # MEASURED 2026-09-09: a 60 W resistive
+                                    # load in the auto socket fired the CT 15
+                                    # at once. Smaller not tested. Build the
+                                    # load at 60 W (240 ohm, 100 W wirewound
+                                    # on a heatsink, brain band). T1 (3 A)
+                                    # switches 0.5 A directly, no relay.
 }
 
 STATION_SUPPLY = {                  # RULED 2026-09-09
@@ -643,7 +647,7 @@ CONFIDENCE = {
                                     # Enduramark
     "STATION_SUPPLY": "ruling",     # 2026-09-09, Jared: one 120 V / 20 A circuit
     "DUST_CONTROL": "ruling",       # 2026-09-09, Jared: through the auto socket
-    "DUST_CONTROL.trigger_load_w": "MEASURE",
+    "DUST_CONTROL.trigger_load_w": "measured",   # 2026-09-09, 60 W fires
     "vfd_model": "confirmed",       # 2026-09-09, Jared read it off the drive
     "METER_MOVEMENT": "placeholder",    # 85C1 footprint stands in for the pair
     "METER_MOVEMENT.name": "MEASURE",
