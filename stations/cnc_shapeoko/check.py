@@ -83,7 +83,7 @@ STANDING_MARKS = (
     "EARTH BONDING",                    # the star point. Never clears.
     "PE IS NEVER SWITCHED",             # earth survives the interlock
     "ANODIZE IS AN INSULATOR",          # bonding lug build instruction
-    "sheets of 4x8",                    # the nest's count (C18): a number, never a defect
+    "x 4x8 + ",                         # the nest's count (C18), "N x 4x8 + M x 5x5": a number, never a defect
 )
 
 TODO_MARKS = (

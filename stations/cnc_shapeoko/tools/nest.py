@@ -126,7 +126,7 @@ from build123d import (
     Unit,
 )
 
-from lib.house import CARCASS_T, LASER_BED_LARGE, PANEL_T, SHEET_4X8
+from lib.house import CARCASS_T, LASER_BED_LARGE, PANEL_T, SHEET_4X8, SHEET_5X5_BALTIC
 from stations.cnc_shapeoko.assembly import (
     Component,
     acrylic_components,
@@ -183,6 +183,20 @@ SHEET_T = CARCASS_T
 nest's X so the sheet's grain lies along GRAIN_AXIS. RULED 2026-09-09: the
 project nests on 4x8, not 5x5 (Spellman stocks 4x8; the workbench nests on it
 too). SOURCE: lib.house, reference_spellman_hardwoods. CONFIDENCE: ruling."""
+
+SHEET_5X5 = SHEET_5X5_BALTIC
+STOCK_OVERRIDES: dict[str, tuple[float, float]] = {
+    spine_panel.PART_NAME: SHEET_5X5,
+}
+"""Parts that do not come out of a 4x8 in their grain orientation, and the
+stock they take instead. RULED 2026-09-09: the spine (1230 across its
+vertical grain, against 1219 across a 4x8) is cut from ONE 5x5, its grain
+neither turned nor narrowed; Spellman supplies both sizes. The 5x5 sheet is
+opened first and the 4x8 pass fills what it leaves before it opens a sheet of
+its own, so the 5x5 never carries the spine alone. The 5x5's face grain runs
+along one edge (the mill marks it); the sheet lies with that edge along X,
+the same GRAIN_AXIS as the 4x8. SOURCE: ruling; the grain edge is shop
+convention. CONFIDENCE: ruling."""
 
 LASER_BED = LASER_BED_LARGE
 LASER_T = PANEL_T
@@ -493,25 +507,34 @@ class Nest:
 
 
 def _pack(bl: list[Blank], material: str, size: tuple[float, float], kind: str,
-          travel: float | None, sheets: list[Sheet], unplaced: list[Blank]) -> None:
-    """First fit, biggest first, onto the open sheets of one material; a new
-    sheet when none takes the part."""
+          travel: float | None, sheets: list[Sheet], unplaced: list[Blank],
+          open_new: bool = True) -> list[Blank]:
+    """First fit, biggest first, onto the open sheets of one material and
+    size; a new sheet when none takes the part. With ``open_new`` False no
+    sheet is opened and the parts nothing took come back instead of going
+    to ``unplaced``: that is how a later stock fills an earlier one's
+    remainder."""
     order = sorted(bl, key=lambda b: (-max(b.a, b.b), -b.area, b.label))
+    left: list[Blank] = []
     for b in order:
         placed = None
         for s in sheets:
-            if s.material != material or s.kind != kind:
+            if s.material != material or s.kind != kind or s.size != size:
                 continue
             placed = s.try_place(b)
             if placed:
                 break
         if placed:
             continue
+        if not open_new:
+            left.append(b)
+            continue
         s = Sheet(len(sheets) + 1, material, kind, size, travel)
         sheets.append(s)
         if s.try_place(b) is None:
             sheets.pop()
             unplaced.append(b)
+    return left
 
 
 def nest(bl: list[Blank] | None = None, comps: list[Component] | None = None,
@@ -537,7 +560,16 @@ def nest(bl: list[Blank] | None = None, comps: list[Component] | None = None,
         if max(b.a, b.b) + REACH > travel:
             unplaced.append(b)
     shapeoko = [b for b in shapeoko if b not in unplaced]
-    _pack(shapeoko, "birch", SHEET, "SHAPEOKO", travel, sheets, unplaced)
+    # the parts ruled onto another stock open their sheets first; the 4x8
+    # pass fills what those sheets have left before it opens its own
+    for size in sorted(set(STOCK_OVERRIDES.values())):
+        _pack([b for b in shapeoko if STOCK_OVERRIDES.get(b.label) == size],
+              "birch", size, "SHAPEOKO", travel, sheets, unplaced)
+    rest = [b for b in shapeoko if b.label not in STOCK_OVERRIDES]
+    for size in sorted(set(STOCK_OVERRIDES.values())):
+        rest = _pack(rest, "birch", size, "SHAPEOKO", travel, sheets, unplaced,
+                     open_new=False)
+    _pack(rest, "birch", SHEET, "SHAPEOKO", travel, sheets, unplaced)
 
     _pack([b for b in bl if b.material == "acrylic"], "acrylic", LASER_BED, "LASER", None,
           sheets, unplaced)
@@ -565,7 +597,8 @@ def check_nest(comps: list[Component] | None = None, d: Datums = D) -> list[str]
         if b.material == "birch":
             notes.append(
                 f"nest: {b.label} is {b.a:.0f} x {b.b:.0f} and has no place on a "
-                f"{SHEET[0]:.0f} x {SHEET[1]:.0f} sheet in its grain orientation within "
+                f"{_stock_name(STOCK_OVERRIDES.get(b.label, SHEET))} sheet in its grain "
+                f"orientation within "
                 f"{travel:.0f}mm of travel, and it is not on the track-saw ruling "
                 f"({', '.join(TRACK_SAW_PARTS)}). It has no sheet."
             )
@@ -598,7 +631,7 @@ def check_nest(comps: list[Component] | None = None, d: Datums = D) -> list[str]
     shap = [s for s in birch if s.kind == "SHAPEOKO"]
     n_birch = sum(len(s.placements) for s in birch)
     notes.append(
-        f"nest: {len(birch)} sheets of 4x8 Baltic {SHEET_T:.0f}mm, standing note. "
+        f"nest: {_stock_count(birch)} Baltic {SHEET_T:.0f}mm, standing note. "
         f"{len(track)} TRACK SAW ({', '.join(p.blank.label for s in track for p in s.placements)}, "
         f"a sheet each by ruling 2026-09-02) + {len(shap)} Shapeoko, ripped to blanks under "
         f"{travel:.0f} on the track saw first. {n_birch} birch parts, {GAP:.0f}mm kerf/margin, "
@@ -850,6 +883,17 @@ def export(n: Nest | None = None, d: Datums = D, out_dir: Path | None = None) ->
 # ================================================================ report
 
 
+def _stock_name(size: tuple[float, float]) -> str:
+    return "5x5" if size == SHEET_5X5 else "4x8"
+
+
+def _stock_count(sheets: list[Sheet]) -> str:
+    """``N x 4x8 + M x 5x5``: the order line, one term per stock."""
+    n4 = sum(1 for s in sheets if _stock_name(s.size) == "4x8")
+    n5 = sum(1 for s in sheets if _stock_name(s.size) == "5x5")
+    return f"{n4} x 4x8 + {n5} x 5x5"
+
+
 def report(n: Nest, d: Datums = D) -> str:
     travel = min(d.s.travel_x, d.s.travel_y)
     lines: list[str] = []
@@ -888,7 +932,7 @@ def main() -> int:
     print(report(n, d))
     birch = n.by_material("birch")
     print(
-        f"\nSHEET COUNT: {len(birch)} sheets of 4x8 Baltic {SHEET_T:.0f}mm "
+        f"\nSHEET COUNT: {_stock_count(birch)} Baltic {SHEET_T:.0f}mm "
         f"({sum(1 for s in birch if s.kind == 'TRACK SAW')} track saw + "
         f"{sum(1 for s in birch if s.kind == 'SHAPEOKO')} Shapeoko), "
         f"{len(n.by_material('acrylic'))} laser bed of {LASER_T:.0f}mm clear, "
