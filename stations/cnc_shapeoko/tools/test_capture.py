@@ -10,12 +10,13 @@ ingest has to give the shape back.
 PHOTO SOURCE
 
     P1. A phone (PHONE_W x PHONE_H, f35 = F35, EXIF written) held flat at
-        D = 450 over the sheet, its nadir 30mm off the tool's centre, rolled
-        5 degrees. A dark 50 x 100 stadium is rendered as a tool measured 20
-        tall whose silhouette edge sits at h_eff = 10 (H_EFF_FRAC x 20), so
-        it is drawn inflated about the nadir by D / (D - 10): 2.3% at the
-        far end, with a soft shadow, a soft highlight streak and a lighter
-        patch. Recovered L, W within 0.5mm of 100 x 50; D within 3% of 450.
+        D = PHOTO_D (600) over the sheet, its nadir 30mm off the tool's
+        centre, rolled 5 degrees. A dark 50 x 100 stadium is rendered as a
+        tool measured 20 tall whose silhouette edge sits at h_eff = 10
+        (H_EFF_FRAC x 20), so it is drawn inflated about the nadir by
+        D / (D - 10): 1.7% at the far end, with a soft shadow, a soft
+        highlight streak and a lighter patch. Recovered L, W within 0.5mm of
+        100 x 50; D within 3% of 600.
     P2. The same with a pencil outline 3mm outside the tool, on the paper
         (a student who traced first). Same tolerance: the line is not the
         outline and does not move it.
@@ -25,8 +26,12 @@ PHOTO SOURCE
         the Result's reason says so.
     P5. Reject paths: a sheet with only a pencil loop (no tool in the
         window), a tool across the window edge, two tools, the phone at 250
-        (too close), a 55mm height (no such class), a height that is not a
-        number. Each rejects with its reason and writes nothing.
+        over the 100 x 50 stadium (too close for a tool this size), a 55mm
+        height (taller than any drawer), a height that is not a number.
+        Each rejects with its reason and writes nothing.
+    P6. The residual gate: at D 262 a 50 x 30 tool 16 tall passes (0.76mm)
+        and the 100 x 50 stadium 40 tall rejects (3.8mm), naming the D to
+        use. Heights arrive as "16mml" and "40.00".
 
 TRACE SOURCE (history; every call passes source="trace")
 
@@ -160,6 +165,12 @@ checks the correction's arithmetic, not the assumption (see
 capture_ingest: THE PERSPECTIVE OF A TOOL ABOVE THE SHEET)."""
 
 PHOTO_TOL_MM = 0.5
+
+PHOTO_D = 600.0
+"""Where the card puts the phone: the sheet about a third of the screen,
+which for a LETTER sheet and a 24mm-equivalent lens is about 600mm. The
+100 x 50 stadium 20 tall leaves a residual of 0.83mm there (see
+capture_ingest.RESIDUAL_MAX); at 450 it would leave 1.11 and reject."""
 
 SHADOW = 0.12
 """How much darker than the paper the synthetic tool's shadow is: a soft
@@ -414,7 +425,7 @@ def _check_photo(r: ci.Result, D: float, label: str) -> None:
 
 
 def test_photo_stadium(tmp: Path) -> ci.Result:
-    D = 450.0
+    D = PHOTO_D
     h_edge = ci.H_EFF_FRAC * TOOL_H
     cx, cy = field_centre()
     outline = stadium(cx, cy, TOOL_L, TOOL_W)
@@ -446,7 +457,7 @@ def test_photo_stadium(tmp: Path) -> ci.Result:
 
 
 def test_photo_family(tmp: Path) -> None:
-    D = 450.0
+    D = PHOTO_D
     h_edge = ci.H_EFF_FRAC * TOOL_H
     for spec in sheet.SIZES.values():
         cx, cy = field_centre(spec)
@@ -471,8 +482,30 @@ def test_photo_no_exif(tmp: Path) -> None:
     print(f"  P4 PNG without EXIF: L {r.L:.3f} W {r.W:.3f}, reason '{r.reason}'")
 
 
+def test_photo_residual_gate(tmp: Path) -> None:
+    """The same D 262 that rejected T042 on the flat floor: a 50 x 30 tool 16
+    tall leaves (25 x 8) / 262 = 0.76mm and passes; the 100 x 50 stadium 40
+    tall leaves (50 x 20) / 262 = 3.8mm and rejects, naming about 1000mm."""
+    D = 262.0
+    cx, cy = field_centre()
+    small_l, small_w, small_h = 50.0, 30.0, 16.0
+    p = photo_case("photo_residual_small", tmp, D, lambda im, to: draw_photo_tool(im, to, stadium(cx, cy, small_l, small_w), ci.H_EFF_FRAC * small_h), nadir=(cx + 15, cy - 10), roll=0.0)
+    r = ci.ingest(p, "T999", "16mml", out_dir=tmp / "captures_residual_small", csv_path=None)
+    assert r.ok, r.reason
+    assert abs(r.L - small_l) <= PHOTO_TOL_MM and abs(r.W - small_w) <= PHOTO_TOL_MM, (r.L, r.W)
+    assert abs(r.D - D) <= 0.03 * D, r.D
+    print(f"  small tool (50 x 30, h 16 from '16mml') at D {D:g}: accepted, L {r.L:.3f} W {r.W:.3f}, residual {(r.L / 2) * 8 / r.D:.2f}")
+    big_h = 40.0
+    p = photo_case("photo_residual_big", tmp, D, lambda im, to: draw_photo_tool(im, to, stadium(cx, cy, TOOL_L, TOOL_W), ci.H_EFF_FRAC * big_h), nadir=(cx + 15, cy - 10), roll=0.0)
+    out = tmp / "captures_residual_big"
+    r = ci.ingest(p, "T999", "40.00", out_dir=out, csv_path=None)
+    assert not r.ok and "too close for a tool this size" in r.reason and "1000 mm" in r.reason, r
+    assert_nothing_written(out)
+    print(f"  big tool (100 x 50, h 40 from '40.00') at D {D:g}: rejected, '{r.reason}'")
+
+
 def test_photo_rejects(tmp: Path) -> None:
-    D = 450.0
+    D = PHOTO_D
     h_edge = ci.H_EFF_FRAC * TOOL_H
     cx, cy = field_centre()
     x0, y0, x1, y1 = sheet.LETTER.field_rect()
@@ -489,8 +522,8 @@ def test_photo_rejects(tmp: Path) -> None:
         ("photo_pencil_only", D, pencil_only, "20", "no tool found"),
         ("photo_edge", D, lambda im, to: draw_photo_tool(im, to, stadium(x1 - 40, cy, TOOL_L, TOOL_W), h_edge), "20", "touches the edge"),
         ("photo_two_tools", D, lambda im, to: (draw_photo_tool(im, to, stadium(cx, cy - 40, 60, 40), h_edge), draw_photo_tool(im, to, stadium(cx, cy + 40, 60, 40), h_edge)), "20", "two tools"),
-        ("photo_too_close", 250.0, lambda im, to: draw_photo_tool(im, to, outline, h_edge), "20", "camera too close"),
-        ("photo_too_tall", D, lambda im, to: draw_photo_tool(im, to, outline, h_edge), "55", "tallest class"),
+        ("photo_too_close", 250.0, lambda im, to: draw_photo_tool(im, to, outline, h_edge), "20", "too close for a tool this size"),
+        ("photo_too_tall", D, lambda im, to: draw_photo_tool(im, to, outline, h_edge), "55", "taller than any drawer"),
         ("photo_height_nan", D, lambda im, to: draw_photo_tool(im, to, outline, h_edge), "tall", "not a number"),
     ]
     for name, d, draw, height, expect in cases:
@@ -544,7 +577,7 @@ def main() -> int:
     tmp = Path(tempfile.mkdtemp(prefix="capture_test_"))
     print(f"scratch: {tmp}")
     print("PHOTO SOURCE (default)")
-    print("P1/P2. a tool on the sheet, D 450, nadir off-centre, with and without a pencil ring")
+    print(f"P1/P2. a tool on the sheet, D {PHOTO_D:g}, nadir off-centre, with and without a pencil ring")
     rp = test_photo_stadium(tmp)
     print("P3. both sheet sizes")
     test_photo_family(tmp)
@@ -552,6 +585,8 @@ def main() -> int:
     test_photo_no_exif(tmp)
     print("P5. reject paths")
     test_photo_rejects(tmp)
+    print("P6. the residual gate at D 262")
+    test_photo_residual_gate(tmp)
     print("TRACE SOURCE (history)")
     print("0a. the two shared constants")
     test_constants()

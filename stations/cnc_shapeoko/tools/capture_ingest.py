@@ -87,7 +87,7 @@ wrench's jaw, a clamp's bar, a caliper's beam) sits somewhere in its
 thickness, around the middle, and the edge the camera sees is the highest
 point along that ray, which is the top for a slab and lower for a rounded
 bar. h_eff = H_EFF_FRAC x measured height is the estimate; FOAM_CLEAR absorbs
-the residual. At arm's length (D 600) a 20mm tool inflates by 3.4%, 1.7mm on
+the residual. With the sheet a third of the screen (D about 600) a 20mm tool inflates by 3.4%, 1.7mm on
 a 50mm width; corrected with h_eff = 10 the residual is under 0.9mm each way
 whether the true edge is at 0 or at 20. CONFIDENCE: estimate.
 
@@ -106,9 +106,19 @@ sheet mm and in the UNWARPED photo, so a keystoned photo averages its near
 and far scale. c, the nadir, is the image's principal point (its centre)
 mapped through the homography into sheet mm; exact for a phone held flat,
 which is what the card says to do. No EXIF (a screenshot, a stripped
-upload): D = D_FALLBACK_MM and the Result says so. D under D_MIN_MM rejects:
-the inflation is then large enough that the h_eff estimate's error is
-bigger than FOAM_CLEAR, and the fix is to hold the phone further away.
+upload): D = D_FALLBACK_MM and the Result says so.
+
+THE GATE ON D IS A RESIDUAL, NOT A FLOOR. What is not known is where the
+widest edge sits in the tool's thickness; h_eff = h / 2 carries +/- h / 2 of
+that, and at the far end of the silhouette, L / 2 from the nadir, that is a
+residual of about (L / 2) * (h / 2) / D in the outline. A 50mm jaw 16 tall
+at D 262 leaves 0.8mm, inside FOAM_CLEAR; the 228mm pendant 40 tall at the
+same D leaves 8.7mm and must be shot from further away. So the photo is
+identified, rectified and segmented FIRST, L is measured, and then
+residual > RESIDUAL_MAX rejects, naming the D that would do. A hard floor
+stays only where the model itself breaks: D under D_HARD_MIN_MM (a phone
+almost on the paper). The first real photos (2026-09-11) showed the flat
+300 floor rejecting a small tool it would have measured to 0.8mm.
 
 THE SHEET SIZE IS NEVER AN ARGUMENT
 ===================================
@@ -305,13 +315,16 @@ BORDER_BAND_MM = 6.0
 the shadow of nothing, and where the tool is NOT allowed to be (a tool this
 close to the edge is rejected anyway). CONFIDENCE: rule."""
 
-PENCIL_MM = 1.0
-"""A pencil line's width on the sheet, and the opening that removes one from
-the mask. Lines up to this wide detach from a tool they hug; components that
-are thin everywhere at 2 x this (a retraced loop) are dropped whole. A tool
-feature narrower than PENCIL_MM (a scriber's last millimetre) is lost, and
-a sharp corner is rounded by PENCIL_MM / 2. SOURCE: the two 2026-09-11
-sheets, bare-pencil traces 0.5 to 1.5mm wide. CONFIDENCE: estimate."""
+PENCIL_MM = 1.5
+"""A pencil line's width on the sheet as the mask sees it (the line plus
+the blur of a phone at 600mm and the rectification), and the opening that
+removes one from the mask. Lines up to this wide detach from a tool they
+hug; a component that is thin everywhere at 2 x this (a retraced loop)
+cannot be the tool's body. A tool feature narrower than PENCIL_MM (a
+scriber's last millimetre and a half) is lost, and a sharp corner is
+rounded by PENCIL_MM / 2. SOURCE: the two 2026-09-11 sheets, bare-pencil
+traces 0.5 to 1.5mm wide, and the synthetic 0.8mm ring, which survived a
+1.0 open at D 600 and was merged into the tool. CONFIDENCE: estimate."""
 
 PAPER_DARK_FRAC = 0.30
 SAT_MIN = 80
@@ -323,6 +336,15 @@ vignetted photo does not move the seed: Otsu did, it split the paper itself
 on the 2026-09-11 sheet shot at 178/255. A soft shadow is 10 to 20% darker
 than the paper and stays out of the seed; grabCut decides its edge.
 CONFIDENCE: estimate, from the two 2026-09-11 photos."""
+
+SHADOW_FRAC = 0.15
+"""After grabCut, a pixel less than this fraction darker than the paper
+model and unsaturated is penumbra, not tool, whatever the colour model
+said: under diffuse light a tool's shadow is 5 to 15% and a tool itself is
+darker than that or coloured. This is what stops the soft shadow's side of
+the outline creeping out by half a millimetre. A tool lighter than 85% of
+the paper (white plastic) is beyond the photo path anyway. CONFIDENCE:
+estimate, from the synthetic stadium at D 600."""
 
 SEED_ERODE_MM = 1.0
 SEED_SURE_MM = 6.0
@@ -355,14 +377,26 @@ FRAME_DIAG_MM = math.hypot(36.0, 24.0)
 against, and what the photo's pixel diagonal stands for."""
 
 D_FALLBACK_MM = 650.0
-"""Camera height when the photo carries no EXIF focal length: arm's length.
+"""Camera height when the photo carries no EXIF focal length: the sheet
+about a third of the screen.
 The Result's reason names it so the digest shows the capture ran on an
 assumption. CONFIDENCE: estimate."""
 
-D_MIN_MM = 300.0
-"""Below this the phone was too close: the inflation of a 20mm tool passes
-7% and the h_eff estimate's error passes FOAM_CLEAR. Reject and say so.
+RESIDUAL_MAX = 1.0
+"""The largest outline error the h_eff estimate may leave, (L / 2) * (h / 2)
+/ D, before the capture rejects as too close for a tool this size. Set to
+FOAM_CLEAR: an error up to the clearance still drops the tool in. See THE
+GATE ON D IS A RESIDUAL. CONFIDENCE: choice, tied to FOAM_CLEAR."""
+
+D_HARD_MIN_MM = 150.0
+"""Below this the pinhole model is not worth correcting with (the phone is
+almost on the paper, the nadir estimate is meaningless): reject outright.
 CONFIDENCE: rule."""
+
+D_FLOOR_MM = 300.0
+"""The flat floor of 2026-09-11 morning, kept for the record; the residual
+gate replaced it the same day (T042 at D 262 would have measured to 0.8mm).
+Not used."""
 
 MERGE_MM = 3.0
 """A component this close to the tool's body is a piece of the tool a
@@ -867,6 +901,8 @@ def segment_tool(crop_bgr: np.ndarray) -> tuple[np.ndarray, str]:
     fgm = np.zeros((1, 65), np.float64)
     cv2.grabCut(small, mask, None, bgm, fgm, GRABCUT_ITERS, cv2.GC_INIT_WITH_MASK)
     fg = (np.isin(mask, (cv2.GC_FGD, cv2.GC_PR_FGD)) * 255).astype(np.uint8)
+    penumbra = ((paper - hsv[:, :, 2].astype(np.float64)) < SHADOW_FRAC * np.maximum(paper, 1.0)) & (hsv[:, :, 1] <= SAT_MIN)
+    fg[penumbra] = 0                                                         # shadow is paper (see SHADOW_FRAC)
 
     fg = cv2.morphologyEx(fg, cv2.MORPH_OPEN, _disk(PENCIL_MM, g))          # pencil lines off, hugging ones detached
     fg = cv2.morphologyEx(fg, cv2.MORPH_CLOSE, _disk(HIGHLIGHT_CLOSE_MM, g))  # highlight gaps bridged
@@ -883,7 +919,10 @@ def _height_class(height_mm: float) -> float:
 def _ingest_photo(img: np.ndarray, image_path: Path, tag: str, height_mm: float, *, print_scale: float, out_dir: Path, csv_path: Path | None) -> Result:
     height_class = _height_class(height_mm)
     if height_class not in HEIGHT_CLASSES:
-        return _reject(f"tool is {height_mm:g} mm tall; the tallest class is {max(HEIGHT_CLASSES):g}")
+        return _reject(
+            f"{height_mm:g} mm is taller than any drawer ({max(HEIGHT_CLASSES):g} max). Measure the height as the "
+            "tool LIES on the sheet: a bottle on its side is its diameter."
+        )
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     loc = _locate(gray)
@@ -896,10 +935,10 @@ def _ingest_photo(img: np.ndarray, image_path: Path, tag: str, height_mm: float,
     span_mm, span_px = tag_span(tags, spec)
     if f35:
         D = camera_height(f35, span_mm * print_scale, span_px, img.shape)
-        if D < D_MIN_MM:
+        if D < D_HARD_MIN_MM:
             return _reject(
-                f"camera too close ({D:.0f} mm above the sheet; need {D_MIN_MM:.0f}): hold the phone at arm's length, "
-                "the whole sheet with room round it",
+                f"camera almost on the paper ({D:.0f} mm above the sheet): hold the phone higher, the sheet about a "
+                "third of the screen",
                 size=spec.name,
             )
     else:
@@ -949,6 +988,14 @@ def _ingest_photo(img: np.ndarray, image_path: Path, tag: str, height_mm: float,
     if len(tool_true) < 3:
         return _reject("silhouette is not a polygon", spec.name)
     tool_local, L, W, M = _align_to_min_rect(tool_true)
+    residual = (L / 2) * (height_mm / 2) / D          # see THE GATE ON D IS A RESIDUAL
+    if residual > RESIDUAL_MAX:
+        need = math.ceil((L / 2) * (height_mm / 2) / RESIDUAL_MAX / 50) * 50
+        return _reject(
+            f"too close for a tool this size ({D:.0f} mm above the sheet, {L:.0f} long, {height_mm:g} tall): hold the "
+            f"phone about {need} mm above the sheet (the sheet about a third of the screen)",
+            size=spec.name,
+        )
     pocket_local_raw = _offset_polygon(tool_local, FOAM_CLEAR)
     pocket_min = pocket_local_raw.min(axis=0)
     pocket_local = pocket_local_raw - pocket_min
@@ -961,7 +1008,7 @@ def _ingest_photo(img: np.ndarray, image_path: Path, tag: str, height_mm: float,
     _write_dxf(pocket_local, dxf_path)
     _write_preview(
         rect, sil_mm, pocket_sheet,
-        f"{tag}  {spec.name}  L {L:.1f}  W {W:.1f}  H {height_mm:g} (class {height_class:g})  D {D:.0f}  h_eff {h_eff:g}  {len(tags)} tags  print_scale {print_scale:.3f}",
+        f"{tag}  {spec.name}  L {L:.1f}  W {W:.1f}  H {height_mm:g} (class {height_class:g})  D {D:.0f}  h_eff {h_eff:g}  resid {residual:.2f}  {len(tags)} tags  print_scale {print_scale:.3f}",
         preview_path, spec,
     )
     if csv_path is not None:
@@ -1099,9 +1146,10 @@ def ingest(
 
     tag = tag.strip().upper()
     if source == "photo":
+        # "16mml", "72.00", "20 mm": digits and a point kept, then whole mm
         digits = "".join(ch for ch in str(height) if ch.isdigit() or ch == ".")
         try:
-            height_mm = float(digits)
+            height_mm = float(round(float(digits)))
         except ValueError:
             return _reject(f"height {height!r} is not a number of mm")
         if height_mm <= 0:

@@ -274,7 +274,7 @@ SIZES: dict[str, SheetSpec] = {
 """The family: LETTER and TABLOID (RT4, 2026-09-04, trimmed the metric and
 ARCH B twins away -- the shop prints on these two). Tag size is a documented
 constant per size, not a formula: 30mm on LETTER, 40mm on TABLOID, big enough
-to detect at arm's length and small enough to keep out of the window. LETTER
+to detect with the sheet a third of the screen and small enough to keep out of the window. LETTER
 keeps ids 0-3 and TABLOID 8-11 so already-printed sheets still read.
 CONFIDENCE: derived, and stated in the README."""
 
@@ -339,8 +339,8 @@ RULES = (
     "ONE TOOL, lying FLAT inside the window as it sits in the drawer, on its widest face, clear of "
     "the border line. Write its TAG in the box.",
     "MEASURE its tallest point above the paper in mm and write it in the HEIGHT box.",
-    "PHOTO from straight above, phone flat, at arm's length: the whole sheet with room round it, all "
-    "four corner squares in frame, no flash, the tool still on the sheet.",
+    "PHOTO from straight above, phone flat, high enough that the sheet is about a third of the screen, "
+    "all four corner squares in frame, no flash, the tool still on the sheet.",
     "FORM: tag, height, photo. Does not fit the window: take a bigger sheet. A plain rectangular "
     "slab: write L, W and thickness in the boxes instead.",
 )
@@ -365,7 +365,7 @@ CARD_SUB = "one tool, about a minute"
 CARD_STEPS = (
     ("LAY", "Take a capture sheet: the smallest size the tool lies in with a finger's width of clear paper all round. Lay the tool FLAT inside the window, on its widest face, as it sits in the drawer, clear of the border line. Write its TAG (T0__, from the drawer label) in the TAG box."),
     ("MEASURE", "Measure the tool's tallest point above the paper with the ruler, in mm. Write it in the HEIGHT box."),
-    ("PHOTO", "Stand over the sheet. Phone flat, arm's length up: the whole sheet in frame with room around it (about a third of the screen), all four corner squares showing. No flash, no lamp shadow. Do not move the tool."),
+    ("PHOTO", "Stand over the sheet. Phone flat, high enough that the whole sheet is about a third of the screen, all four corner squares showing. The bigger the tool, the higher the phone. No flash, no lamp shadow. Do not move the tool."),
     ("FORM", "Open the form “CNC tray capture”: tag, height in mm, the photo. Done. The software reads the corner squares to know which paper you used and takes the tool's own outline from the photo. The tray regenerates; a rejected sheet comes back with one line saying why."),
 )
 CARD_EXCEPTIONS = (
