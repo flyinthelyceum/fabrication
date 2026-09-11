@@ -11,9 +11,10 @@ writes, beside this file:
     trace_sheet_<size>.pdf  one per paper size in ``SIZES`` (letter, a4,
                         tabloid, a3, a2, arch_b). Print at 100%. Four ArUco
                         tags (DICT_4X4_50) at the corners of the printable
-                        area, a trace window with a 1mm border, the TAG /
-                        HEIGHT boxes, the rules, a 100mm scale bar, all of it
-                        inside a 14mm gutter.
+                        area, a MAGENTA window with a 1mm border (white
+                        tools are a hole in the colour; see WINDOW_FILL),
+                        the four rules, a 100mm scale bar, all of it inside a
+                        14mm gutter. Print in colour.
     trace_sheet.pdf     the LETTER sheet again under its old name, so every
                         link and every printed reference to it still works.
     trace_sheet_<size>.png  each page rasterised (pdftoppm at RENDER_DPI when
@@ -316,39 +317,42 @@ FIELD_BORDER_W = 1.0
 """The window's border line, centred on the window boundary. The ingest crops
 inside it (``capture_ingest.FIELD_INSET``) so the line is never a contour."""
 
-BOX_H = 16.0
-BOX_W_MAX = 60.0
-BOX_GAP = 14.0
-BOX_H_BAND_FRAC = 0.55
-"""The two hand-filled boxes: as wide as the corridor allows up to
-``BOX_W_MAX``, ``BOX_GAP`` apart, sitting at the bottom of the top tag band so
-the sheet's title has the band's top half. ``BOX_H`` grows with the sheet but
-never takes more than ``BOX_H_BAND_FRAC`` of the band, which is what leaves
-the title room to grow too. Written by hand, read by a human: the Form carries
-the same two values for the machine."""
+WINDOW_FILL = "#EC008C"
+"""The window is a flat, saturated magenta (RGB 236, 0, 140: process
+magenta, prints from C0 M100 Y40 on any colour printer), so a white or
+light-grey tool (the white-capped Vactra bottle, a bare aluminium block) is
+a hole in the colour rather than white on white. The ingest keys on the
+hue (``capture_ingest.MAGENTA_HUE``) and falls back to grabCut when the
+window is white, so every sheet printed before 2026-09-11 still works. Tags,
+quiet zones, the scale bar and the rules stay on white: the markers want
+their contrast and the type wants to be read. SOURCE: Jared, 2026-09-11
+about 11:00. CONFIDENCE: choice; the printed hue is checked on the first
+colour print."""
+
+# The TAG and HEIGHT boxes were removed the same day: the Form carries both
+# and nothing reads them off the paper.
 
 SCALE_BAR_MM = 100.0
 """Print at 100% and this bar measures 100 with a ruler; if it does not, the
 sheet is scaled and every capture from it is wrong by the same ratio."""
 
 PRINT_CHECK_LINE = (
-    "Print at 100%.  If this bar is not 100mm, write the measured length here: ____ mm"
+    "Print in colour at 100%.  If this bar is not 100mm, write the measured length here: ____ mm"
 )
 
 RULES = (
-    "ONE TOOL, lying FLAT inside the window as it sits in the drawer, on its widest face, clear of "
-    "the border line. Write its TAG in the box.",
-    "MEASURE its tallest point above the paper in mm and write it in the HEIGHT box.",
-    "PHOTO from straight above, phone flat, high enough that the sheet is about a third of the screen, "
-    "all four corner squares in frame, no flash, the tool still on the sheet.",
-    "FORM: tag, height, photo. Does not fit the window: take a bigger sheet. A plain rectangular "
-    "slab: write L, W and thickness in the boxes instead.",
+    "LAY: one tool, flat inside the magenta window, on its widest face, as it sits in the drawer, "
+    "clear of the border.",
+    "MEASURE: its tallest point above the sheet, in mm, as it lies. A bottle on its side is its diameter.",
+    "SHOOT: from straight above, phone flat, the sheet about a third of the screen, all four corner "
+    "squares in frame, no flash.",
+    "SUBMIT: the form \u201cCNC tray capture\u201d: tag, height, photo. Does not fit the window: take a bigger sheet.",
 )
-"""The whole procedure, on the sheet, where the hand is: LAY, MEASURE, PHOTO,
-FORM. Four rules, wrapped to the bottom tag band's corridor at draw time.
-SOURCE: the photo capture, 2026-09-11, which retired the collar and the
-tracing (see capture_ingest). The v3 rules (collar, slot under 20mm) were
-here from 2026-09-04 to 2026-09-11."""
+"""The whole procedure, on the sheet, where the hand is: LAY, MEASURE, SHOOT,
+SUBMIT. Four lines, wrapped to the bottom tag band's corridor at draw time.
+SOURCE: the photo capture, 2026-09-11 (the magenta window and the four-step
+wording from about 11:00 that day). The v3 rules (collar, slot under 20mm)
+were here from 2026-09-04 to 2026-09-11."""
 
 RULE_FONT_PT = 7.0
 RULE_LEADING = 1.40
@@ -363,29 +367,29 @@ RENDER_DPI = 300
 CARD_TITLE = "CNC TRAY CAPTURE"
 CARD_SUB = "one tool, about a minute"
 CARD_STEPS = (
-    ("LAY", "Take a capture sheet: the smallest size the tool lies in with a finger's width of clear paper all round. Lay the tool FLAT inside the window, on its widest face, as it sits in the drawer, clear of the border line. Write its TAG (T0__, from the drawer label) in the TAG box."),
-    ("MEASURE", "Measure the tool's tallest point above the paper with the ruler, in mm. Write it in the HEIGHT box."),
-    ("PHOTO", "Stand over the sheet. Phone flat, high enough that the whole sheet is about a third of the screen, all four corner squares showing. The bigger the tool, the higher the phone. No flash, no lamp shadow. Do not move the tool."),
-    ("FORM", "Open the form “CNC tray capture”: tag, height in mm, the photo. Done. The software reads the corner squares to know which paper you used and takes the tool's own outline from the photo. The tray regenerates; a rejected sheet comes back with one line saying why."),
+    ("LAY", "Take a capture sheet: the smallest size the tool lies in with a finger's width of magenta all round. Lay the tool FLAT inside the magenta window, on its widest face, as it sits in the drawer, clear of the border. Note its TAG (T0__, from the drawer label)."),
+    ("MEASURE", "Measure the tool's tallest point above the sheet with the ruler, in mm, as it lies. A bottle on its side is its diameter."),
+    ("SHOOT", "Stand over the sheet. Phone flat, high enough that the whole sheet is about a third of the screen, all four corner squares showing. The bigger the tool, the higher the phone. No flash, no lamp shadow. Do not move the tool."),
+    ("SUBMIT", "Open the form \u201cCNC tray capture\u201d: tag, height in mm, the photo. Done. The software reads the corner squares to know which paper you used and takes the tool's own outline out of the magenta. The tray regenerates; a rejected sheet comes back with one line saying why."),
 )
 CARD_EXCEPTIONS = (
     ("IT DOES NOT FIT THE WINDOW",
-     "Take a bigger sheet: LETTER, then TABLOID. If the tool is a plain rectangular slab, do not photograph "
-     "it at all: write L, W and thickness in the boxes and submit the sheet."),
+     "Take a bigger sheet: LETTER, then TABLOID. Nothing that will not lie in a drawer gets a pocket, so "
+     "nothing bigger than TABLOID needs a sheet."),
     ("IT WILL NOT LIE FLAT, OR IT SHINES",
-     "A tool that rocks or stands on a knob throws its outline: prop it level with a scrap of card. A bright "
-     "reflection running along an edge can cut that edge off the outline: turn the sheet under the light and "
-     "shoot again. Look at the preview the software posts back."),
+     "A tool that rocks or stands on a knob throws its outline: prop it level with a scrap of card. Chrome "
+     "reflects the magenta and can lose an edge: turn the sheet under the light and shoot again. Look at the "
+     "preview the software posts back."),
 )
 CARD_FOOT = (
     "One tool per sheet.  Never a hand in the window, never a tool on its edge, never a lamp or a flash throwing a hard shadow.",
-    "Sheets and the ruler live in Drawer 1.  Print at 100%: the bar at the bottom must measure 100mm.",
+    "Sheets and the ruler live in Drawer 1.  Print in colour at 100%: the bar at the bottom must measure 100mm.",
 )
-"""The card, verbatim. It is the sheet's rules unfolded into the four things
-a hand does, in the order it does them, plus the two cases where the answer
-is not to photograph. SOURCE: the photo capture, 2026-09-11. The v3 card
-(SHEET / HEIGHT / LAY / TRACE / PHOTO / FORM, the collar and the gauge) ran
-from 2026-09-04 to 2026-09-11; Jared red-teamed the collar as too clunky."""
+"""The card, verbatim. It is the sheet's four lines unfolded into what a hand
+does, in the order it does it, plus the two cases where the answer is not
+to photograph. SOURCE: the photo capture, 2026-09-11. The v3 card (SHEET /
+HEIGHT / LAY / TRACE / PHOTO / FORM, the collar and the gauge) ran from
+2026-09-04 to 2026-09-11; Jared red-teamed the collar as too clunky."""
 
 
 def marker_image(tag_id: int, px: int = 600) -> np.ndarray:
@@ -423,9 +427,11 @@ def _layout_rules(width_mm: float, height_mm: float, pt_max: float) -> tuple[flo
     return best
 
 
-def draw_sheet(spec: SheetSpec, pdf_path: Path, png_path: Path | None = None) -> list[Path]:
+def draw_sheet(spec: SheetSpec, pdf_path: Path, png_path: Path | None = None, window_fill: str = WINDOW_FILL) -> list[Path]:
     """Lay one size out in matplotlib in sheet mm (y down) and write the PDF,
-    plus a PNG when asked. Returns the paths written."""
+    plus a PNG when asked. Returns the paths written. ``window_fill`` is the
+    window's colour; ``"white"`` reproduces the pre-magenta sheet, which the
+    tests use to exercise the grabCut path."""
     import matplotlib
 
     matplotlib.use("Agg")
@@ -442,10 +448,10 @@ def draw_sheet(spec: SheetSpec, pdf_path: Path, png_path: Path | None = None) ->
     ax.set_aspect("equal")
     ax.axis("off")
 
-    # the window and its 1mm border
+    # the window, filled, and its 1mm border
     fx0, fy0, fx1, fy1 = spec.field_rect()
     ax.add_patch(
-        Rectangle((fx0, fy0), spec.field_w, spec.field_h, fill=False,
+        Rectangle((fx0, fy0), spec.field_w, spec.field_h, fc=window_fill,
                   lw=FIELD_BORDER_W * PT, ec="black", joinstyle="miter")
     )
 
@@ -465,25 +471,16 @@ def draw_sheet(spec: SheetSpec, pdf_path: Path, png_path: Path | None = None) ->
     # no "id N" caption under a marker: it collided with the size line under
     # the window, and that line already names the quartet
 
-    # ---- the top tag band's corridor: the title, then the two hand boxes.
+    # ---- the top tag band's corridor: the title, centred in the band (the
+    # TAG and HEIGHT boxes that sat under it are gone; the Form carries both).
     # Type grows with the sheet, because a bigger sheet is read further away.
     k = spec.page_h / LETTER.page_h
     band_top = MARGIN
-    box_h = min(BOX_H * k, BOX_H_BAND_FRAC * spec.tag_mm)
-    title_band = spec.tag_mm - box_h
+    title_band = spec.tag_mm
     title = f"CAPTURE SHEET  ·  {spec.name.replace('_', ' ')}  {spec.page_w:.0f} x {spec.page_h:.0f} mm"
-    title_pt = _fit_font(spec.corridor_w - 6.0, title, title_band * 0.72 / 0.3528, per_char_em=0.62)
+    title_pt = _fit_font(spec.corridor_w - 6.0, title, title_band * 0.42 / 0.3528, per_char_em=0.62)
     ax.text(spec.corridor_x0 + 3.0, band_top + title_band / 2, title,
             ha="left", va="center", fontsize=title_pt, fontweight="bold")
-
-    box_w = min(BOX_W_MAX * k, (spec.corridor_w - BOX_GAP * k) / 2)
-    boxes_x = spec.corridor_x0 + (spec.corridor_w - (2 * box_w + BOX_GAP * k)) / 2
-    box_y = band_top + spec.tag_mm - box_h
-    for i, (label, blank) in enumerate((("TAG", "T0 _ _"), ("HEIGHT", "_ _"))):
-        bx = boxes_x + i * (box_w + BOX_GAP * k)
-        ax.add_patch(Rectangle((bx, box_y), box_w, box_h, fill=False, lw=0.5 * PT, ec="black"))
-        ax.text(bx + 2 * k, box_y + box_h / 2, label, ha="left", va="center", fontsize=7 * k, fontweight="bold")
-        ax.text(bx + box_w - 3 * k, box_y + box_h / 2, blank, ha="right", va="center", fontsize=11 * k, family="monospace")
 
     # ---- the strip under the window: what this sheet IS, and where it came
     # from. No tag reaches this band, so it runs the full printable width.
@@ -495,7 +492,7 @@ def draw_sheet(spec: SheetSpec, pdf_path: Path, png_path: Path | None = None) ->
             f"largest tool {max_l:.0f} x {max_w:.0f}   corner squares {spec.tag_ids[0]}-{spec.tag_ids[3]}",
             ha="left", va="center", fontsize=min(5.5 * k, strip_cap), color="0.25")
     ax.text(spec.page_w - MARGIN, strip_y,
-            "tool capture sheet v3, 2026-09-11  |  tools/trace_sheet.py",
+            "tool capture sheet v4, 2026-09-11 (magenta)  |  tools/trace_sheet.py",
             ha="right", va="center", fontsize=min(4.5 * k, strip_cap), color="0.5")
 
     # ---- the bottom tag band's corridor: the scale bar, the print check, the
@@ -571,7 +568,7 @@ def draw_card(pdf_path: Path) -> Path:
     ax.plot([14, W - 14], [y - 5, y - 5], color="black", lw=0.8)
     for j, line in enumerate(CARD_FOOT):
         ax.text(14, y + 2 + j * 7, line, fontsize=8.5, ha="left", va="center", color="0.15")
-    ax.text(W - 14, H - 10, "tools/trace_sheet.py  |  capture card v3, 2026-09-11", fontsize=6, ha="right", va="center", color="0.5")
+    ax.text(W - 14, H - 10, "tools/trace_sheet.py  |  capture card v4, 2026-09-11", fontsize=6, ha="right", va="center", color="0.5")
     # matplotlib wraps to the figure edge; keep the step text inside the gutter
     for t in ax.texts:
         t._get_wrap_line_width = lambda: (W - 29 - 14) * MM * fig.dpi

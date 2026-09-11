@@ -32,6 +32,13 @@ PHOTO SOURCE
     P6. The residual gate: at D 262 a 50 x 30 tool 16 tall passes (0.76mm)
         and the 100 x 50 stadium 40 tall rejects (3.8mm), naming the D to
         use. Heights arrive as "16mml" and "40.00".
+    P7. The magenta window (the committed sheet, 2026-09-11 11:00 on): a
+        white stadium and a light grey shiny one, with shadow and highlight,
+        keyed on chroma and recovered within 0.5mm; field_kind says magenta
+        on that sheet and white on the white one.
+
+P1 to P6 render the sheet with a WHITE window (``sheet_png(magenta=False)``)
+so the grabCut path keeps being exercised; so does every trace-source case.
 
 TRACE SOURCE (history; every call passes source="trace")
 
@@ -86,14 +93,23 @@ STROKE_MM = 1.0
 TOL_MM = 0.3
 
 
-def sheet_png(spec: sheet.SheetSpec = sheet.LETTER, tmp: Path | None = None) -> np.ndarray:
-    """One size's page, rasterised at DPI. The committed PNG beside this file
-    is used when it is there; otherwise the PDF is regenerated into ``tmp``."""
-    png = HERE / f"trace_sheet_{spec.slug}.png"
-    if not png.exists():
-        out = tmp or HERE
-        sheet.draw_sheet(spec, out / f"trace_sheet_{spec.slug}.pdf", out / f"trace_sheet_{spec.slug}.png")
-        png = out / f"trace_sheet_{spec.slug}.png"
+def sheet_png(spec: sheet.SheetSpec = sheet.LETTER, tmp: Path | None = None, magenta: bool = False) -> np.ndarray:
+    """One size's page, rasterised at DPI. ``magenta`` is the committed sheet
+    (the magenta window, 2026-09-11 11:00 on); the default is the same page
+    with a WHITE window, rendered once into ``tmp``, which is what the trace
+    source and the grabCut path are for."""
+    if magenta:
+        png = HERE / f"trace_sheet_{spec.slug}.png"
+        if not png.exists():
+            out = tmp or HERE
+            sheet.draw_sheet(spec, out / f"trace_sheet_{spec.slug}.pdf", out / f"trace_sheet_{spec.slug}.png")
+            png = out / f"trace_sheet_{spec.slug}.png"
+    else:
+        assert tmp is not None, "the white-window render goes to the scratch directory, never beside the module"
+        out = tmp
+        png = out / f"white_sheet_{spec.slug}.png"
+        if not png.exists():
+            sheet.draw_sheet(spec, out / f"white_sheet_{spec.slug}.pdf", png, window_fill="white")
     img = cv2.imread(str(png), cv2.IMREAD_COLOR)
     assert img is not None, png
     assert abs(img.shape[1] / spec.page_w - PX) < 0.05, (img.shape, PX)
@@ -180,14 +196,14 @@ why the card says no flash and no lamp shadow."""
 
 
 def photo_case(name: str, tmp: Path, D: float, draw, spec: sheet.SheetSpec = sheet.LETTER,
-               nadir: tuple[float, float] | None = None, roll: float = 5.0, exif: bool = True) -> Path:
+               nadir: tuple[float, float] | None = None, roll: float = 5.0, exif: bool = True, magenta: bool = False) -> Path:
     """A frame from a phone held flat at height ``D`` over the sheet, its
     optical axis through ``nadir`` (sheet mm), rolled ``roll`` degrees about
     that axis. ``draw(canvas, to_px)`` draws on the frame; ``to_px(pts_mm,
     h)`` maps sheet-mm points at height h above the paper to frame pixels by
     the pinhole model: C + (p - nadir) * f_px / (D - h). Written as JPEG with
     FocalLengthIn35mmFilm = F35 in its Exif IFD, or as PNG without EXIF."""
-    page = sheet_png(spec, tmp)
+    page = sheet_png(spec, tmp, magenta=magenta)
     f_px = F35 * math.hypot(PHONE_W, PHONE_H) / ci.FRAME_DIAG_MM
     k0 = f_px / D
     C = np.array([PHONE_W / 2, PHONE_H / 2], dtype=np.float64)
@@ -218,11 +234,20 @@ def photo_case(name: str, tmp: Path, D: float, draw, spec: sheet.SheetSpec = she
     return p
 
 
+TOOL_DARK = ((74, 72, 70), 235, (150, 148, 146))
+TOOL_WHITE = ((248, 246, 244), 255, (226, 224, 222))
+TOOL_GREY = ((200, 198, 196), 252, (172, 170, 168))
+"""(body BGR, highlight peak, patch BGR): a dark steel tool, a white plastic
+one (the Vactra cap), a light shiny one (bare aluminium)."""
+
+
 def draw_photo_tool(canvas: np.ndarray, to_px, outline_mm: np.ndarray, h_edge: float,
-                    pencil_out_mm: float | None = None, highlight: bool = True) -> None:
-    """A dark tool with a soft shadow, a soft highlight streak along it and a
-    lighter patch, its silhouette edge at ``h_edge``; optionally a pencil
-    line on the paper ``pencil_out_mm`` outside it."""
+                    pencil_out_mm: float | None = None, highlight: bool = True, tool=TOOL_DARK) -> None:
+    """A tool with a soft shadow, a soft highlight streak along it and a
+    patch of another tone, its silhouette edge at ``h_edge``; optionally a
+    pencil line on the paper ``pencil_out_mm`` outside it. ``tool`` picks
+    the tones (TOOL_DARK, TOOL_WHITE, TOOL_GREY)."""
+    body, peak, patch_colour = tool
     if pencil_out_mm is not None:
         cx, cy = outline_mm.mean(axis=0)
         ring = stadium(cx, cy, TOOL_L + 2 * pencil_out_mm, TOOL_W + 2 * pencil_out_mm)
@@ -234,7 +259,7 @@ def draw_photo_tool(canvas: np.ndarray, to_px, outline_mm: np.ndarray, h_edge: f
     sh = cv2.GaussianBlur(sh, (41, 41), 0)
     canvas[:] = (canvas.astype(np.float32) * (1 - SHADOW * sh[..., None])).astype(np.uint8)
     poly = np.round(to_px(outline_mm, h_edge) * (1 << DRAW_SHIFT)).astype(np.int32)
-    cv2.fillPoly(canvas, [poly], (74, 72, 70), cv2.LINE_AA, shift=DRAW_SHIFT)
+    cv2.fillPoly(canvas, [poly], body, cv2.LINE_AA, shift=DRAW_SHIFT)
     if highlight:
         (cx, cy), (rw, rh), ang = cv2.minAreaRect(to_px(outline_mm, h_edge).astype(np.float32))
         a = math.radians(ang + (90 if rw < rh else 0))
@@ -246,9 +271,9 @@ def draw_photo_tool(canvas: np.ndarray, to_px, outline_mm: np.ndarray, h_edge: f
         hl = np.zeros(canvas.shape[:2], np.float32)
         cv2.line(hl, tuple(np.round(c0 - d * L / 2).astype(int)), tuple(np.round(c0 + d * L / 2).astype(int)), 1.0, max(int(W * 0.06), 3))
         hl = cv2.GaussianBlur(hl, (21, 21), 0)
-        canvas[:] = np.clip(canvas.astype(np.float32) + hl[..., None] * (235 - 74), 0, 255).astype(np.uint8)
+        canvas[:] = np.clip(canvas.astype(np.float32) + hl[..., None] * (peak - body[0]), 0, 255).astype(np.uint8)
         patch = to_px(outline_mm.mean(axis=0) + np.array([[-8, -6], [8, -6], [8, 6], [-8, 6]]), h_edge)
-        cv2.fillPoly(canvas, [np.round(patch).astype(np.int32)], (150, 148, 146), cv2.LINE_AA)
+        cv2.fillPoly(canvas, [np.round(patch).astype(np.int32)], patch_colour, cv2.LINE_AA)
 
 
 def field_centre(spec: sheet.SheetSpec = sheet.LETTER) -> tuple[float, float]:
@@ -329,7 +354,7 @@ def test_print_scale(tmp: Path) -> None:
     at its true size), so it is drawn at the ORIGINAL density (``PX``),
     positioned wherever the field centre landed once the raster shrank."""
     print_scale = 0.94
-    img = sheet_png()
+    img = sheet_png(tmp=tmp)
     h, w = img.shape[:2]
     scaled = cv2.resize(img, (int(round(w * print_scale)), int(round(h * print_scale))), interpolation=cv2.INTER_AREA)
 
@@ -504,6 +529,30 @@ def test_photo_residual_gate(tmp: Path) -> None:
     print(f"  big tool (100 x 50, h 40 from '40.00') at D {D:g}: rejected, '{r.reason}'")
 
 
+def test_photo_magenta(tmp: Path) -> None:
+    """The magenta window (the committed sheet): a WHITE stadium and a light
+    grey shiny one, both with the shadow (darker magenta) and the highlight,
+    keyed on chroma and recovered within 0.5mm; the preview names the field."""
+    D = PHOTO_D
+    h_edge = ci.H_EFF_FRAC * TOOL_H
+    cx, cy = field_centre()
+    outline = stadium(cx, cy, TOOL_L, TOOL_W)
+    for label, tool in (("white", TOOL_WHITE), ("light grey shiny", TOOL_GREY)):
+        p = photo_case(f"magenta_{label.split()[0]}", tmp, D, lambda im, to: draw_photo_tool(im, to, outline, h_edge, tool=tool), nadir=(cx + 30, cy - 20), magenta=True)
+        r = ci.ingest(p, "T999", 20, out_dir=tmp / f"captures_magenta_{label.split()[0]}", csv_path=None)
+        _check_photo(r, D, f"P7 magenta, {label} tool")
+        print(f"  P7 magenta window, {label} tool: L {r.L:.3f} W {r.W:.3f}, D read {r.D:.1f}")
+    # the field detector on both sheets
+    for magenta in (True, False):
+        img = sheet_png(sheet.LETTER, tmp, magenta=magenta)
+        x0, y0, x1, y1 = sheet.LETTER.field_rect()
+        crop = img[int((y0 + 3) * PX):int((y1 - 3) * PX), int((x0 + 3) * PX):int((x1 - 3) * PX)]
+        hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+        kind, hue = ci.field_kind(hsv, int(ci.BORDER_BAND_MM * PX))
+        assert kind == ("magenta" if magenta else "white"), (magenta, kind, hue)
+        print(f"  field_kind on the {'magenta' if magenta else 'white'} sheet: {kind}" + (f", hue {hue} (OpenCV units; {hue * 2} degrees)" if hue else ""))
+
+
 def test_photo_rejects(tmp: Path) -> None:
     D = PHOTO_D
     h_edge = ci.H_EFF_FRAC * TOOL_H
@@ -587,6 +636,8 @@ def main() -> int:
     test_photo_rejects(tmp)
     print("P6. the residual gate at D 262")
     test_photo_residual_gate(tmp)
+    print("P7. the magenta window: white and light-grey tools by chroma key")
+    test_photo_magenta(tmp)
     print("TRACE SOURCE (history)")
     print("0a. the two shared constants")
     test_constants()

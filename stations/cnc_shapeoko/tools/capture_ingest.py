@@ -26,7 +26,13 @@ THE PHOTO PIPELINE
        PX_PER_MM, warp the photo into the sheet frame, crop the window inside
        its border line, white out any tag square that overlaps the crop
        (``_locate``, ``rectify``, ``field_crop``; shared with the trace path)
-    -> SEGMENT the tool against the paper (``segment_tool``). One Otsu is not
+    -> SEGMENT the tool against the window (``segment_tool``). Which window
+       is read off a band just inside it: MAGENTA (sheets from 2026-09-11
+       11:00 on, ``trace_sheet.WINDOW_FILL``) is a CHROMA KEY, every pixel
+       whose hue is off the field's or whose saturation is too low to be the
+       field is tool, and a shadow (darker magenta, same hue, still
+       saturated) stays background; a WHITE window (every sheet before that)
+       takes the grabCut path below, unchanged. On white one Otsu is not
        enough: a metal tool has highlights as bright as the paper and casts a
        soft shadow darker than the paper, so the threshold is only the SEED.
        Seed: darkness-or-saturation score, Otsu, opened at 2 x PENCIL_MM so a
@@ -301,6 +307,32 @@ CONFIDENCE: rule."""
 HEIGHT_CLASSES = sheet.GAUGE_SLOTS
 
 # ---- photo source
+
+MAGENTA_HUE = (150, 175)
+"""The window is magenta when the median hue of the saturated pixels in the
+border band lands in this window, in OpenCV's 0-179 hue units (300 to 350
+degrees). Process magenta prints at about 325 degrees (162), a phone's white
+balance and a warm shop light move it 10 degrees either way, and the printer's
+inks another few. Red is at 0/180 and blue at 120, both well outside.
+CONFIDENCE: estimate; verified on the synthetic sheet, to be checked on the
+first colour print."""
+
+FIELD_SAT_MIN = 90
+"""A pixel below this saturation (of 255) is not the magenta field whatever
+its hue: a white tool, a grey tool, a chrome highlight, a pencil line. The
+printed field sits near 200; a shadow on it keeps its saturation.
+CONFIDENCE: estimate."""
+
+FIELD_FRAC = 0.6
+"""Fraction of the border band that has to be magenta for the window to
+count as magenta. A tool lying across the band takes some of it; a white
+sheet has none. CONFIDENCE: rule."""
+
+HUE_TOL = 12
+"""How far a pixel's hue may sit from the band's median hue (OpenCV units,
+about 24 degrees) and still be field: the printed magenta is flat, and a
+tool of any colour but magenta is further off than this. CONFIDENCE:
+estimate."""
 
 GRABCUT_PX_PER_MM = 5.0
 """grabCut runs on the colour crop downsampled to this: 0.2mm a pixel, 900 x
@@ -858,14 +890,67 @@ def _paper_model(V: np.ndarray, band: int) -> np.ndarray:
     return (design(gx.ravel().astype(np.float64), gy.ravel().astype(np.float64)) @ coef).reshape(h, w)
 
 
-def segment_tool(crop_bgr: np.ndarray) -> tuple[np.ndarray, str]:
-    """The tool against the paper as 255 on 0, at the crop's resolution
-    (PX_PER_MM), or ("", reason). See THE PHOTO PIPELINE."""
+def field_kind(hsv: np.ndarray, band: int) -> tuple[str, int]:
+    """("magenta", median hue) when the border band is the magenta field,
+    else ("white", 0). See MAGENTA_HUE."""
+    h, w = hsv.shape[:2]
+    m = np.zeros((h, w), bool)
+    m[:band, :] = True
+    m[-band:, :] = True
+    m[:, :band] = True
+    m[:, -band:] = True
+    hue = hsv[:, :, 0][m].astype(int)
+    sat = hsv[:, :, 1][m].astype(int)
+    val = hsv[:, :, 2][m].astype(int)
+    magenta = (hue >= MAGENTA_HUE[0]) & (hue <= MAGENTA_HUE[1]) & (sat > FIELD_SAT_MIN) & (val > 40)
+    if magenta.mean() < FIELD_FRAC:
+        return "white", 0
+    return "magenta", int(np.median(hue[magenta]))
+
+
+def _mask_chroma(hsv: np.ndarray, h0: int) -> np.ndarray:
+    """Tool = not the field. The field is every pixel within HUE_TOL of the
+    band's hue and saturated above FIELD_SAT_MIN; a shadow is darker but the
+    same hue and still saturated, so it is field."""
+    hue = hsv[:, :, 0].astype(int)
+    dh = np.abs(hue - h0)
+    dh = np.minimum(dh, 180 - dh)
+    field = (dh <= HUE_TOL) & (hsv[:, :, 1] > FIELD_SAT_MIN)
+    return ((~field) * 255).astype(np.uint8)
+
+
+def segment_tool(crop_bgr: np.ndarray) -> tuple[np.ndarray, str, str]:
+    """The tool against the window as 255 on 0, at the crop's resolution
+    (PX_PER_MM), the reason if there is none, and which field it was
+    ("magenta" or "white"). See THE PHOTO PIPELINE."""
     s = GRABCUT_PX_PER_MM / PX_PER_MM
     small = cv2.resize(crop_bgr, None, fx=s, fy=s, interpolation=cv2.INTER_AREA)
     g = GRABCUT_PX_PER_MM
     hsv = cv2.cvtColor(small, cv2.COLOR_BGR2HSV)
     band = int(round(BORDER_BAND_MM * g))
+    field, h0 = field_kind(hsv, band)
+    if field == "magenta":
+        fg = _mask_chroma(hsv, h0)
+        fg[:2, :] = 0
+        fg[-2:, :] = 0
+        fg[:, :2] = 0
+        fg[:, -2:] = 0
+        return _finish_mask(fg, g, crop_bgr.shape), "", field
+    return _segment_white(small, hsv, band, g, crop_bgr.shape)
+
+
+def _finish_mask(fg: np.ndarray, g: float, shape: tuple[int, ...]) -> np.ndarray:
+    """The morphology both fields share, then back up to PX_PER_MM."""
+    fg = cv2.morphologyEx(fg, cv2.MORPH_OPEN, _disk(PENCIL_MM, g))          # pencil lines off, hugging ones detached
+    fg = cv2.morphologyEx(fg, cv2.MORPH_CLOSE, _disk(HIGHLIGHT_CLOSE_MM, g))  # highlight gaps bridged
+    # what is thin everywhere (a retraced loop) and what is a piece of the
+    # tool is decided by the caller against the tool's body: see MERGE_MM
+    up = cv2.resize(fg, (shape[1], shape[0]), interpolation=cv2.INTER_LINEAR)
+    return ((up >= 128) * 255).astype(np.uint8)
+
+
+def _segment_white(small: np.ndarray, hsv: np.ndarray, band: int, g: float, shape: tuple[int, ...]) -> tuple[np.ndarray, str, str]:
+    """The white-window path: paper model, seed, grabCut."""
     # the seed: darker than the paper would be here, or saturated
     paper = _paper_model(hsv[:, :, 2], band)
     dark = (paper - hsv[:, :, 2].astype(np.float64)) > PAPER_DARK_FRAC * np.maximum(paper, 1.0)
@@ -883,7 +968,7 @@ def segment_tool(crop_bgr: np.ndarray) -> tuple[np.ndarray, str]:
     n, labels, stats, _c = cv2.connectedComponentsWithStats((thick > 0).astype(np.uint8))
     big = [i for i in range(1, n) if stats[i, cv2.CC_STAT_AREA] >= MIN_TOOL_MM2 * g * g]
     if not big:
-        return np.zeros(crop_bgr.shape[:2], np.uint8), "no tool found in the window: lay the tool flat inside the window and photograph it in place"
+        return np.zeros(shape[:2], np.uint8), "no tool found in the window: lay the tool flat inside the window and photograph it in place", "white"
     seed = _keep_thick(cv2.morphologyEx(seed, cv2.MORPH_OPEN, _disk(PENCIL_MM, g)), 2 * PENCIL_MM, g)
     pr_fg = cv2.erode(seed, _disk(2 * SEED_ERODE_MM, g))
     sure_fg = cv2.erode(seed, _disk(2 * SEED_SURE_MM, g))
@@ -903,13 +988,7 @@ def segment_tool(crop_bgr: np.ndarray) -> tuple[np.ndarray, str]:
     fg = (np.isin(mask, (cv2.GC_FGD, cv2.GC_PR_FGD)) * 255).astype(np.uint8)
     penumbra = ((paper - hsv[:, :, 2].astype(np.float64)) < SHADOW_FRAC * np.maximum(paper, 1.0)) & (hsv[:, :, 1] <= SAT_MIN)
     fg[penumbra] = 0                                                         # shadow is paper (see SHADOW_FRAC)
-
-    fg = cv2.morphologyEx(fg, cv2.MORPH_OPEN, _disk(PENCIL_MM, g))          # pencil lines off, hugging ones detached
-    fg = cv2.morphologyEx(fg, cv2.MORPH_CLOSE, _disk(HIGHLIGHT_CLOSE_MM, g))  # highlight gaps bridged
-    # what is thin everywhere (a retraced loop) and what is a piece of the
-    # tool is decided by the caller against the tool's body: see MERGE_MM
-    up = cv2.resize(fg, (crop_bgr.shape[1], crop_bgr.shape[0]), interpolation=cv2.INTER_LINEAR)
-    return ((up >= 128) * 255).astype(np.uint8), ""
+    return _finish_mask(fg, g, shape), "", "white"
 
 
 def _height_class(height_mm: float) -> float:
@@ -949,7 +1028,7 @@ def _ingest_photo(img: np.ndarray, image_path: Path, tag: str, height_mm: float,
 
     rect = rectify(img, tags, spec, H)
     crop, origin = field_crop(rect, spec)
-    mask, why = segment_tool(crop)
+    mask, why, field = segment_tool(crop)
     if why:
         return _reject(why, spec.name)
 
@@ -1008,7 +1087,7 @@ def _ingest_photo(img: np.ndarray, image_path: Path, tag: str, height_mm: float,
     _write_dxf(pocket_local, dxf_path)
     _write_preview(
         rect, sil_mm, pocket_sheet,
-        f"{tag}  {spec.name}  L {L:.1f}  W {W:.1f}  H {height_mm:g} (class {height_class:g})  D {D:.0f}  h_eff {h_eff:g}  resid {residual:.2f}  {len(tags)} tags  print_scale {print_scale:.3f}",
+        f"{tag}  {spec.name} {field}  L {L:.1f}  W {W:.1f}  H {height_mm:g} (class {height_class:g})  D {D:.0f}  h_eff {h_eff:g}  resid {residual:.2f}  {len(tags)} tags  print_scale {print_scale:.3f}",
         preview_path, spec,
     )
     if csv_path is not None:
