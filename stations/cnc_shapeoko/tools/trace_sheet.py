@@ -1,6 +1,7 @@
-"""The trace sheets and the tracing collar: the physical
-things a tool capture needs (spec v3, 2026-09-04; the sheet family added the
-same day).
+"""The capture sheets, the card and (for history) the tracing collar: the
+physical things a tool capture needs (spec v3, 2026-09-04; the sheet family
+added the same day; the photo capture replaced tracing on 2026-09-11, so the
+sheets' rules and the card now read LAY / MEASURE / PHOTO / FORM).
 
     PYTHONPATH=. .venv/bin/python stations/cnc_shapeoko/tools/trace_sheet.py
     PYTHONPATH=. .venv/bin/python stations/cnc_shapeoko/tools/trace_sheet.py --size TABLOID
@@ -21,11 +22,12 @@ writes, beside this file:
                         10/20/30/40/50 wide, open at the top and through the
                         block's depth. A tool that slides into the 20 and not
                         the 10 is height class 20. Labels embossed.
-    tracing_collar.stl  the TRACE collar: a 14.0 OD cylinder a standard hex
-                        pencil rides in, so the contact surface against the
-                        tool is a cylinder of known radius whatever the tool's
-                        height or the pencil's taper. PEN_R in
-                        ``capture_ingest`` is this collar's radius.
+    tracing_collar.stl  the TRACE collar, RETIRED 2026-09-11 with the trace
+                        capture (the photo capture reads the tool's own
+                        silhouette; see ``capture_ingest``). Still generated
+                        so the v1 captures' history stays reproducible: a
+                        14.0 OD cylinder a hex pencil rides in, PEN_R in
+                        ``capture_ingest`` its radius.
     capture_card.pdf    the laminated card: the procedure in large type, one
                         page, for Drawer 1 beside the sheets.
 
@@ -152,6 +154,11 @@ TRACE_INSET = 2.0
 never lands in the threshold image. Mirrors ``capture_ingest.FIELD_INSET``;
 ``test_capture`` asserts the two are equal. CONFIDENCE: rule."""
 
+CLEAR_PAPER = 3.0
+"""Paper the photo capture wants between the tool and the crop edge, so the
+silhouette has white on every side and never touches the edge (which
+rejects). CONFIDENCE: rule."""
+
 
 @dataclass(frozen=True)
 class SheetSpec:
@@ -238,11 +245,11 @@ class SheetSpec:
     # ---- what it will actually take -------------------------------------
 
     def max_tool(self) -> tuple[float, float]:
-        """The largest tool this sheet will take, mm, longer side first. The
-        collar rides ``COLLAR_OD / 2`` outside the tool, so the drawn loop is
-        one collar diameter bigger than the tool in each direction, and the
-        crop throws away ``TRACE_INSET`` at each edge."""
-        pad = COLLAR_OD + 2 * TRACE_INSET
+        """The largest tool this sheet will take, mm, longer side first: the
+        window less the crop's ``TRACE_INSET`` and ``CLEAR_PAPER`` of paper
+        the photo needs round the tool, each side. (Until 2026-09-11 the
+        collar's diameter was in here too.)"""
+        pad = 2 * (TRACE_INSET + CLEAR_PAPER)
         a, b = self.field_h - pad, self.field_w - pad
         return (max(a, b), min(a, b))
 
@@ -329,18 +336,19 @@ PRINT_CHECK_LINE = (
 )
 
 RULES = (
-    "ONE TOOL, lying as it sits in the drawer. Pencil in the TRACE collar, straight up like a "
-    "candle, collar riding the tool. Trace the OUTSIDE only.",
-    "IF IT DOES NOT FIT THE WINDOW: take a bigger sheet. If it is a plain rectangular slab, do "
-    "not trace it at all. Write L, W and thickness in the boxes and photograph the sheet.",
-    "A SLOT, THROAT OR GAP UNDER 20mm is narrower than the collar and the line cannot enter it. "
-    "If the tool has one, caliper that one dimension and write it on the sheet.",
+    "ONE TOOL, lying FLAT inside the window as it sits in the drawer, on its widest face, clear of "
+    "the border line. Write its TAG in the box.",
+    "MEASURE its tallest point above the paper in mm and write it in the HEIGHT box.",
+    "PHOTO from straight above, phone flat, at arm's length: the whole sheet with room round it, all "
+    "four corner squares in frame, no flash, the tool still on the sheet.",
+    "FORM: tag, height, photo. Does not fit the window: take a bigger sheet. A plain rectangular "
+    "slab: write L, W and thickness in the boxes instead.",
 )
-"""The whole procedure, on the sheet, where the hand is. Three rules, wrapped
-to the bottom tag band's corridor at draw time. The second and third came out
-of Jared's questions on 2026-09-04: the pendant that fits no window, and the
-wrench jaw the 14mm collar cannot get into. SOURCE: spec v3, amended
-2026-09-04."""
+"""The whole procedure, on the sheet, where the hand is: LAY, MEASURE, PHOTO,
+FORM. Four rules, wrapped to the bottom tag band's corridor at draw time.
+SOURCE: the photo capture, 2026-09-11, which retired the collar and the
+tracing (see capture_ingest). The v3 rules (collar, slot under 20mm) were
+here from 2026-09-04 to 2026-09-11."""
 
 RULE_FONT_PT = 7.0
 RULE_LEADING = 1.40
@@ -353,31 +361,31 @@ because a bigger sheet is photographed and read from further away."""
 RENDER_DPI = 300
 
 CARD_TITLE = "CNC TRAY CAPTURE"
-CARD_SUB = "one tool, about ninety seconds"
+CARD_SUB = "one tool, about a minute"
 CARD_STEPS = (
-    ("SHEET", "Take a trace sheet: the smallest size the tool lies in with a finger's width to spare. The size and its window are printed under the window. Write the tool's TAG (T0__, from the drawer label) in the TAG box."),
-    ("HEIGHT", "Slide the tool edge-on into the gauge. The smallest slot it enters is its height: 10, 20, 30, 40 or 50. Write it in the HEIGHT box."),
-    ("LAY", "Lay the tool inside the window, as it sits in the drawer. Clear of the border line and of the four corner squares."),
-    ("TRACE", "Pencil in the TRACE collar. Straight up like a candle, collar riding the tool. Trace the OUTSIDE only, all the way round, until the line meets itself."),
-    ("PHOTO", "Lift the tool off. Photograph the whole sheet from above: all four corner squares in frame, sheet flat, no shadow across the line."),
-    ("FORM", "Open the form “CNC tray capture”: tag, height, photo. Done. The software reads the corner squares to know which paper you used. The tray regenerates; a rejected sheet comes back with one line saying why."),
+    ("LAY", "Take a capture sheet: the smallest size the tool lies in with a finger's width of clear paper all round. Lay the tool FLAT inside the window, on its widest face, as it sits in the drawer, clear of the border line. Write its TAG (T0__, from the drawer label) in the TAG box."),
+    ("MEASURE", "Measure the tool's tallest point above the paper with the ruler, in mm. Write it in the HEIGHT box."),
+    ("PHOTO", "Stand over the sheet. Phone flat, arm's length up: the whole sheet in frame with room around it (about a third of the screen), all four corner squares showing. No flash, no lamp shadow. Do not move the tool."),
+    ("FORM", "Open the form “CNC tray capture”: tag, height in mm, the photo. Done. The software reads the corner squares to know which paper you used and takes the tool's own outline from the photo. The tray regenerates; a rejected sheet comes back with one line saying why."),
 )
 CARD_EXCEPTIONS = (
     ("IT DOES NOT FIT THE WINDOW",
-     "Take a bigger sheet: LETTER, A4, TABLOID, A3, ARCH B, A2. Remember the pencil rides 7mm outside "
-     "the tool, so leave 10mm of clear paper all round. If the tool is a plain rectangular slab, do not "
-     "trace it at all: write L, W and thickness in the boxes and photograph the sheet."),
-    ("IT HAS A SLOT, THROAT OR GAP UNDER 20mm",
-     "The collar is 14mm across and cannot enter one, so the line bridges it and the pocket comes out "
-     "solid there. Caliper that one dimension and write it on the sheet beside the boxes."),
+     "Take a bigger sheet: LETTER, then TABLOID. If the tool is a plain rectangular slab, do not photograph "
+     "it at all: write L, W and thickness in the boxes and submit the sheet."),
+    ("IT WILL NOT LIE FLAT, OR IT SHINES",
+     "A tool that rocks or stands on a knob throws its outline: prop it level with a scrap of card. A bright "
+     "reflection running along an edge can cut that edge off the outline: turn the sheet under the light and "
+     "shoot again. Look at the preview the software posts back."),
 )
 CARD_FOOT = (
-    "One tool per sheet.  Never a hand in the window, never a tool on its edge, never a tool that moved.",
-    "Sheets, collar, pencil and gauge live in Drawer 1.  Print at 100%: the bar at the bottom must measure 100mm.",
+    "One tool per sheet.  Never a hand in the window, never a tool on its edge, never a lamp or a flash throwing a hard shadow.",
+    "Sheets and the ruler live in Drawer 1.  Print at 100%: the bar at the bottom must measure 100mm.",
 )
-"""The card, verbatim. It is the sheet's rules unfolded into the six things a
-hand does, in the order it does them, plus the two cases where the answer is
-not to trace. SOURCE: spec v3, amended 2026-09-04."""
+"""The card, verbatim. It is the sheet's rules unfolded into the four things
+a hand does, in the order it does them, plus the two cases where the answer
+is not to photograph. SOURCE: the photo capture, 2026-09-11. The v3 card
+(SHEET / HEIGHT / LAY / TRACE / PHOTO / FORM, the collar and the gauge) ran
+from 2026-09-04 to 2026-09-11; Jared red-teamed the collar as too clunky."""
 
 
 def marker_image(tag_id: int, px: int = 600) -> np.ndarray:
@@ -463,7 +471,7 @@ def draw_sheet(spec: SheetSpec, pdf_path: Path, png_path: Path | None = None) ->
     band_top = MARGIN
     box_h = min(BOX_H * k, BOX_H_BAND_FRAC * spec.tag_mm)
     title_band = spec.tag_mm - box_h
-    title = f"TRACE SHEET  ·  {spec.name.replace('_', ' ')}  {spec.page_w:.0f} x {spec.page_h:.0f} mm"
+    title = f"CAPTURE SHEET  ·  {spec.name.replace('_', ' ')}  {spec.page_w:.0f} x {spec.page_h:.0f} mm"
     title_pt = _fit_font(spec.corridor_w - 6.0, title, title_band * 0.72 / 0.3528, per_char_em=0.62)
     ax.text(spec.corridor_x0 + 3.0, band_top + title_band / 2, title,
             ha="left", va="center", fontsize=title_pt, fontweight="bold")
@@ -487,7 +495,7 @@ def draw_sheet(spec: SheetSpec, pdf_path: Path, png_path: Path | None = None) ->
             f"largest tool {max_l:.0f} x {max_w:.0f}   corner squares {spec.tag_ids[0]}-{spec.tag_ids[3]}",
             ha="left", va="center", fontsize=min(5.5 * k, strip_cap), color="0.25")
     ax.text(spec.page_w - MARGIN, strip_y,
-            "tool capture sheet v2, 2026-09-04  |  tools/trace_sheet.py",
+            "tool capture sheet v3, 2026-09-11  |  tools/trace_sheet.py",
             ha="right", va="center", fontsize=min(4.5 * k, strip_cap), color="0.5")
 
     # ---- the bottom tag band's corridor: the scale bar, the print check, the
@@ -552,9 +560,9 @@ def draw_card(pdf_path: Path) -> Path:
         ax.text(19, y, str(i), fontsize=13, fontweight="bold", color="white", ha="center", va="center")
         ax.text(29, y - 1.5, word, fontsize=11.5, fontweight="bold", ha="left", va="center")
         ax.text(29, y + 6.0, text, fontsize=9, ha="left", va="top", wrap=True, linespacing=1.3)
-        y += 26
+        y += 32          # four steps, three lines of text each at most
     ax.plot([14, W - 14], [y - 10, y - 10], color="black", lw=1.5)
-    ax.text(14, y - 3, "WHEN NOT TO TRACE", fontsize=11.5, fontweight="bold", ha="left", va="center")
+    ax.text(14, y - 3, "WHEN NOT TO PHOTOGRAPH", fontsize=11.5, fontweight="bold", ha="left", va="center")
     y += 5
     for word, text in CARD_EXCEPTIONS:
         ax.text(14, y, word, fontsize=9.5, fontweight="bold", ha="left", va="center")
@@ -563,7 +571,7 @@ def draw_card(pdf_path: Path) -> Path:
     ax.plot([14, W - 14], [y - 5, y - 5], color="black", lw=0.8)
     for j, line in enumerate(CARD_FOOT):
         ax.text(14, y + 2 + j * 7, line, fontsize=8.5, ha="left", va="center", color="0.15")
-    ax.text(W - 14, H - 10, "tools/trace_sheet.py  |  capture card v2, 2026-09-04", fontsize=6, ha="right", va="center", color="0.5")
+    ax.text(W - 14, H - 10, "tools/trace_sheet.py  |  capture card v3, 2026-09-11", fontsize=6, ha="right", va="center", color="0.5")
     # matplotlib wraps to the figure edge; keep the step text inside the gutter
     for t in ax.texts:
         t._get_wrap_line_width = lambda: (W - 29 - 14) * MM * fig.dpi

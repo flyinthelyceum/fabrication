@@ -4,38 +4,52 @@ Canonical, editable list lives in the Google Sheet "CNC Station – Tool List v1
 `tool_list.csv` and `tool_list_add.csv` here are point-in-time snapshots of the Sheet's TRAY and ADD tabs, committed for the build123d tray generator to read.
 Regenerate by exporting the Sheet's TRAY tab (File > Download > CSV) over `tool_list.csv`, and the ADD tab over `tool_list_add.csv` — never hand-edit these snapshots, with one exception: `capture_ingest.py` upserts the row it just captured, and the same row lands in the Sheet through the CAPTURE tab, so the two stay in step. The ADD tab's subtotal rows (blank id) are dropped from the snapshot.
 
-## Capture (spec v3, approved 2026-09-04)
+## Capture (spec v3, approved 2026-09-04; photo capture 2026-09-11)
 
 Trays are milled from two-tone Kaizen foam on the Shapeoko, one piece per drawer. A pocket comes from one of three socket rules in `parts/trays.py` and nowhere else:
 
 - `cutter` — a CATALOG row: `oal_mm` by its largest diameter
 - `collet` — a CATALOG row: `oal_mm` by the DIN 6499 ER-16 body
-- `captured` — a CAPTURED row: the pocket IS the tool's traced outline, from `captures/T0xx.dxf`, at a depth of `height_class` plus `FOAM_DEPTH_ALLOW`
+- `captured` — a CAPTURED row: the pocket IS the tool's silhouette plus `FOAM_CLEAR`, from `captures/T0xx.dxf`, at a depth of `height_class` plus `FOAM_DEPTH_ALLOW`
 
-Everything that is not a cutter or a collet gets traced. The bounding-box-plus-clearance rule and its three caliper numbers are gone (ruled 2026-09-03, replaced 2026-09-04): a wrench is not a box.
+Everything that is not a cutter or a collet gets captured: the tool lies on a capture sheet, a phone photographs it, the software reads its outline. The bounding-box-plus-clearance rule and its three caliper numbers are gone (ruled 2026-09-03): a wrench is not a box.
+
+### The procedure (this is the laminated card, `capture_card.pdf`)
+
+1. **LAY.** Take a capture sheet: the smallest size the tool lies in with a finger's width of clear paper all round. Lay the tool FLAT inside the window, on its widest face, as it sits in the drawer, clear of the border line. Write its TAG (T0__, from the drawer label) in the TAG box.
+2. **MEASURE.** Measure the tool's tallest point above the paper with the ruler, in mm. Write it in the HEIGHT box.
+3. **PHOTO.** Stand over the sheet. Phone flat, arm's length up: the whole sheet in frame with room around it (about a third of the screen), all four corner squares showing. No flash, no lamp shadow. Do not move the tool.
+4. **FORM.** Open the form "CNC tray capture": tag, height in mm, the photo. Done. The software reads the corner squares to know which paper you used and takes the tool's own outline from the photo. The tray regenerates; a rejected sheet comes back with one line saying why.
+
+Two cases where the answer is not to photograph, both on the card:
+
+- **It does not fit the window.** Take a bigger sheet: LETTER, then TABLOID. If the tool is a plain rectangular slab, write L, W and thickness in the boxes and submit the sheet.
+- **It will not lie flat, or it shines.** A tool that rocks throws its outline: prop it level with a scrap of card. A bright reflection running along an edge can cut that edge off the outline: turn the sheet under the light and shoot again. Look at the preview the software posts back.
+
+One tool per sheet. Never a hand in the window, never a tool on its edge, never a lamp or a flash throwing a hard shadow. Sheets and the ruler live in Drawer 1. Print sheets at 100%: the bar at the bottom must measure 100mm.
+
+### Why the collar and the tracing are gone
+
+From 2026-09-04 to 2026-09-11 the procedure was SHEET / HEIGHT / LAY / TRACE / PHOTO / FORM: a pencil in a printed 14mm collar rode the tool and drew a line 7mm outside it, the tool was lifted off, the sheet photographed, and the ingest inset the line by half its width plus the collar's radius. Jared red-teamed it on 2026-09-11 as too clunky for a student to get right, and the first two student sheets that day proved it: both traced with a bare pencil against the tool, no collar, so the offset was unknowable and both were rejected. The photo capture removes the whole failure class. There is no offset to get wrong, no collar to lose, no slot the collar cannot enter, no gauge: the tool's own edge is the outline, and the height is a number off a ruler. The trace source stays in `capture_ingest.py` as `source="trace"`, unchanged, so T025 and T026 (captured that way) can be re-run; nothing new uses it. The collar's STL is still generated for the same reason.
 
 ### The sheet family, and why it stops at A2
 
-**A trace sheet never has to be bigger than the drawer.** Anything that will not lie in a drawer does not get a foam pocket, so it never gets traced. That is the whole sizing rule, and it is what sets the top of the family.
+**A capture sheet never has to be bigger than the drawer.** Anything that will not lie in a drawer does not get a foam pocket, so it never gets captured. That is the whole sizing rule, and it is what sets the top of the family.
 
-The drawers are `parts/drawers.py`. After the 2026-09-04 inset-front ruling every box is 259 wide outside; 18mm birch a side, 500mm slides, a front rabbet and a back set in one thickness with its own thickness behind it give the **clear interior 446 deep x 223 wide** (`drawers.interior`, same for all three boxes). A tool that fills that interior end to end does not draw a 446 x 223 line: the collar rides 7mm outside it, so the loop on the paper is **460 x 237**. The largest sheet's window has to hold that, not the tool.
+The drawers are `parts/drawers.py`. After the 2026-09-04 inset-front ruling every box is 259 wide outside; 18mm birch a side, 500mm slides, a front rabbet and a back set in one thickness with its own thickness behind it give the **clear interior 446 deep x 223 wide** (`drawers.interior`, same for all three boxes). The family was sized when the collar added 7mm a side to every tool; without it every window has 14mm more to give.
 
 | size | page mm | window mm | largest tool | tag ids | tag mm | what it is for |
 |---|---|---|---|---|---|---|
-| LETTER | 216 x 279 | 180 x 180 | 162 x 162 | 0–3 | 30 | the default. Most of the cutter and instrument drawers. |
-| A4 | 210 x 297 | 174 x 198 | 180 x 156 | 4–7 | 30 | the default where the paper is metric. |
-| TABLOID | 279 x 432 | 243 x 313 | 295 x 225 | 8–11 | 40 | the long-tool sheet: the jog pendant (228), a torque wrench, a long clamp. |
-| A3 | 297 x 420 | 261 x 301 | 283 x 243 | 12–15 | 40 | TABLOID's metric twin: wider, shorter. |
-| ARCH B | 305 x 457 | 269 x 338 | 320 x 251 | 20–23 | 40 | the plotter roll's size, where the shop has ARCH B and not TABLOID. |
-| A2 | 420 x 594 | 384 x 475 | 457 x 366 | 16–19 | 40 | the ceiling: the window covers the whole drawer interior plus the collar's halo, 14.6mm to spare on the long axis. |
+| LETTER | 216 x 279 | 180 x 180 | 170 x 170 | 0–3 | 30 | the default. Most of the cutter and instrument drawers. |
+| TABLOID | 279 x 432 | 243 x 313 | 303 x 233 | 8–11 | 40 | the long-tool sheet: the jog pendant (228), a torque wrench, a long clamp. |
 
-"Largest tool" is the window less one collar diameter and the crop's 2mm inset a side, so it is what will actually come back, not what will physically lie on the paper.
+"Largest tool" is the window less the crop's 2mm inset and 3mm of clear paper a side (`trace_sheet.CLEAR_PAPER`), so it is what will actually come back, not what will physically lie on the paper. RT4 (2026-09-04) trimmed A4, A3, ARCH B and A2 from the family; the shop prints on these two. The A2 argument (the window covers the whole drawer interior) is in `trace_sheet.py`'s docstring for when a tool longer than 303 turns up.
 
-Tag size is a documented constant per size, not a formula: 30mm on the two letter-class sheets, 40mm on the four big ones. It stops at 40 rather than growing to 50 on A2 because a bigger tag eats the window from both ends, and 50mm tags would leave A2's window at 454.6 against the 460 a full-interior tool draws. The window covering the drawer wins.
+Tag size is a documented constant per size, not a formula: 30mm on LETTER, 40mm on TABLOID, big enough to detect at arm's length and small enough to keep out of the window.
 
-Every sheet keeps the same 14mm gutter, the same 1mm window border, the same TAG and HEIGHT boxes, the same 100mm scale bar and the same three rules. The only things that change are the page, the tag size and the quartet.
+Every sheet keeps the same 14mm gutter, the same 1mm window border, the same TAG and HEIGHT boxes, the same 100mm scale bar and the same four rules. The only things that change are the page, the tag size and the quartet.
 
-Generate them with `PYTHONPATH=. .venv/bin/python stations/cnc_shapeoko/tools/trace_sheet.py`, or one at a time with `--size TABLOID`. `trace_sheet.pdf` stays the LETTER sheet under its old name so every existing link resolves; the family is `trace_sheet_<size>.pdf`.
+Generate them with `PYTHONPATH=. .venv/bin/python stations/cnc_shapeoko/tools/trace_sheet.py`, or one at a time with `--size TABLOID`. `trace_sheet.pdf` stays the LETTER sheet under its old name so every existing link resolves; the family is `trace_sheet_<size>.pdf`. The file names keep the word "trace" for the same reason.
 
 ### Self-identifying sheets
 
@@ -48,42 +62,23 @@ LETTER keeps ids 0–3 and keeps its exact v1 window (180 x 180 at 17.95, 48.0),
 
 A size counts as present at two detected markers, not one: a lone stray id out of a 50-marker dictionary is a detector false positive and should not reject an otherwise good capture. Two sizes at two markers each is `two different sheet sizes in frame` and rejects; no size at two markers is `no known sheet size found` and rejects.
 
-### The two limits the collar imposes
-
-- **14.0mm is the hard floor.** The collar's contact cylinder is `trace_sheet.COLLAR_OD` = 14.0 across, which is `2 x capture_ingest.PEN_R`. Nothing narrower than that exists as far as the trace is concerned, and every concave corner of the tool tighter than 7mm comes back as a 7mm fillet. That always makes the foam tongue smaller than the notch, never larger, so the tool still drops in.
-- **About 20mm is the practical floor for a slot.** A 14mm collar cannot be walked into a slot, throat or gap much narrower than 20mm without the pencil losing contact, so the line bridges it and the pocket comes out solid there. If the tool has one, caliper that one dimension and write it on the sheet. That is a rule on the sheet and on the card, not a note in this file.
-
-### The procedure (this is the laminated card, `capture_card.pdf`)
-
-1. **SHEET.** Take a trace sheet: the smallest size the tool lies in with a finger's width to spare. The size and its window are printed under the window. Write the tool's TAG (T0__, from the drawer label) in the TAG box.
-2. **HEIGHT.** Slide the tool edge-on into the gauge. The smallest slot it enters is its height: 10, 20, 30, 40 or 50. Write it in the HEIGHT box.
-3. **LAY.** Lay the tool inside the window, as it sits in the drawer. Clear of the border line and of the four corner squares.
-4. **TRACE.** Pencil in the TRACE collar. Straight up like a candle, collar riding the tool. Trace the OUTSIDE only, all the way round, until the line meets itself.
-5. **PHOTO.** Lift the tool off. Photograph the whole sheet from above: all four corner squares in frame, sheet flat, no shadow across the line.
-6. **FORM.** Open the form "CNC tray capture": tag, height, photo. Done. The software reads the corner squares to know which paper you used. The tray regenerates; a rejected sheet comes back with one line saying why.
-
-Two cases where the answer is not to trace, both on the sheet and on the card:
-
-- **It does not fit the window.** Take a bigger sheet, remembering the pencil rides 7mm outside the tool, so leave 10mm of clear paper all round. If the tool is a plain rectangular slab, do not trace it at all: write L, W and thickness in the boxes and photograph the sheet.
-- **It has a slot, throat or gap under 20mm.** The collar cannot enter one. Caliper that one dimension and write it on the sheet beside the boxes.
-
-One tool per sheet. Never a hand in the window, never a tool on its edge, never a tool that moved. Sheets, collar, pencil and gauge live in Drawer 1. Print sheets at 100%: the bar at the bottom must measure 100mm.
-
-### The pen rule
-
-The tracing tool is a standard wooden hex pencil (7mm across flats) in the printed TRACE collar (`tracing_collar.stl`): a 14.0mm OD contact cylinder with a hex bore, the lead exiting flush at the bottom face. The collar, not the pencil, rides the tool, so the drawn line's centreline is always the tool's outline offset outward by exactly the collar's radius, whatever the tool's height and however sharp the pencil. `capture_ingest.PEN_R = 7.0` is that radius (CONFIDENCE: design; verify with calipers on the printed collar once and correct it if the printer ran fat or thin). No other pen, no other collar: a bare pencil traces a line whose offset depends on the taper and the tool's height, and the pocket comes out wrong by an unknowable amount.
-
 ### What the ingest does
 
-`capture_ingest.py <image> <tag> <height>` (or `ingest(image_path, tag, height_slot, source="trace")`): finds the ArUco tags, reads the quartet to know which paper this is, rectifies the photo into that size's mm frame (three tags is the floor), crops the field, thresholds the pencil line, takes the largest closed contour, measures the line's own width from its hole, insets by half of that plus `PEN_R`, offsets by `FOAM_CLEAR` (1.0, settled by the fit test), and writes:
+`capture_ingest.py <image> <tag> <height_mm>` (or `ingest(image_path, tag, height, source="photo")`): finds the ArUco tags, reads the quartet to know which paper this is, rectifies the photo into that size's mm frame (three tags is the floor), crops the window, and then:
+
+- **segments the tool** against the paper with `cv2.grabCut`. One threshold is not enough: metal reflects (highlights as bright as the paper) and casts a soft shadow (darker than the paper). The threshold is only the seed: pixels more than 30% darker than a quadratic model of the paper's brightness fitted to the window's border band, or saturated, opened at twice a pencil line's width so a line already on the sheet cannot seed, eroded 1mm as probable foreground and 6mm as sure foreground; the border band is probable background, the paper outside the window sure background. grabCut refines the edge from colour. Then a 1mm open (pencil lines off, a line hugging the tool detached), a 1mm close (highlight gaps bridged), components that are thin everywhere at 2mm dropped whole (a retraced loop is thick but thin everywhere; a tool with a thin tip keeps its tip), holes filled (highlights), and any component within 3mm of the largest merged back (a piece of tool a highlight band cut off).
+- **corrects the perspective.** The four tags rectify the sheet plane exactly, but the tool's edge stands above it, so its silhouette is inflated away from the camera's nadir: `p' = c + (p - c) · D / (D - h)`. The correction is `p = c + (p' - c) · (D - h_eff) / D` with `h_eff = 0.5 x` the measured height (the widest edge of a real tool sits around mid-height; `FOAM_CLEAR` absorbs the residual; CONFIDENCE: estimate). D, the camera height, comes from the photo's EXIF: `D = f35 · S · image_diag_px / (43.27 · s_px)`, where f35 is FocalLengthIn35mmFilm, S and s_px the widest span between two detected tag corners in sheet mm and in the unwarped photo, and 43.27 the 35mm frame's diagonal (the form that is right for a 4:3 phone frame; on 3:2 it reduces to the long side over 36). The nadir c is the image centre mapped through the homography. No EXIF: D = 650 and the Result's reason says `camera height assumed 650`, which the digest shows. D under 300 rejects: the phone was too close and the h_eff estimate's error would pass `FOAM_CLEAR`. Both 2026-09-11 photos were shot at 212 and 308mm; with a 24mm-equivalent phone lens a LETTER sheet filling the frame means the phone is 20cm away, which is why the card says a third of the screen.
+- Douglas-Peucker at 0.3mm, `print_scale` if the sheet did not print at 100%, the pocket as the corrected outline offset by `FOAM_CLEAR` (1.0, settled by the fit test; build123d's arc offset, with a raster offset behind it for the concavity the kernel folds over), the height class as `ceil(height_mm / 10) x 10`, and writes:
 
 - `captures/T0xx.dxf` — the pocket, one closed loop, mm, laid with its long side along X and its box's corner at the origin
-- `captures/preview/T0xx.png` — the rectified sheet, the detected line in orange, the pocket in cyan, L / W / H in the corner. Look at this before trusting a capture.
-- the tag's row in `tool_list.csv`: `dims_status=CAPTURED`, `silhouette`, `height_class`, `bbox_l_mm` / `bbox_w_mm` (the tool's L and W, for the record; trays pack by the loop's own box)
+- `captures/preview/T0xx.png` — the rectified sheet, the detected silhouette in orange, the pocket in cyan, L / W / H, the height class and the D used in the corner. **Look at this before trusting a capture.**
+- the tag's row in `tool_list.csv`: `dims_status=CAPTURED`, `silhouette`, `height_class`, `bbox_l_mm` / `bbox_w_mm` (the tool's L and W), `bbox_h_mm` (the measured height in mm)
 
-It rejects, with one line and nothing written, when: two different sheet sizes are in the frame; no known quartet is in the frame; fewer than three tags of the identified size are found; the trace is not a closed loop; the trace touches the window edge (the message names the size and says to take a bigger sheet); a second trace in the window is more than a quarter of the largest's area.
+It rejects, with one line and nothing written, when: two different sheet sizes are in the frame; no known quartet is in the frame; fewer than three tags of the identified size are found; no component over 100mm² is in the window (`no tool found in the window`); the tool touches the window edge (the message names the size and says to take a bigger sheet); a second component in the window is more than a quarter of the largest's area (`two tools`); the camera was under 300mm from the sheet (`camera too close`); the height is over 50 (no such class) or not a number.
 
-`test_capture.py` runs the whole family end to end (every size rendered, warped about 20 degrees, identified from its own quartet, and a 50 x 100 stadium recovered within 0.3mm), the LETTER stadium case, a 94%-print case proving the same tool comes back correct with `--print-scale 0.94` and about 7% too big without it, and the five reject paths: `PYTHONPATH=. .venv/bin/python stations/cnc_shapeoko/tools/test_capture.py`.
+Two things the photo path cannot see, both visible in the preview: a specular band running the FULL length of an edge with a strip of tool beyond it wider than 3mm cuts that strip off (turn the sheet under the light, shoot again); a hard shadow from one lamp or a flash is read as tool along that side (about 1.5mm on the synthetic stadium; hence no flash, no lamp). Light-coloured tools (bare aluminium) have not been through it on a real photo yet: the seed wants 30% darker than paper or saturated, and a real trial is the check.
+
+`test_capture.py` runs the photo source (a modelled phone at D 450 with EXIF, the tool's edge rendered at h_eff about an off-centre nadir, with and without a pencil ring 3mm outside it, recovered within 0.5mm on both sheet sizes; a PNG without EXIF falling back to 650 and saying so; and six reject paths) and then the whole trace source as before (every size, the LETTER stadium, the 94% print, five reject paths, the tray): `PYTHONPATH=. .venv/bin/python stations/cnc_shapeoko/tools/test_capture.py`.
 
 If the sheet did not print at 100% (a printer's own margins forced a smaller scale), pass `--print-scale` — measured scale-bar length / 100, read off the line under the bar on the printed sheet — and the ingest corrects for it; every capture from an uncorrected scaled sheet is wrong by that same ratio.
 
@@ -93,32 +88,32 @@ If the sheet did not print at 100% (a printer's own margins forced a smaller sca
 
 | column | values | who writes it |
 |---|---|---|
-| `dims_status` | `CATALOG` (datasheet numbers: cutters, collets), `CAPTURED` (traced, silhouette on disk), `MEASURE` (nothing yet) | CATALOG by hand; CAPTURED by the ingest; MEASURE is the default |
-| `height_class` | 10, 20, 30, 40, 50: the gauge slot the tool passed | the ingest, from the Form |
+| `dims_status` | `CATALOG` (datasheet numbers: cutters, collets), `CAPTURED` (photographed, silhouette on disk), `MEASURE` (nothing yet) | CATALOG by hand; CAPTURED by the ingest; MEASURE is the default |
+| `height_class` | 10, 20, 30, 40, 50: the measured height rounded up to the next ten | the ingest, from the Form's height |
+| `bbox_h_mm` | the measured height, mm | the ingest, from the Form's height |
 | `silhouette` | `captures/T0xx.dxf`, relative to this directory | the ingest |
 
-`bbox_l_mm`, `bbox_w_mm`, `bbox_h_mm` stay in the schema as the ingest's record of L and W (and the old photo estimates); `trays.py` reads none of them. `socket_note` stays as a free note.
+`bbox_l_mm`, `bbox_w_mm` stay in the schema as the ingest's record of L and W; `trays.py` reads none of the three bbox columns. `socket_note` stays as a free note.
 
 ### The Form and the CAPTURE tab
 
-The Sheet's CAPTURE tab (columns `timestamp, tag, height_slot, photo_url, status, reason`) is the landing tab. `~/labnode-scripts/cnc-capture-ingest.py` reads rows whose `status` is blank, downloads the photo from Drive, runs the ingest, writes `status` (`captured` / `rejected` / `error`) and `reason` back, uploads the preview to `IC / CNC Station 2026 / 05 Capture / preview`, and puts one line in the 07:05 digest.
+The Sheet's CAPTURE tab (columns `timestamp, tag, height, photo_url, status, reason`) is the landing tab; `height` is the tool's measured mm as typed (the ingest strips anything that is not a digit, so "20mm" is 20). `~/labnode-scripts/cnc-capture-ingest.py` reads rows whose `status` is blank, downloads the photo from Drive, runs the ingest, writes `status` (`captured` / `rejected` / `error`) and `reason` back (an accepted capture's reason carries L, W, H and the class, plus `camera height assumed 650` when the photo had no EXIF), uploads the preview to `IC / CNC Station 2026 / 05 Capture / preview`, and puts one line in the 07:05 digest.
 
-The Form exists (built through the Forms API on 2026-09-11 from the Brophy Drive token, which authorizes `forms:batchUpdate`; the one thing the API refuses is creating a file-upload question, so that question was added by hand). Form id `1CLmlEu2w75Go0GjtxteJvdp2GKIq3jxkxWVq3KZ8eIU`, in IC / CNC Station 2026. Questions: Tag (dropdown, one entry per traceable row), Height (10..50), Photo of the sheet (file upload, images, one file). Respondent email is collected, so a capture is attributed. It has no Google-linked response tab: `cnc-capture-ingest.py` reads the Forms API and copies each new response into the CAPTURE tab itself (columns G email, H response id, the dedup key), then runs the rows as before.
+The Form exists (built through the Forms API on 2026-09-11 from the Brophy Drive token, which authorizes `forms:batchUpdate`; the one thing the API refuses is creating a file-upload question, so that question was added by hand). Form id `1CLmlEu2w75Go0GjtxteJvdp2GKIq3jxkxWVq3KZ8eIU`, in IC / CNC Station 2026. Questions: Tag (dropdown, one entry per capturable row), Height (mm, free text), Photo of the sheet (file upload, images, one file). Respondent email is collected, so a capture is attributed. It has no Google-linked response tab: `cnc-capture-ingest.py` reads the Forms API and copies each new response into the CAPTURE tab itself (columns G email, H response id, the dedup key), then runs the rows as before.
 
-The Sheet's BOARD tab is the student-facing checkoff: one row per traceable tool, a checkbox that ticks itself when CAPTURE's last row for that tag says `captured`, the status, who, and the ingest's one line. Formulas only; nothing writes to it. The Sheet is shared read-only to the brophyprep.org domain for that tab.
+The Sheet's BOARD tab is the student-facing checkoff: one row per capturable tool, a checkbox that ticks itself when CAPTURE's last row for that tag says `captured`, the status, who, and the ingest's one line. Formulas only; nothing writes to it. The Sheet is shared read-only to the brophyprep.org domain for that tab.
 
 ### The physical kit (Drawer 1)
 
-- a stack of `trace_sheet.pdf` (LETTER), printed at 100% (the scale bar is the check), and a few of each larger size behind them: `trace_sheet_tabloid.pdf` is the one the pendant needs
-- the TRACE collar (`tracing_collar.stl`, PLA, 0.2 layer, no supports, bore up) with a hex pencil in it
-- the height gauge (`height_gauge.stl`, 180 x 60 x 60, prints flat on its back; five through-slots 10..50, labels embossed on the front)
+- a stack of `trace_sheet.pdf` (LETTER), printed at 100% (the scale bar is the check), and a few TABLOID behind them: `trace_sheet_tabloid.pdf` is the one the pendant needs
+- a steel rule, for the height
 - `capture_card.pdf`, laminated
 
-All of them are in Drive under IC / CNC Station 2026 / 06 Tool Capture, generated by `trace_sheet.py`: the six sheet PDFs, the card, the gauge and the collar.
+The collar and the height gauge are retired (2026-09-11) and can leave the drawer. The sheets and the card are in Drive under IC / CNC Station 2026 / 06 Tool Capture, generated by `trace_sheet.py`, updated in place so every link still resolves.
 
 ### v2: the machine captures its own tools
 
-The ingest's image source is a plug: `ingest(..., source="camera")` is reserved for a camera on the Z plate looking down at a tool on a fiducial mat on the bed, one gSender macro to the capture pose, a frame grab on the console. Same ingest, same tags, same output. It raises `NotImplementedError` today. Nothing in v1 is built in a way that v2 would have to undo: the sheet frame becomes the mat frame and the tag positions become the mat's.
+The ingest's image source is a plug: `ingest(..., source="camera")` is reserved for a camera on the Z plate looking down at a tool on a fiducial mat on the bed, one gSender macro to the capture pose, a frame grab on the console. Same ingest, same tags, same segmentation, same output, and a known camera height instead of one read from EXIF. It raises `NotImplementedError` today. Nothing in v1 is built in a way that v2 would have to undo: the sheet frame becomes the mat frame and the tag positions become the mat's.
 
 The Sheet's LOG tab (date, reading, who) is the human half of the station log; the first row is reserved for the commissioning continuity reading. It is not snapshotted here.
 

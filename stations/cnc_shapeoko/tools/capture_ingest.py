@@ -1,61 +1,119 @@
-"""Tool capture ingest: a photo of a traced sheet in, a pocket polyline out.
+"""Tool capture ingest: a photo of a tool lying on a capture sheet in, a
+pocket polyline out.
 
-    PYTHONPATH=. .venv/bin/python stations/cnc_shapeoko/tools/capture_ingest.py <image> <tag> <height> [--print-scale S]
+    PYTHONPATH=. .venv/bin/python stations/cnc_shapeoko/tools/capture_ingest.py <image> <tag> <height_mm>
 
-    ingest(image_path, tag, height_slot, source="trace", print_scale=1.0) -> Result
+    ingest(image_path, tag, height, source="photo", print_scale=1.0) -> Result
 
-The v1 image source is a phone photo of ``trace_sheet.pdf`` with one tool's
-outline drawn on it by a pencil riding in the TRACE collar. Because the trace
-lies on the sheet's plane, four ArUco tags rectify it completely: no camera
-height, no tilt, no parallax, no lighting model. ``source="camera"`` is the
-v2 plug (the machine's own Z-plate camera over a fiducial mat) and raises
-until it is built.
+Two sources. ``source="photo"`` (the default since 2026-09-11) is a phone
+photo of the TOOL ITSELF lying flat in the sheet's window, plus the tool's
+measured height in mm; the tool's silhouette against the white paper is the
+outline. ``source="trace"`` (v1, 2026-09-04 to 2026-09-11) is a photo of a
+pencil line drawn round the tool with the TRACE collar; it is kept, unchanged,
+so the two captures made that way (T025, T026) can be re-run, but nothing new
+should use it: the collar was red-teamed on 2026-09-11 as too clunky for a
+student to get right. ``source="camera"`` is the v2 plug (the machine's own
+Z-plate camera over a fiducial mat) and raises until it is built.
 
-PIPELINE
-========
+THE PHOTO PIPELINE
+==================
 
     ArUco detect (DICT_4X4_50) -> which SHEET SIZE is in the frame, from the
        quartet of ids the markers belong to (``trace_sheet.SIZE_FOR_TAG``);
        reject on two quartets, on none, or on fewer than MIN_TAGS of the one
-       that is there
+       that is there (``identify``; shared with the trace path)
     -> homography from the detected corners to that size's sheet mm at
-       PX_PER_MM (``SheetSpec.tag_corners`` is the only source of those
-       positions)
-    -> warp the photo into the sheet frame, crop the trace field inside its
-       border line, white out any tag square that overlaps the crop (the
-       14mm-margin sheet keeps the field clear of the tags, so this is
-       normally a no-op)
-    -> flatten the lighting (divide by a wide blur), invert, Otsu, close 2px
-    -> contours with holes (RETR_CCOMP): the top-level contours are the
-       candidate traces; the largest is the tool
-    -> reject: a second top-level contour over SECOND_FRAC of the largest
-       (two tools); the largest touching the crop edge (ran off the field);
-       no hole inside the largest (an open trace)
-    -> the pencil line has a width; it is estimated from the trace itself,
-       (outer area - hole area) / mean perimeter, so the stroke's centreline
-       is the outer contour inset by half of that. The centreline is where
-       the collar's axis went: the tool's outline is that, inset by PEN_R
-    -> Douglas-Peucker at DP_TOL on the outer contour, rescale into TRUE mm
-       by ``print_scale`` (see DEFAULT_PRINT_SCALE), then the two insets
-       (half stroke plus PEN_R) as one build123d offset of the polygon face,
-       then the pocket as the tool outline offset by FOAM_CLEAR
-    -> the tool outline is turned so its minimum-area rectangle lies along X
-       and its bounding box's corner sits at the origin; L and W are that
+       PX_PER_MM, warp the photo into the sheet frame, crop the window inside
+       its border line, white out any tag square that overlaps the crop
+       (``_locate``, ``rectify``, ``field_crop``; shared with the trace path)
+    -> SEGMENT the tool against the paper (``segment_tool``). One Otsu is not
+       enough: a metal tool has highlights as bright as the paper and casts a
+       soft shadow darker than the paper, so the threshold is only the SEED.
+       Seed: darkness-or-saturation score, Otsu, opened at 2 x PENCIL_MM so a
+       pencil line already on the sheet cannot seed, components over
+       MIN_TOOL_MM2, eroded by SEED_ERODE_MM (probable foreground) and by
+       SEED_SURE_MM (sure foreground). Then cv2.grabCut on the colour crop,
+       initialised with the paper outside the window as sure background, a
+       BORDER_BAND_MM band inside the window as probable background, the seed
+       as above, and everything else probable background; GRABCUT_ITERS
+       rounds at GRABCUT_PX_PER_MM.
+    -> clean the grabCut mask: open at PENCIL_MM (pencil lines off, one
+       hugging the tool detached: today's students traced first, and the
+       line runs along the tool's own edge); close at HIGHLIGHT_CLOSE_MM
+    -> the tool's BODY is the largest component that has a part 2 x
+       PENCIL_MM thick (a retraced loop is thick but thin everywhere; a tool
+       is not); every component within MERGE_MM of the body is merged back
+       into it, thick or thin (a strip a highlight cut off), the gap closed,
+       the holes filled (highlights inside the tool)
+    -> reject: no thick component over MIN_TOOL_MM2 (no tool in the window);
+       the tool touching the crop edge (too big for this sheet); a second
+       thick component over SECOND_FRAC of the body (two tools)
+    -> PERSPECTIVE: the tool stands above the sheet plane, so its silhouette
+       is inflated away from the camera's nadir (see below). Correct it with
+       the camera height D from the photo's EXIF and h_eff from the measured
+       height, in sheet mm
+    -> Douglas-Peucker at DP_TOL, rescale into TRUE mm by ``print_scale``,
+       then the pocket as the corrected outline offset by FOAM_CLEAR (one
+       build123d offset, ``Kind.ARC``)
+    -> the outline is turned so its minimum-area rectangle lies along X and
+       its bounding box's corner sits at the origin; L and W are that
        rectangle's sides
+    -> height class = ceil(height_mm / 10) x 10, one of HEIGHT_CLASSES
     -> write captures/<tag>.dxf (the pocket loop, mm) and
-       captures/preview/<tag>.png (the rectified sheet, the detected trace in
-       orange, the pocket in cyan, L / W / H in the corner)
+       captures/preview/<tag>.png (the rectified sheet, the silhouette in
+       orange, the pocket in cyan, L / W / H and the D used in the corner)
     -> upsert the tag's row in tool_list.csv: dims_status CAPTURED,
-       silhouette, height_class, bbox_l_mm, bbox_w_mm
+       silhouette, height_class, bbox_l_mm, bbox_w_mm, bbox_h_mm (the
+       measured mm)
 
 A rejection writes NOTHING: no DXF, no preview, no row. The Result carries
 one line saying why, and that line is what the Form's CAPTURE tab and the
-morning digest show.
+morning digest show. An accepted capture may ALSO carry a note in ``reason``
+("camera height assumed 650"); the wrapper appends it to the digest.
+
+THE PERSPECTIVE OF A TOOL ABOVE THE SHEET
+=========================================
+
+The four tags rectify the SHEET PLANE exactly. A silhouette edge at height h
+above that plane is seen along a ray from the camera, and where that ray
+meets the paper is further from the camera's nadir than the edge itself
+(similar triangles, camera at height D over nadir c, all in sheet mm):
+
+    p' = c + (p - c) * D / (D - h)          what the rectified image shows
+    p  = c + (p' - c) * (D - h) / D         the correction
+
+h is not the tool's measured height: the widest edge of a real tool (a
+wrench's jaw, a clamp's bar, a caliper's beam) sits somewhere in its
+thickness, around the middle, and the edge the camera sees is the highest
+point along that ray, which is the top for a slab and lower for a rounded
+bar. h_eff = H_EFF_FRAC x measured height is the estimate; FOAM_CLEAR absorbs
+the residual. At arm's length (D 600) a 20mm tool inflates by 3.4%, 1.7mm on
+a 50mm width; corrected with h_eff = 10 the residual is under 0.9mm each way
+whether the true edge is at 0 or at 20. CONFIDENCE: estimate.
+
+D comes from the photo's EXIF. A lens of 35mm-equivalent focal length f35
+projects an object of size S at distance D onto s = f35 * S / D mm of a
+35mm frame, and that frame's diagonal (FRAME_DIAG_MM, sqrt(36^2 + 24^2) =
+43.27) is the image's diagonal in pixels, whatever the sensor's aspect
+ratio, so s in pixels is s * image_diag_px / 43.27 and
+
+    D = f35 * S * image_diag_px / (43.27 * s_px)
+
+On a 3:2 frame this is exactly f35 * S * image_long_px / (36 * s_px); phones
+shoot 4:3, and the diagonal form is the one their f35 is defined against
+(CIPA). S and s_px are the widest span between two detected tag corners, in
+sheet mm and in the UNWARPED photo, so a keystoned photo averages its near
+and far scale. c, the nadir, is the image's principal point (its centre)
+mapped through the homography into sheet mm; exact for a phone held flat,
+which is what the card says to do. No EXIF (a screenshot, a stripped
+upload): D = D_FALLBACK_MM and the Result says so. D under D_MIN_MM rejects:
+the inflation is then large enough that the h_eff estimate's error is
+bigger than FOAM_CLEAR, and the fix is to hold the phone further away.
 
 THE SHEET SIZE IS NEVER AN ARGUMENT
 ===================================
 
-Nobody tells this module what paper the trace is on. Each size in
+Nobody tells this module what paper the tool is on. Each size in
 ``trace_sheet.SIZES`` carries its own quartet of ArUco ids -- LETTER 0-3,
 TABLOID 8-11 (RT4 trimmed the rest) -- so the markers in the
 photo name the geometry, and ``identify`` looks it up. Two consequences worth
@@ -73,20 +131,59 @@ detector false positive, and one false positive should not reject an
 otherwise good capture. Two candidates in one frame is "two different sheet
 sizes in frame" and rejects.
 
+THE TRACE PIPELINE (source="trace", history)
+============================================
+
+    ... the shared front end above, on the grey image ...
+    -> flatten the lighting (divide by a wide blur), invert, Otsu, close 2px
+    -> contours with holes (RETR_CCOMP): the top-level contours are the
+       candidate traces; the largest is the tool
+    -> reject: a second top-level contour over SECOND_FRAC of the largest
+       (two tools); the largest touching the crop edge (ran off the field);
+       no hole inside the largest (an open trace)
+    -> the pencil line has a width; it is estimated from the trace itself,
+       (outer area - hole area) / mean perimeter, so the stroke's centreline
+       is the outer contour inset by half of that. The centreline is where
+       the collar's axis went: the tool's outline is that, inset by PEN_R
+    -> Douglas-Peucker, rescale by ``print_scale``, the two insets (half
+       stroke plus PEN_R) as one build123d offset, then the pocket as the
+       tool outline offset by FOAM_CLEAR; align, write, upsert as above
+
 THE OFFSETS
 ===========
 
 shapely is not in the venv and nothing new is added for this; the polygon
 offsets are build123d's ``offset`` on a face made from the polyline, with
-``Kind.ARC`` so an inset never self-intersects at a reflex corner. The only
-thing lost is what any 7mm collar loses: a concave corner of the tool
-tighter than PEN_R comes back as a PEN_R fillet, which makes the foam tongue
-there smaller than the notch, never larger. The tool still drops in.
+``Kind.ARC`` so an inset never self-intersects at a reflex corner. What the
+trace path lost to the collar (a concave corner tighter than PEN_R came back
+as a PEN_R fillet) the photo path does not: the silhouette is the tool's own
+edge, to the pixel, and only the pencil-line opening (PENCIL_MM) rounds it,
+by half a millimetre at a sharp corner.
+
+WHAT THE PHOTO PATH CANNOT SEE
+==============================
+
+A specular highlight is paper-bright. One that is enclosed by the tool (a
+streak down a wrench, a patch on a clamp's bar) is a hole and is filled. One
+that runs the FULL length of an edge, with a strip of tool beyond it, cuts
+that strip off: the strip is thin everywhere and is dropped like a pencil
+line, and the pocket comes out narrower by the strip. A hard band like that
+is rare under diffuse shop light and no flash, and it is visible in the
+preview as a straight step in the orange line. The remedy is to turn the
+tool or the sheet relative to the light and photograph it again, not a
+rescue rule: anything that re-admits a dark strip beside the tool
+re-admits a pencil line hugging it. LOOK AT THE PREVIEW.
+
+A hard shadow is the other one. Under diffuse shop light a tool's shadow is
+a 5 to 15% penumbra and grabCut leaves it with the paper; under one lamp or
+a flash it is a 25% band with an edge, and grabCut takes it as tool along
+that side, about 1.5mm on the synthetic stadium. Hence no flash, no lamp.
 """
 
 from __future__ import annotations
 
 import csv
+import math
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -104,7 +201,7 @@ TOOL_LIST = HERE / "tool_list.csv"
 # ================================================================ parameters
 
 PEN_R = 7.0
-"""Radius of the surface that rides the tool while tracing: the TRACE collar,
+"""TRACE PATH ONLY. Radius of the surface that rides the tool while tracing: the TRACE collar,
 ``trace_sheet.COLLAR_OD`` / 2, a pencil in its hex bore. The pencil's own
 taper never touches the tool, so this is the whole of the offset between the
 drawn line's centreline and the tool's outline. SOURCE: design, ruling
@@ -193,6 +290,97 @@ CONFIDENCE: rule."""
 
 HEIGHT_CLASSES = sheet.GAUGE_SLOTS
 
+# ---- photo source
+
+GRABCUT_PX_PER_MM = 5.0
+"""grabCut runs on the colour crop downsampled to this: 0.2mm a pixel, 900 x
+900 on LETTER, well under a second. The mask comes back up to PX_PER_MM
+bilinearly, so the boundary is placed to about a tenth of a millimetre.
+CONFIDENCE: choice."""
+
+GRABCUT_ITERS = 5
+
+BORDER_BAND_MM = 6.0
+"""Band inside the window edge initialised as probable background: paper,
+the shadow of nothing, and where the tool is NOT allowed to be (a tool this
+close to the edge is rejected anyway). CONFIDENCE: rule."""
+
+PENCIL_MM = 1.0
+"""A pencil line's width on the sheet, and the opening that removes one from
+the mask. Lines up to this wide detach from a tool they hug; components that
+are thin everywhere at 2 x this (a retraced loop) are dropped whole. A tool
+feature narrower than PENCIL_MM (a scriber's last millimetre) is lost, and
+a sharp corner is rounded by PENCIL_MM / 2. SOURCE: the two 2026-09-11
+sheets, bare-pencil traces 0.5 to 1.5mm wide. CONFIDENCE: estimate."""
+
+PAPER_DARK_FRAC = 0.30
+SAT_MIN = 80
+"""The seed: a pixel darker than the PAPER MODEL at that point by more than
+PAPER_DARK_FRAC of it, or more saturated than SAT_MIN (a red handle, blue
+anodising, under any light). The paper model is a quadratic in x and y fit
+to the BORDER_BAND_MM band, which is paper by construction, so a dim or
+vignetted photo does not move the seed: Otsu did, it split the paper itself
+on the 2026-09-11 sheet shot at 178/255. A soft shadow is 10 to 20% darker
+than the paper and stays out of the seed; grabCut decides its edge.
+CONFIDENCE: estimate, from the two 2026-09-11 photos."""
+
+SEED_ERODE_MM = 1.0
+SEED_SURE_MM = 6.0
+"""The seed blob eroded by SEED_ERODE_MM is probable foreground for grabCut
+(a millimetre keeps the seed inside the tool through the edge's blur and
+shadow, and still keeps a 2.3mm strip of tool beside a highlight: 2mm did
+not); eroded by SEED_SURE_MM it is sure foreground, the anchor the colour
+model cannot lose. A tool narrower than 2 x SEED_SURE_MM has no sure core and
+is seeded as probable only. CONFIDENCE: rule."""
+
+HIGHLIGHT_CLOSE_MM = 1.0
+"""After the pencil-line open, a close at this width bridges the sub-
+millimetre gaps a specular highlight cuts through a metal tool's mask, so
+the strip beyond the highlight stays part of the tool and the hole fill
+can do the rest. Smaller than the gap between a tool and a pencil line
+that has already been opened away. CONFIDENCE: estimate, from the composite
+test on the 2026-09-11 T056 sheet."""
+
+MIN_TOOL_MM2 = 100.0
+"""Under this area a component is a mark, not a tool: a 1/8in endmill lying
+flat is 127. CONFIDENCE: rule."""
+
+H_EFF_FRAC = 0.5
+"""The silhouette's edge is assumed at this fraction of the measured height
+(see THE PERSPECTIVE OF A TOOL ABOVE THE SHEET). CONFIDENCE: estimate;
+FOAM_CLEAR absorbs the residual."""
+
+FRAME_DIAG_MM = math.hypot(36.0, 24.0)
+"""The 35mm frame's diagonal, 43.27: what FocalLengthIn35mmFilm is defined
+against, and what the photo's pixel diagonal stands for."""
+
+D_FALLBACK_MM = 650.0
+"""Camera height when the photo carries no EXIF focal length: arm's length.
+The Result's reason names it so the digest shows the capture ran on an
+assumption. CONFIDENCE: estimate."""
+
+D_MIN_MM = 300.0
+"""Below this the phone was too close: the inflation of a 20mm tool passes
+7% and the h_eff estimate's error passes FOAM_CLEAR. Reject and say so.
+CONFIDENCE: rule."""
+
+MERGE_MM = 3.0
+"""A component this close to the tool's body is a piece of the tool a
+highlight cut off (a bright band running along an edge leaves the strip
+beyond it as its own island, often under 2mm wide), and is merged back
+whatever its thickness, the gap closed at this width and the holes filled.
+The one thing this re-admits is a pencil line over PENCIL_MM wide (a heavy
+retrace) hugging the tool within MERGE_MM, which then pads the outline by
+its own width: a pocket a little big. The alternative, dropping every thin
+piece first, made a pocket too SMALL by the strip on any shiny tool, and a
+too-small pocket is a re-cut tray. Lines a pencil normally draws (under
+PENCIL_MM) are gone before this runs; a second TOOL is further away than
+this. A band wider than MERGE_MM still leaves a notch, and the preview shows
+it. CONFIDENCE: estimate, from the synthetic stadium whose highlight runs
+out through the cap and the composite on the 2026-09-11 T056 sheet."""
+
+SILHOUETTE_COLOUR = (0, 140, 255)  # BGR: orange, same as the trace
+
 PREVIEW_PX_PER_MM = 3.0
 TRACE_COLOUR = (0, 140, 255)      # BGR: orange
 POCKET_COLOUR = (220, 200, 0)     # BGR: cyan
@@ -212,10 +400,14 @@ class Result:
     size: str | None = None
     """Which sheet size the tags said this was. Set on every accepted capture,
     and on a rejection whenever the size was identified before the reason."""
+    D: float | None = None
+    """Photo source: the camera height used, mm."""
+    height_class: float | None = None
 
     def line(self) -> str:
         if self.ok:
-            return f"ok: {self.size} sheet, L {self.L:.1f} W {self.W:.1f}, {self.dxf_path}"
+            note = f" ({self.reason})" if self.reason else ""
+            return f"ok: {self.size} sheet, L {self.L:.1f} W {self.W:.1f}, {self.dxf_path}{note}"
         return f"rejected: {self.reason}"
 
 
@@ -264,22 +456,56 @@ def identify(found: dict[int, np.ndarray]) -> tuple[sheet.SheetSpec | None, dict
     return spec, by_size[present[0]], ""
 
 
-def rectify(img: np.ndarray, tags: dict[int, np.ndarray], spec: sheet.SheetSpec) -> np.ndarray:
-    """The photo warped into that size's sheet frame at PX_PER_MM."""
+def homography(tags: dict[int, np.ndarray], spec: sheet.SheetSpec) -> np.ndarray:
+    """Photo pixels -> rectified pixels (sheet mm x PX_PER_MM), from every
+    detected corner of that size's quartet."""
     src = np.concatenate([tags[i] for i in sorted(tags)])
     dst = np.concatenate([spec.tag_corners(i) for i in sorted(tags)]) * PX_PER_MM
     H, _mask = cv2.findHomography(src, dst, 0)
+    return H
+
+
+def rectify(img: np.ndarray, tags: dict[int, np.ndarray], spec: sheet.SheetSpec, H: np.ndarray | None = None) -> np.ndarray:
+    """The photo (grey or colour) warped into that size's sheet frame at
+    PX_PER_MM."""
+    if H is None:
+        H = homography(tags, spec)
     size = (int(round(spec.page_w * PX_PER_MM)), int(round(spec.page_h * PX_PER_MM)))
     return cv2.warpPerspective(img, H, size, flags=cv2.INTER_LINEAR, borderValue=(255, 255, 255))
 
 
-def field_crop(rect_gray: np.ndarray, spec: sheet.SheetSpec) -> tuple[np.ndarray, tuple[int, int]]:
-    """The trace field, inside its border, tags whited out. Returns the crop
-    and its (x, y) origin in rectified pixels."""
+@dataclass(frozen=True)
+class Located:
+    """The shared front end's answer: which sheet, its tags, the homography."""
+    spec: sheet.SheetSpec
+    tags: dict[int, np.ndarray]
+    H: np.ndarray
+
+
+def _locate(gray: np.ndarray) -> Located | Result:
+    """Detect, identify, insist on MIN_TAGS, fit the homography. Both sources
+    start here; a Result is a rejection."""
+    found = detect_tags(gray)
+    spec, tags, why = identify(found)
+    if spec is None:
+        return _reject(why)
+    if len(tags) < MIN_TAGS:
+        return _reject(
+            f"{len(tags)} of 4 corner squares found on the {spec.name} sheet (need {MIN_TAGS}): "
+            "square covered, sheet cut off, or out of focus",
+            size=spec.name,
+        )
+    return Located(spec, tags, homography(tags, spec))
+
+
+def field_crop(rect: np.ndarray, spec: sheet.SheetSpec) -> tuple[np.ndarray, tuple[int, int]]:
+    """The window, inside its border, tags whited out; grey or colour in,
+    the same out. Returns the crop and its (x, y) origin in rectified
+    pixels."""
     x0, y0, x1, y1 = spec.field_rect()
     px0, py0 = int(round((x0 + FIELD_INSET) * PX_PER_MM)), int(round((y0 + FIELD_INSET) * PX_PER_MM))
     px1, py1 = int(round((x1 - FIELD_INSET) * PX_PER_MM)), int(round((y1 - FIELD_INSET) * PX_PER_MM))
-    crop = rect_gray[py0:py1, px0:px1].copy()
+    crop = rect[py0:py1, px0:px1].copy()
     for mx0, my0, mx1, my1 in spec.tag_masks():
         ax0 = int(round((mx0 - MASK_PAD) * PX_PER_MM)) - px0
         ay0 = int(round((my0 - MASK_PAD) * PX_PER_MM)) - py0
@@ -311,16 +537,51 @@ def _mm_poly(px_pts: np.ndarray, origin: tuple[int, int]) -> np.ndarray:
     return pts / PX_PER_MM
 
 
+def _clean_polygon(pts_mm: np.ndarray, eps: float = 0.02) -> np.ndarray:
+    """Consecutive duplicates and hairpin spikes out of a polygon, so the
+    kernel's offset never sees a zero-length or reversed edge. A mask's
+    contour, corrected and rotated, can carry both; the pencil trace's never
+    did because it was inset first."""
+    pts = np.asarray(pts_mm, dtype=np.float64)
+    for _ in range(3):
+        n = len(pts)
+        if n < 4:
+            return pts
+        keep = np.ones(n, bool)
+        for i in range(n):
+            a, b, c_ = pts[i - 1], pts[i], pts[(i + 1) % n]
+            u, v = b - a, c_ - b
+            if np.hypot(*u) < eps:
+                keep[i] = False
+                continue
+            cross = u[0] * v[1] - u[1] * v[0]
+            dot = u[0] * v[0] + u[1] * v[1]
+            if abs(cross) < eps * max(np.hypot(*u), np.hypot(*v)) and dot < 0:
+                keep[i] = False          # a hairpin: the point doubles back on its own edge
+        if keep.all():
+            return pts
+        pts = pts[keep]
+    return pts
+
+
 def _offset_polygon(pts_mm: np.ndarray, amount: float) -> np.ndarray:
     """A closed polygon offset by ``amount`` (negative = inset), as a closed
     polygon again, arcs sampled at ARC_CHORD_TOL chord error. build123d does
     the offset so a reflex corner never folds over."""
     from build123d import GeomType, Kind, Polyline, make_face, offset
 
+    pts_mm = _clean_polygon(pts_mm)
     face = make_face(Polyline(*[tuple(p) for p in pts_mm], close=True))
     if abs(amount) < 1e-9:
         return pts_mm
-    result = offset(face, amount=amount, kind=Kind.ARC)
+    try:
+        result = offset(face, amount=amount, kind=Kind.ARC)
+    except RuntimeError:
+        # the kernel's offset folds over at a concavity narrower than the
+        # offset (a 0.6mm notch in a photographed edge, under a 1mm outset)
+        # and hands back a compound, not a wire. The raster offset is the
+        # same geometry to RASTER_PX_PER_MM and cannot fail.
+        return _offset_polygon_raster(pts_mm, amount)
     faces = result.faces()
     if not faces:
         raise ValueError("offset produced no face")
@@ -337,6 +598,32 @@ def _offset_polygon(pts_mm: np.ndarray, amount: float) -> np.ndarray:
             p = e.position_at(i / n)
             out.append((p.X, p.Y))
     return np.array(out, dtype=np.float64)
+
+
+RASTER_PX_PER_MM = 20.0
+"""Resolution of the raster offset the kernel's offset falls back to:
+0.05mm a pixel, the same as ARC_CHORD_TOL. CONFIDENCE: choice."""
+
+
+def _offset_polygon_raster(pts_mm: np.ndarray, amount: float) -> np.ndarray:
+    """The polygon as a mask at RASTER_PX_PER_MM, dilated (outset) or eroded
+    (inset) by a disk of |amount|, and its outer contour back in mm."""
+    k = RASTER_PX_PER_MM
+    pad = int(np.ceil(abs(amount) * k)) + 4
+    lo = pts_mm.min(axis=0)
+    px = np.round((pts_mm - lo) * k).astype(np.int32) + pad
+    hi = px.max(axis=0) + pad + 1
+    mask = np.zeros((int(hi[1]), int(hi[0])), np.uint8)
+    cv2.fillPoly(mask, [px], 255)
+    r = int(round(abs(amount) * k))
+    disk = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1, 2 * r + 1))
+    mask = cv2.dilate(mask, disk) if amount > 0 else cv2.erode(mask, disk)
+    contours, _h = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    if not contours:
+        return np.zeros((0, 2))
+    outer = max(contours, key=cv2.contourArea)
+    approx = cv2.approxPolyDP(outer, ARC_CHORD_TOL * k, True).reshape(-1, 2).astype(np.float64)
+    return (approx - pad) / k + lo
 
 
 def _align_to_min_rect(pts_mm: np.ndarray) -> tuple[np.ndarray, float, float, np.ndarray]:
@@ -394,9 +681,12 @@ CSV_COLUMNS = (
 )
 
 
-def upsert_row(csv_path: Path, tag: str, height_class: float, silhouette: str, L: float, W: float) -> None:
+def upsert_row(csv_path: Path, tag: str, height_class: float, silhouette: str, L: float, W: float,
+               height_mm: float | None = None) -> None:
     """Update the tag's row in the snapshot, or append one if the tag is new.
-    Every other cell is left exactly as it was."""
+    Every other cell is left exactly as it was. ``height_mm`` (the photo
+    source's measured height) goes to bbox_h_mm; the trace source, which only
+    knew the slot, leaves that cell alone."""
     rows: list[dict[str, str]] = []
     fields: list[str] = list(CSV_COLUMNS)
     if csv_path.exists():
@@ -414,6 +704,8 @@ def upsert_row(csv_path: Path, tag: str, height_class: float, silhouette: str, L
         "bbox_l_mm": f"{L:.1f}",
         "bbox_w_mm": f"{W:.1f}",
     }
+    if height_mm is not None:
+        update["bbox_h_mm"] = f"{height_mm:g}"
     hit = False
     for r in rows:
         if (r.get("id") or "").strip().upper() == tag.upper():
@@ -431,30 +723,260 @@ def upsert_row(csv_path: Path, tag: str, height_class: float, silhouette: str, L
             w.writerow({k: r.get(k, "") for k in fields})
 
 
-# ================================================================ ingest
+# ================================================================ photo source
 
 
-def ingest(
-    image_path: str | Path,
-    tag: str,
-    height_slot: float | int | str,
-    source: str = "trace",
-    *,
-    print_scale: float = DEFAULT_PRINT_SCALE,
-    out_dir: Path = CAPTURES,
-    csv_path: Path | None = TOOL_LIST,
-) -> Result:
-    """One capture. The paper size is NOT an argument: the ArUco quartet in
-    the photo names it (see ``identify``). ``print_scale`` corrects a sheet
-    printed at other than 100% (see ``DEFAULT_PRINT_SCALE``). ``out_dir`` and
-    ``csv_path`` exist so a test can point the writes anywhere;
-    ``csv_path=None`` skips the row."""
-    if source == "camera":
-        raise NotImplementedError("v2: machine Z-plate camera")
-    if source != "trace":
-        raise ValueError(f"unknown source {source!r}")
+def read_f35(image_path: str | Path) -> float | None:
+    """FocalLengthIn35mmFilm out of the photo's EXIF, or None. Read with
+    PIL: the tag lives in the Exif sub-IFD (0x8769 / 0xA405); a writer that
+    put it at the top level is accepted too."""
+    try:
+        from PIL import Image
 
-    tag = tag.strip().upper()
+        ex = Image.open(str(image_path)).getexif()
+        v = ex.get_ifd(0x8769).get(0xA405) or ex.get(0xA405)
+        return float(v) if v else None
+    except Exception:
+        return None
+
+
+def tag_span(tags: dict[int, np.ndarray], spec: sheet.SheetSpec) -> tuple[float, float]:
+    """(mm, px): the widest separation between two detected tag corners on
+    the sheet, and the same two corners' distance in the unwarped photo."""
+    mm = np.concatenate([spec.tag_corners(i) for i in sorted(tags)])
+    px = np.concatenate([tags[i] for i in sorted(tags)])
+    d = np.linalg.norm(mm[:, None, :] - mm[None, :, :], axis=2)
+    a, b = np.unravel_index(int(np.argmax(d)), d.shape)
+    return float(d[a, b]), float(np.linalg.norm(px[a] - px[b]))
+
+
+def camera_height(f35: float, span_mm: float, span_px: float, image_shape: tuple[int, ...]) -> float:
+    """D, sheet mm: see THE PERSPECTIVE OF A TOOL ABOVE THE SHEET.
+    D = f35 * S * image_diag_px / (FRAME_DIAG_MM * s_px)."""
+    diag_px = math.hypot(image_shape[0], image_shape[1])
+    return f35 * span_mm * diag_px / (FRAME_DIAG_MM * span_px)
+
+
+def nadir_mm(H: np.ndarray, image_shape: tuple[int, ...]) -> np.ndarray:
+    """The image's principal point (its centre) in sheet mm: where a
+    flat-held phone's vertical meets the paper."""
+    c = np.array([[[image_shape[1] / 2.0, image_shape[0] / 2.0]]], dtype=np.float64)
+    return cv2.perspectiveTransform(c, H).reshape(2) / PX_PER_MM
+
+
+def correct_perspective(pts_mm: np.ndarray, c_mm: np.ndarray, D: float, h_eff: float) -> np.ndarray:
+    """p = c + (p' - c) * (D - h_eff) / D, on every point."""
+    return c_mm + (pts_mm - c_mm) * ((D - h_eff) / D)
+
+
+def _disk(mm: float, px_per_mm: float) -> np.ndarray:
+    r = max(int(round(mm * px_per_mm / 2)), 1)
+    return cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1, 2 * r + 1))
+
+
+def _fill_holes(mask: np.ndarray) -> np.ndarray:
+    """255 inside every closed boundary: flood the background from the
+    border, and what the flood did not reach is foreground."""
+    h, w = mask.shape
+    flood = np.pad((mask > 0).astype(np.uint8), 1)
+    ff = np.zeros((h + 4, w + 4), np.uint8)
+    cv2.floodFill(flood, ff, (0, 0), 2)
+    return np.where(flood[1:-1, 1:-1] == 2, 0, 255).astype(np.uint8)
+
+
+def _keep_thick(mask: np.ndarray, open_mm: float, px_per_mm: float) -> np.ndarray:
+    """Every component of ``mask`` that has SOME pixel surviving an opening
+    at ``open_mm``, kept whole. A pencil loop is thin everywhere and goes; a
+    tool with a thin tip keeps its tip."""
+    survivors = cv2.morphologyEx(mask, cv2.MORPH_OPEN, _disk(open_mm, px_per_mm))
+    n, labels = cv2.connectedComponents((mask > 0).astype(np.uint8))
+    keep = np.unique(labels[survivors > 0])
+    out = np.isin(labels, keep[keep > 0])
+    return (out * 255).astype(np.uint8)
+
+
+def _paper_model(V: np.ndarray, band: int) -> np.ndarray:
+    """The paper's brightness everywhere in the crop, as a quadratic surface
+    fit to the border band (paper by construction), refit once without the
+    outliers a pencil line or a shadow crossing the band leaves."""
+    h, w = V.shape
+    m = np.zeros((h, w), bool)
+    m[:band, :] = True
+    m[-band:, :] = True
+    m[:, :band] = True
+    m[:, -band:] = True
+    ys, xs = np.nonzero(m)
+    ys, xs = ys[::3], xs[::3]
+    v = V[ys, xs].astype(np.float64)
+
+    def design(x, y):
+        x = x / w - 0.5
+        y = y / h - 0.5
+        return np.column_stack([np.ones_like(x), x, y, x * x, y * y, x * y])
+
+    A = design(xs.astype(np.float64), ys.astype(np.float64))
+    coef, *_ = np.linalg.lstsq(A, v, rcond=None)
+    resid = v - A @ coef
+    keep = np.abs(resid) < 3 * max(np.median(np.abs(resid)) * 1.4826, 2.0)
+    if keep.sum() > 12:
+        coef, *_ = np.linalg.lstsq(A[keep], v[keep], rcond=None)
+    gy, gx = np.mgrid[0:h, 0:w]
+    return (design(gx.ravel().astype(np.float64), gy.ravel().astype(np.float64)) @ coef).reshape(h, w)
+
+
+def segment_tool(crop_bgr: np.ndarray) -> tuple[np.ndarray, str]:
+    """The tool against the paper as 255 on 0, at the crop's resolution
+    (PX_PER_MM), or ("", reason). See THE PHOTO PIPELINE."""
+    s = GRABCUT_PX_PER_MM / PX_PER_MM
+    small = cv2.resize(crop_bgr, None, fx=s, fy=s, interpolation=cv2.INTER_AREA)
+    g = GRABCUT_PX_PER_MM
+    hsv = cv2.cvtColor(small, cv2.COLOR_BGR2HSV)
+    band = int(round(BORDER_BAND_MM * g))
+    # the seed: darker than the paper would be here, or saturated
+    paper = _paper_model(hsv[:, :, 2], band)
+    dark = (paper - hsv[:, :, 2].astype(np.float64)) > PAPER_DARK_FRAC * np.maximum(paper, 1.0)
+    seed = ((dark | (hsv[:, :, 1] > SAT_MIN)) * 255).astype(np.uint8)
+    seed[:band, :] = 0
+    seed[-band:, :] = 0
+    seed[:, :band] = 0
+    seed[:, -band:] = 0
+    # is there a tool at all? Only what survives an open at 2 x PENCIL_MM
+    # counts toward MIN_TOOL_MM2, so a pencil loop, however retraced, never
+    # seeds; but the seed itself is every component (opened at PENCIL_MM,
+    # so a line does not ride in on the tool) that has such a thick part,
+    # kept WHOLE, so a strip of tool beside a highlight is seeded too
+    thick = cv2.morphologyEx(seed, cv2.MORPH_OPEN, _disk(2 * PENCIL_MM, g))
+    n, labels, stats, _c = cv2.connectedComponentsWithStats((thick > 0).astype(np.uint8))
+    big = [i for i in range(1, n) if stats[i, cv2.CC_STAT_AREA] >= MIN_TOOL_MM2 * g * g]
+    if not big:
+        return np.zeros(crop_bgr.shape[:2], np.uint8), "no tool found in the window: lay the tool flat inside the window and photograph it in place"
+    seed = _keep_thick(cv2.morphologyEx(seed, cv2.MORPH_OPEN, _disk(PENCIL_MM, g)), 2 * PENCIL_MM, g)
+    pr_fg = cv2.erode(seed, _disk(2 * SEED_ERODE_MM, g))
+    sure_fg = cv2.erode(seed, _disk(2 * SEED_SURE_MM, g))
+
+    mask = np.full(small.shape[:2], cv2.GC_PR_BGD, np.uint8)
+    mask[pr_fg > 0] = cv2.GC_PR_FGD
+    mask[sure_fg > 0] = cv2.GC_FGD
+    # the crop IS the window; a one-pixel frame of sure background stands
+    # for the paper outside it, and the band inside is probable background
+    mask[0, :] = cv2.GC_BGD
+    mask[-1, :] = cv2.GC_BGD
+    mask[:, 0] = cv2.GC_BGD
+    mask[:, -1] = cv2.GC_BGD
+    bgm = np.zeros((1, 65), np.float64)
+    fgm = np.zeros((1, 65), np.float64)
+    cv2.grabCut(small, mask, None, bgm, fgm, GRABCUT_ITERS, cv2.GC_INIT_WITH_MASK)
+    fg = (np.isin(mask, (cv2.GC_FGD, cv2.GC_PR_FGD)) * 255).astype(np.uint8)
+
+    fg = cv2.morphologyEx(fg, cv2.MORPH_OPEN, _disk(PENCIL_MM, g))          # pencil lines off, hugging ones detached
+    fg = cv2.morphologyEx(fg, cv2.MORPH_CLOSE, _disk(HIGHLIGHT_CLOSE_MM, g))  # highlight gaps bridged
+    # what is thin everywhere (a retraced loop) and what is a piece of the
+    # tool is decided by the caller against the tool's body: see MERGE_MM
+    up = cv2.resize(fg, (crop_bgr.shape[1], crop_bgr.shape[0]), interpolation=cv2.INTER_LINEAR)
+    return ((up >= 128) * 255).astype(np.uint8), ""
+
+
+def _height_class(height_mm: float) -> float:
+    return float(math.ceil(height_mm / 10.0 - 1e-9) * 10)
+
+
+def _ingest_photo(img: np.ndarray, image_path: Path, tag: str, height_mm: float, *, print_scale: float, out_dir: Path, csv_path: Path | None) -> Result:
+    height_class = _height_class(height_mm)
+    if height_class not in HEIGHT_CLASSES:
+        return _reject(f"tool is {height_mm:g} mm tall; the tallest class is {max(HEIGHT_CLASSES):g}")
+
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    loc = _locate(gray)
+    if isinstance(loc, Result):
+        return loc
+    spec, tags, H = loc.spec, loc.tags, loc.H
+
+    notes: list[str] = []
+    f35 = read_f35(image_path)
+    span_mm, span_px = tag_span(tags, spec)
+    if f35:
+        D = camera_height(f35, span_mm * print_scale, span_px, img.shape)
+        if D < D_MIN_MM:
+            return _reject(
+                f"camera too close ({D:.0f} mm above the sheet; need {D_MIN_MM:.0f}): hold the phone at arm's length, "
+                "the whole sheet with room round it",
+                size=spec.name,
+            )
+    else:
+        D = D_FALLBACK_MM
+        notes.append(f"camera height assumed {D_FALLBACK_MM:g}")
+    h_eff = H_EFF_FRAC * height_mm
+    c_mm = nadir_mm(H, img.shape)
+
+    rect = rectify(img, tags, spec, H)
+    crop, origin = field_crop(rect, spec)
+    mask, why = segment_tool(crop)
+    if why:
+        return _reject(why, spec.name)
+
+    # the tool's BODY is the largest component with a part 2 x PENCIL_MM
+    # thick (a retraced pencil loop can out-area a small tool, but it is thin
+    # everywhere) ...
+    n, labels, stats, _cent = cv2.connectedComponentsWithStats((mask > 0).astype(np.uint8))
+    thick = _keep_thick(mask, 2 * PENCIL_MM, PX_PER_MM)
+    thick_ids = {int(i) for i in np.unique(labels[thick > 0]) if i != 0}
+    min_area_px = MIN_TOOL_MM2 * PX_PER_MM ** 2
+    comps = sorted(((stats[i, cv2.CC_STAT_AREA], i) for i in thick_ids if stats[i, cv2.CC_STAT_AREA] >= min_area_px), reverse=True)
+    if not comps:
+        return _reject("no tool found in the window: lay the tool flat inside the window and photograph it in place", spec.name)
+    area, idx = comps[0]
+    # ... plus every component within MERGE_MM of it, thick or not (a strip a
+    # highlight cut off), closed and filled ...
+    near = cv2.dilate(((labels == idx) * 255).astype(np.uint8), _disk(2 * MERGE_MM, PX_PER_MM))
+    merged_ids = {int(i) for i in np.unique(labels[near > 0]) if i != 0}
+    tool_mask = (np.isin(labels, list(merged_ids)) * 255).astype(np.uint8)
+    tool_mask = _fill_holes(cv2.morphologyEx(tool_mask, cv2.MORPH_CLOSE, _disk(MERGE_MM, PX_PER_MM)))
+    # ... and only a THICK component still separate can be a second tool;
+    # thin ones elsewhere (a pencil loop round nothing) are ignored
+    others = [a for a, i in comps[1:] if i not in merged_ids]
+    if others and others[0] > SECOND_FRAC * area:
+        return _reject(f"two tools in the window (second is {others[0] / area:.0%} of the largest): one tool per sheet", spec.name)
+    bx, by, bw, bh = cv2.boundingRect(tool_mask)
+    if bx <= 0 or by <= 0 or bx + bw >= mask.shape[1] or by + bh >= mask.shape[0]:
+        return _reject(f"tool touches the edge of the {spec.name} window: take a bigger sheet", spec.name)
+
+    contours, _h = cv2.findContours(tool_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    outer = max(contours, key=cv2.contourArea)
+    approx = cv2.approxPolyDP(outer, DP_TOL * PX_PER_MM, True)
+    sil_mm = _mm_poly(approx, origin)                            # the silhouette as seen, nominal frame: what the preview draws
+    tool_sheet = correct_perspective(sil_mm, c_mm, D, h_eff)     # the tool's edge, nominal frame
+    tool_true = tool_sheet * print_scale                         # true mm (see DEFAULT_PRINT_SCALE)
+    if len(tool_true) < 3:
+        return _reject("silhouette is not a polygon", spec.name)
+    tool_local, L, W, M = _align_to_min_rect(tool_true)
+    pocket_local_raw = _offset_polygon(tool_local, FOAM_CLEAR)
+    pocket_min = pocket_local_raw.min(axis=0)
+    pocket_local = pocket_local_raw - pocket_min
+    Minv = cv2.invertAffineTransform(M)
+    pocket_true = (Minv[:, :2] @ (pocket_local + pocket_min).T).T + Minv[:, 2]
+    pocket_sheet = pocket_true / print_scale
+
+    dxf_path = out_dir / f"{tag}.dxf"
+    preview_path = out_dir / "preview" / f"{tag}.png"
+    _write_dxf(pocket_local, dxf_path)
+    _write_preview(
+        rect, sil_mm, pocket_sheet,
+        f"{tag}  {spec.name}  L {L:.1f}  W {W:.1f}  H {height_mm:g} (class {height_class:g})  D {D:.0f}  h_eff {h_eff:g}  {len(tags)} tags  print_scale {print_scale:.3f}",
+        preview_path, spec,
+    )
+    if csv_path is not None:
+        try:
+            rel = str(dxf_path.relative_to(csv_path.parent))
+        except ValueError:
+            rel = str(dxf_path)
+        upsert_row(csv_path, tag, height_class, rel, L, W, height_mm=height_mm)
+    return Result(ok=True, reason="; ".join(notes), dxf_path=dxf_path, preview_path=preview_path, L=L, W=W, size=spec.name, D=D, height_class=height_class)
+
+
+# ================================================================ trace source (history)
+
+
+def _ingest_trace(img: np.ndarray, tag: str, height_slot: float | int | str, *, print_scale: float, out_dir: Path, csv_path: Path | None) -> Result:
     try:
         height_class = float(height_slot)
     except (TypeError, ValueError):
@@ -462,23 +984,13 @@ def ingest(
     if height_class not in HEIGHT_CLASSES:
         return _reject(f"height slot {height_class:g} is not one of {', '.join(f'{h:g}' for h in HEIGHT_CLASSES)}")
 
-    img = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
-    if img is None:
-        return _reject(f"could not read image {image_path}")
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    loc = _locate(gray)
+    if isinstance(loc, Result):
+        return loc
+    spec, tags = loc.spec, loc.tags
 
-    found = detect_tags(gray)
-    spec, tags, why = identify(found)
-    if spec is None:
-        return _reject(why)
-    if len(tags) < MIN_TAGS:
-        return _reject(
-            f"{len(tags)} of 4 corner squares found on the {spec.name} sheet (need {MIN_TAGS}): "
-            "square covered, sheet cut off, or out of focus",
-            size=spec.name,
-        )
-
-    rect = rectify(gray, tags, spec)
+    rect = rectify(gray, tags, spec, loc.H)
     crop, origin = field_crop(rect, spec)
     binary = threshold(crop)
 
@@ -557,19 +1069,64 @@ def ingest(
         except ValueError:
             rel = str(dxf_path)
         upsert_row(csv_path, tag, height_class, rel, L, W)
-    return Result(ok=True, reason="", dxf_path=dxf_path, preview_path=preview_path, L=L, W=W, size=spec.name)
+    return Result(ok=True, reason="", dxf_path=dxf_path, preview_path=preview_path, L=L, W=W, size=spec.name, height_class=height_class)
+
+
+# ================================================================ ingest
+
+
+def ingest(
+    image_path: str | Path,
+    tag: str,
+    height: float | int | str,
+    source: str = "photo",
+    *,
+    print_scale: float = DEFAULT_PRINT_SCALE,
+    out_dir: Path = CAPTURES,
+    csv_path: Path | None = TOOL_LIST,
+) -> Result:
+    """One capture. ``height`` is the tool's measured height in mm for the
+    photo source (free text is tolerated: digits and a point are kept, so
+    "20mm" is 20) and the gauge slot for the trace source. The paper size is
+    NOT an argument: the ArUco quartet in the photo names it (see
+    ``identify``). ``print_scale`` corrects a sheet printed at other than
+    100% (see ``DEFAULT_PRINT_SCALE``). ``out_dir`` and ``csv_path`` exist so
+    a test can point the writes anywhere; ``csv_path=None`` skips the row."""
+    if source == "camera":
+        raise NotImplementedError("v2: machine Z-plate camera")
+    if source not in ("photo", "trace"):
+        raise ValueError(f"unknown source {source!r}")
+
+    tag = tag.strip().upper()
+    if source == "photo":
+        digits = "".join(ch for ch in str(height) if ch.isdigit() or ch == ".")
+        try:
+            height_mm = float(digits)
+        except ValueError:
+            return _reject(f"height {height!r} is not a number of mm")
+        if height_mm <= 0:
+            return _reject(f"height {height_mm:g} mm is not a height")
+
+    img = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
+    if img is None:
+        return _reject(f"could not read image {image_path}")
+
+    if source == "photo":
+        return _ingest_photo(img, Path(image_path), tag, height_mm, print_scale=print_scale, out_dir=out_dir, csv_path=csv_path)
+    return _ingest_trace(img, tag, height, print_scale=print_scale, out_dir=out_dir, csv_path=csv_path)
 
 
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Tool capture ingest: a photo of a traced sheet in, a pocket polyline out.")
+    parser = argparse.ArgumentParser(description="Tool capture ingest: a photo of a tool on a capture sheet in, a pocket polyline out.")
     parser.add_argument("image")
     parser.add_argument("tag")
-    parser.add_argument("height")
+    parser.add_argument("height", help="the tool's tallest point, mm (photo source); the gauge slot (trace source)")
+    parser.add_argument("--source", choices=("photo", "trace"), default="photo")
     parser.add_argument("--print-scale", type=float, default=DEFAULT_PRINT_SCALE, dest="print_scale",
                          help="measured scale-bar length / 100 (default 1.0, a 100%% print)")
     args = parser.parse_args()
-    r = ingest(args.image, args.tag, args.height, print_scale=args.print_scale)
+    r = ingest(args.image, args.tag, args.height, source=args.source, print_scale=args.print_scale)
     print(r.line())
     sys.exit(0 if r.ok else 1)
