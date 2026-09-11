@@ -103,14 +103,9 @@ If the sheet did not print at 100% (a printer's own margins forced a smaller sca
 
 The Sheet's CAPTURE tab (columns `timestamp, tag, height_slot, photo_url, status, reason`) is the landing tab. `~/labnode-scripts/cnc-capture-ingest.py` reads rows whose `status` is blank, downloads the photo from Drive, runs the ingest, writes `status` (`captured` / `rejected` / `error`) and `reason` back, uploads the preview to `IC / CNC Station 2026 / 05 Capture / preview`, and puts one line in the 07:05 digest.
 
-The Form itself is a five-minute manual task (the Drive token on the Mini has no Forms scope, and this is not worth a second credential). In Google Forms:
+The Form exists (built through the Forms API on 2026-09-11 from the Brophy Drive token, which authorizes `forms:batchUpdate`; the one thing the API refuses is creating a file-upload question, so that question was added by hand). Form id `1CLmlEu2w75Go0GjtxteJvdp2GKIq3jxkxWVq3KZ8eIU`, in IC / CNC Station 2026. Questions: Tag (dropdown, one entry per traceable row), Height (10..50), Photo of the sheet (file upload, images, one file). Respondent email is collected, so a capture is attributed. It has no Google-linked response tab: `cnc-capture-ingest.py` reads the Forms API and copies each new response into the CAPTURE tab itself (columns G email, H response id, the dedup key), then runs the rows as before.
 
-1. New form, title **CNC tray capture**. Settings > Responses: collect email off; Presentation: confirmation message "Captured. Check the tray preview tomorrow morning."
-2. Question 1, **Tag**, Dropdown, required. Options: every `id` in the TRAY tab (T013..T058 today; copy the column). Keep the list in the TRAY tab's order.
-3. Question 2, **Height slot**, Multiple choice, required. Options: `10`, `20`, `30`, `40`, `50`.
-4. Question 3, **Photo of the sheet**, File upload, required, images only, one file, 10 MB. Google will ask to create an upload folder: put it in **IC / CNC Station 2026 / 05 Capture** (the folder exists; choose it or move the auto-created one inside it).
-5. Responses > Link to Sheets > Select existing spreadsheet > "CNC Station – Tool List v1". The Form creates a new tab; rename it **CAPTURE** and delete the empty CAPTURE tab that is there now, OR leave the empty one and re-point `CAPTURE_TAB` in the script at the Form's tab name. The Form writes `Timestamp, Tag, Height slot, Photo of the sheet` as columns A..D; the script fills `status` and `reason` in E and F.
-6. Print the Form's link as a QR on the card's back, or put the short link on the drawer label.
+The Sheet's BOARD tab is the student-facing checkoff: one row per traceable tool, a checkbox that ticks itself when CAPTURE's last row for that tag says `captured`, the status, who, and the ingest's one line. Formulas only; nothing writes to it. The Sheet is shared read-only to the brophyprep.org domain for that tab.
 
 ### The physical kit (Drawer 1)
 
