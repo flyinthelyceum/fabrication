@@ -134,6 +134,8 @@ SOURCES = {
     "mini_pc_env": "https://psref.lenovo.com/syspool/Sys/PDF/ThinkStation/ThinkStation_P350_Tiny/ThinkStation_P350_Tiny_Spec.PDF"
                    " -- Lenovo ThinkStation P350 Tiny, 1L Tiny chassis, PSREF "
                    "dimensions 179mm W x 182.9mm D x 36.5mm H (read 2026-09-04). "
+                   "MEASURED 2026-09-11, Jared, calipers on the unit with rubber feet: "
+                   "7-1/16 x 7-3/16 x 1.425 in = 179.4 x 182.6 x 36.2; PSREF confirmed. "
                    "Replaces the Intel NUC 13 Pro (117x112x54, medium): the P350 "
                    "is the unit Jared is fitting, RT3.",
     "drawer_slide_side_clear": "https://www.accuride.com/hardware/3832 -- the 3832 "
