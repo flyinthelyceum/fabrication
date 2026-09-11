@@ -12,9 +12,9 @@ PHOTO SOURCE
     P1. A phone (PHONE_W x PHONE_H, f35 = F35, EXIF written) held flat at
         D = PHOTO_D (600) over the sheet, its nadir 30mm off the tool's
         centre, rolled 5 degrees. A dark 50 x 100 stadium is rendered as a
-        tool measured 20 tall whose silhouette edge sits at h_eff = 10
-        (H_EFF_FRAC x 20), so it is drawn inflated about the nadir by
-        D / (D - 10): 1.7% at the far end, with a soft shadow, a soft
+        tool measured 20 tall whose silhouette edge sits at h_eff =
+        H_EFF_FRAC x 20 = 0, on the paper (the T056 calibration: a flat tool's
+        widest outline lies on the sheet), with a soft shadow, a soft
         highlight streak and a lighter patch. Recovered L, W within 0.5mm of
         100 x 50; D within 3% of 600.
     P2. The same with a pencil outline 3mm outside the tool, on the paper
@@ -29,9 +29,9 @@ PHOTO SOURCE
         over the 100 x 50 stadium (too close for a tool this size), a 55mm
         height (taller than any drawer), a height that is not a number.
         Each rejects with its reason and writes nothing.
-    P6. The residual gate: at D 262 a 50 x 30 tool 16 tall passes (0.76mm)
-        and the 100 x 50 stadium 40 tall rejects (3.8mm), naming the D to
-        use. Heights arrive as "16mml" and "40.00".
+    P6. The oversize gate: at D 262 a 50 x 30 tool 16 tall passes (could
+        read 1.5mm large) and the 100 x 50 stadium 40 tall rejects (7.6mm),
+        naming the D to use. Heights arrive as "16mml" and "40.00".
     P7. The magenta window (the committed sheet, 2026-09-11 11:00 on): a
         white stadium and a light grey shiny one, with shadow and highlight,
         keyed on chroma and recovered within 0.5mm; field_kind says magenta
@@ -176,17 +176,18 @@ PHONE_W, PHONE_H = 3024, 4032
 
 TOOL_H = 20.0
 """The synthetic tool's measured height. Its silhouette edge is rendered at
-H_EFF_FRAC x this, which is the pipeline's own assumption, so the test
-checks the correction's arithmetic, not the assumption (see
-capture_ingest: THE PERSPECTIVE OF A TOOL ABOVE THE SHEET)."""
+H_EFF_FRAC x this (0: on the paper), which is the pipeline's own assumption,
+so the test checks the pipeline's arithmetic, not the assumption; the
+assumption is the T056 calibration (see capture_ingest: THE PERSPECTIVE OF
+A TOOL ABOVE THE SHEET). The oversize gate uses the measured height."""
 
 PHOTO_TOL_MM = 0.5
 
 PHOTO_D = 600.0
 """Where the card puts the phone: the sheet about a third of the screen,
 which for a LETTER sheet and a 24mm-equivalent lens is about 600mm. The
-100 x 50 stadium 20 tall leaves a residual of 0.83mm there (see
-capture_ingest.RESIDUAL_MAX); at 450 it would leave 1.11 and reject."""
+100 x 50 stadium 20 tall could read 1.67mm large there (see
+capture_ingest.OVERSIZE_MAX); at 450 it would be 2.22 and reject."""
 
 SHADOW = 0.12
 """How much darker than the paper the synthetic tool's shadow is: a soft
@@ -507,10 +508,12 @@ def test_photo_no_exif(tmp: Path) -> None:
     print(f"  P4 PNG without EXIF: L {r.L:.3f} W {r.W:.3f}, reason '{r.reason}'")
 
 
-def test_photo_residual_gate(tmp: Path) -> None:
+def test_photo_oversize_gate(tmp: Path) -> None:
     """The same D 262 that rejected T042 on the flat floor: a 50 x 30 tool 16
-    tall leaves (25 x 8) / 262 = 0.76mm and passes; the 100 x 50 stadium 40
-    tall leaves (50 x 20) / 262 = 3.8mm and rejects, naming about 1000mm."""
+    tall could read (50 x 8) / 262 = 1.5mm large and passes; the 100 x 50
+    stadium 40 tall could read (100 x 20) / 262 = 7.6mm large and rejects,
+    naming about 1000mm. Both tools are drawn with their edge ON the paper
+    (h_eff = 0), which is what the pipeline now assumes."""
     D = 262.0
     cx, cy = field_centre()
     small_l, small_w, small_h = 50.0, 30.0, 16.0
@@ -519,7 +522,7 @@ def test_photo_residual_gate(tmp: Path) -> None:
     assert r.ok, r.reason
     assert abs(r.L - small_l) <= PHOTO_TOL_MM and abs(r.W - small_w) <= PHOTO_TOL_MM, (r.L, r.W)
     assert abs(r.D - D) <= 0.03 * D, r.D
-    print(f"  small tool (50 x 30, h 16 from '16mml') at D {D:g}: accepted, L {r.L:.3f} W {r.W:.3f}, residual {(r.L / 2) * 8 / r.D:.2f}")
+    print(f"  small tool (50 x 30, h 16 from '16mml') at D {D:g}: accepted, L {r.L:.3f} W {r.W:.3f}, oversize bound {r.L * 8 / r.D:.2f}")
     big_h = 40.0
     p = photo_case("photo_residual_big", tmp, D, lambda im, to: draw_photo_tool(im, to, stadium(cx, cy, TOOL_L, TOOL_W), ci.H_EFF_FRAC * big_h), nadir=(cx + 15, cy - 10), roll=0.0)
     out = tmp / "captures_residual_big"
@@ -634,8 +637,8 @@ def main() -> int:
     test_photo_no_exif(tmp)
     print("P5. reject paths")
     test_photo_rejects(tmp)
-    print("P6. the residual gate at D 262")
-    test_photo_residual_gate(tmp)
+    print("P6. the oversize gate at D 262")
+    test_photo_oversize_gate(tmp)
     print("P7. the magenta window: white and light-grey tools by chroma key")
     test_photo_magenta(tmp)
     print("TRACE SOURCE (history)")

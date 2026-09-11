@@ -88,14 +88,18 @@ meets the paper is further from the camera's nadir than the edge itself
     p' = c + (p - c) * D / (D - h)          what the rectified image shows
     p  = c + (p' - c) * (D - h) / D         the correction
 
-h is not the tool's measured height: the widest edge of a real tool (a
-wrench's jaw, a clamp's bar, a caliper's beam) sits somewhere in its
-thickness, around the middle, and the edge the camera sees is the highest
-point along that ray, which is the top for a slab and lower for a rounded
-bar. h_eff = H_EFF_FRAC x measured height is the estimate; FOAM_CLEAR absorbs
-the residual. With the sheet a third of the screen (D about 600) a 20mm tool inflates by 3.4%, 1.7mm on
-a 50mm width; corrected with h_eff = 10 the residual is under 0.9mm each way
-whether the true edge is at 0 or at 20. CONFIDENCE: estimate.
+h is NOT the tool's measured height, and it is not half of it either:
+h_eff = H_EFF_FRAC x measured = 0. The widest outline of the tools that go
+in a drawer (a clamp's bar, a wrench, a block, a bottle on its side) lies ON
+the paper, so the silhouette's edge is at h = 0 and needs no shrink; a round
+bar's widest edge is at mid-height and reads LARGE by up to (L / 2)(h / 2) / D
+a side, which the oversize gate below bounds. Foam must err large, never
+small: a pocket a millimetre big still takes the tool, a pocket a millimetre
+small does not. The datum: Jared's calipers on the T056 Essential Clamp bar,
+70.23 x 19.77; the photo path with h_eff = h / 2 read 68.9 x 20.0 at D 409,
+h 18 (1.3mm short along L, the shrink of a flat-bottomed tool that needed
+none; W within 0.23, which is the uncorrected read). CONFIDENCE: measured,
+this datum, 2026-09-11.
 
 D comes from the photo's EXIF. A lens of 35mm-equivalent focal length f35
 projects an object of size S at distance D onto s = f35 * S / D mm of a
@@ -114,17 +118,18 @@ mapped through the homography into sheet mm; exact for a phone held flat,
 which is what the card says to do. No EXIF (a screenshot, a stripped
 upload): D = D_FALLBACK_MM and the Result says so.
 
-THE GATE ON D IS A RESIDUAL, NOT A FLOOR. What is not known is where the
-widest edge sits in the tool's thickness; h_eff = h / 2 carries +/- h / 2 of
-that, and at the far end of the silhouette, L / 2 from the nadir, that is a
-residual of about (L / 2) * (h / 2) / D in the outline. A 50mm jaw 16 tall
-at D 262 leaves 0.8mm, inside FOAM_CLEAR; the 228mm pendant 40 tall at the
-same D leaves 8.7mm and must be shot from further away. So the photo is
-identified, rectified and segmented FIRST, L is measured, and then
-residual > RESIDUAL_MAX rejects, naming the D that would do. A hard floor
-stays only where the model itself breaks: D under D_HARD_MIN_MM (a phone
-almost on the paper). The first real photos (2026-09-11) showed the flat
-300 floor rejecting a small tool it would have measured to 0.8mm.
+THE GATE ON D IS AN OVERSIZE BOUND, NOT A FLOOR. With no shrink applied,
+the one error left is a tool whose widest edge is NOT on the paper (a round
+bar, a tapered handle): at mid-height it projects outward, and at a
+distance L from the nadir (the worst place for it, the nadir at one end of
+the tool) by L * (h / 2) / D. That is worst_oversize; over OVERSIZE_MAX the
+capture rejects as too close for a tool this size and names the D that
+would do. So the photo is identified, rectified and segmented FIRST, L is
+measured, and then the gate runs. A hard floor stays only where the model
+itself breaks: D under D_HARD_MIN_MM (a phone almost on the paper). The
+first real photos (2026-09-11) showed a flat 300 floor rejecting a small
+tool it would have measured to 0.8mm, and a residual gate at h / 2 reading
+a flat clamp bar 1.3mm short; this is the third gate that day.
 
 THE SHEET SIZE IS NEVER AN ARGUMENT
 ===================================
@@ -399,10 +404,12 @@ MIN_TOOL_MM2 = 100.0
 """Under this area a component is a mark, not a tool: a 1/8in endmill lying
 flat is 127. CONFIDENCE: rule."""
 
-H_EFF_FRAC = 0.5
-"""The silhouette's edge is assumed at this fraction of the measured height
-(see THE PERSPECTIVE OF A TOOL ABOVE THE SHEET). CONFIDENCE: estimate;
-FOAM_CLEAR absorbs the residual."""
+H_EFF_FRAC = 0.0
+"""The silhouette's edge is assumed at this fraction of the measured height,
+i.e. ON the paper: no perspective shrink (see THE PERSPECTIVE OF A TOOL
+ABOVE THE SHEET). 0.5 (2026-09-11 morning) read the T056 clamp bar 1.3mm
+short against calipers; the outline must err large, never small.
+CONFIDENCE: measured, that datum."""
 
 FRAME_DIAG_MM = math.hypot(36.0, 24.0)
 """The 35mm frame's diagonal, 43.27: what FocalLengthIn35mmFilm is defined
@@ -414,11 +421,17 @@ about a third of the screen.
 The Result's reason names it so the digest shows the capture ran on an
 assumption. CONFIDENCE: estimate."""
 
+OVERSIZE_MAX = 2.0
+"""The largest amount a tool's widest edge may read large, L * (h / 2) / D,
+before the capture rejects as too close for a tool this size. Twice
+FOAM_CLEAR: a pocket that big still takes the tool with a loose fit; beyond
+it the phone goes higher. See THE GATE ON D IS AN OVERSIZE BOUND. SOURCE:
+Jared, 2026-09-11, with the T056 calibration. CONFIDENCE: choice."""
+
 RESIDUAL_MAX = 1.0
-"""The largest outline error the h_eff estimate may leave, (L / 2) * (h / 2)
-/ D, before the capture rejects as too close for a tool this size. Set to
-FOAM_CLEAR: an error up to the clearance still drops the tool in. See THE
-GATE ON D IS A RESIDUAL. CONFIDENCE: choice, tied to FOAM_CLEAR."""
+"""The residual gate of 2026-09-11 midday, (L / 2)(h / 2) / D against this,
+kept for the record; the oversize gate replaced it after the T056
+calibration. Not used."""
 
 D_HARD_MIN_MM = 150.0
 """Below this the pinhole model is not worth correcting with (the phone is
@@ -1067,12 +1080,13 @@ def _ingest_photo(img: np.ndarray, image_path: Path, tag: str, height_mm: float,
     if len(tool_true) < 3:
         return _reject("silhouette is not a polygon", spec.name)
     tool_local, L, W, M = _align_to_min_rect(tool_true)
-    residual = (L / 2) * (height_mm / 2) / D          # see THE GATE ON D IS A RESIDUAL
-    if residual > RESIDUAL_MAX:
-        need = math.ceil((L / 2) * (height_mm / 2) / RESIDUAL_MAX / 50) * 50
+    oversize = L * (height_mm / 2) / D                # see THE GATE ON D IS AN OVERSIZE BOUND
+    if oversize > OVERSIZE_MAX:
+        need = math.ceil(L * (height_mm / 2) / OVERSIZE_MAX / 50) * 50
         return _reject(
-            f"too close for a tool this size ({D:.0f} mm above the sheet, {L:.0f} long, {height_mm:g} tall): hold the "
-            f"phone about {need} mm above the sheet (the sheet about a third of the screen)",
+            f"too close for a tool this size ({D:.0f} mm above the sheet, {L:.0f} long, {height_mm:g} tall): its "
+            f"widest edge could read up to {oversize:.1f} mm large; hold the phone about {need} mm above the sheet "
+            "(the sheet about a third of the screen)",
             size=spec.name,
         )
     pocket_local_raw = _offset_polygon(tool_local, FOAM_CLEAR)
@@ -1087,7 +1101,7 @@ def _ingest_photo(img: np.ndarray, image_path: Path, tag: str, height_mm: float,
     _write_dxf(pocket_local, dxf_path)
     _write_preview(
         rect, sil_mm, pocket_sheet,
-        f"{tag}  {spec.name} {field}  L {L:.1f}  W {W:.1f}  H {height_mm:g} (class {height_class:g})  D {D:.0f}  h_eff {h_eff:g}  resid {residual:.2f}  {len(tags)} tags  print_scale {print_scale:.3f}",
+        f"{tag}  {spec.name} {field}  L {L:.1f}  W {W:.1f}  H {height_mm:g} (class {height_class:g})  D {D:.0f}  h_eff {h_eff:g}  over<={oversize:.1f}  {len(tags)} tags  print_scale {print_scale:.3f}",
         preview_path, spec,
     )
     if csv_path is not None:
