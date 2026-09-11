@@ -14,8 +14,8 @@ the count that comes out. Three materials, three nests:
     acrylic   every solid in the assembly's ``acrylic`` group (the rear door's
               reveal, the console's reveal and three panes, the cradle's lip),
               on the Universal's large bed.  ->  nest/laser_NN.dxf
-    foam      one Kaizen tray per drawer, from ``trays.plan``, on the 2x4 foam
-              sheet.  ->  nest/foam_NN.dxf
+    foam      one Kaizen blank per tray tile (D1 is two tiles), from
+              ``trays.plan_all``, on the 2x4 foam sheet.  ->  nest/foam_NN.dxf
 
 The birch count is the number the brief (v7, "3 sheets") and the build guide
 ("plan five") were waiting on. It is computed here and asserted by
@@ -362,8 +362,8 @@ def blanks(comps: list[Component] | None = None, d: Datums = D) -> list[Blank]:
     for c in acrylic_components(comps):
         out.append(blank_from_component(c, "acrylic", LASER_T))
     for spec in drawers.DRAWERS:
-        p = trays.plan(spec.key, d)
-        out.append(Blank(f"tray_{spec.key.lower()}", "foam", max(p.w, p.d), min(p.w, p.d), False, "any"))
+        for p in trays.plan_all(spec.key, d):
+            out.append(Blank(p.label, "foam", max(p.w, p.d), min(p.w, p.d), False, "any"))
     return out
 
 
@@ -737,8 +737,8 @@ def flats(d: Datums = D) -> dict[str, tuple[Part | None, dict[str, list[Face]]]]
 
     # -- foam -----------------------------------------------------------
     for spec in drawers.DRAWERS:
-        p = trays.plan(spec.key, d)
-        add(f"tray_{spec.key.lower()}", None, trays.layers(p))
+        for p in trays.plan_all(spec.key, d):
+            add(p.label, None, trays.layers(p))
 
     return out
 

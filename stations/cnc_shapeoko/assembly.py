@@ -204,8 +204,10 @@ def components(d: Datums = DATUMS) -> list[Component]:
     for label, part in drawers.placed_all(d):
         out.append(Component(label, "drawer", part))
 
-    # 7. the fitted tray in drawer 1, generated from the tool list
-    out.append(Component(trays.TRAY_LABEL, "tray", trays.place(d=d)))
+    # 7. the fitted tray in drawer 1, generated from the tool list: two
+    # tiles since 2026-09-11, the bore grid in front and the rest behind
+    for label, part in trays.placed_all(d):
+        out.append(Component(label, "tray", part))
 
     # 8. the mast's steel backing plate, under the cap at the mast pad. Not
     # birch, but it lives in the brain band's corner beside two housed panels,
@@ -447,15 +449,16 @@ def joints(d: Datums = DATUMS) -> dict[frozenset[str], Joint]:
     # -- inside each drawer box, and the tray that sits in one -------------
     for a, b, kind, axis, lo, hi, note in drawers.joint_table(d):
         js.append(Joint(a, b, kind, axis, lo, hi, note))
-    js.append(
-        Joint(
-            trays.TRAY_LABEL,
-            f"{trays.spec_for(trays.TRAY_V1).name}_bottom",
-            "bearing",
-            None,
-            note="the tray stands on the drawer's bottom panel",
+    for p in trays.plan_all(trays.TRAY_V1, d):
+        js.append(
+            Joint(
+                p.label,
+                f"{trays.spec_for(trays.TRAY_V1).name}_bottom",
+                "bearing",
+                None,
+                note="the tile stands on the drawer's bottom panel",
+            )
         )
-    )
 
     # -- the stock comb is housed in the cap and butts both dividers; the
     # reference blank is housed in the deck's groove and the comb's slot ----
@@ -751,10 +754,11 @@ def envelope(comps: list[Component] | None = None, d: Datums = DATUMS) -> list[F
     )
 
     tray_spec = trays.spec_for(trays.TRAY_V1)
-    plan = trays.plan(trays.TRAY_V1, d)
+    plans = trays.plan_all(trays.TRAY_V1, d)
     iw, idep, _ih = drawers.interior(tray_spec, d)
-    fits.append(Fit(f"{trays.TRAY_LABEL} width", plan.w, iw, "X"))
-    fits.append(Fit(f"{trays.TRAY_LABEL} depth", plan.d, idep, "Y"))
+    for plan in plans:
+        fits.append(Fit(f"{plan.label} width", plan.w, iw, "X"))
+    fits.append(Fit("tray_d1 tiles depth", sum(p.d for p in plans), idep, "Y"))
 
     # The lungs carriage against the bay less its lining and slides, and the
     # unit against the platform it stands on.
@@ -944,13 +948,13 @@ def main() -> None:
             f"{bay_walls.SLIDE_LEN:.0f}mm slide"
             + (f"   NARROWED by {nar:.1f} for the console, right slide on the cheek" if nar else "")
         )
-    plan = trays.plan(trays.TRAY_V1, d)
     miss = trays.skipped(trays.TRAY_V1)
-    print(
-        f"  {trays.TRAY_LABEL}: {plan.w:.1f} x {plan.d:.1f} x {plan.h:.1f} foam, "
-        f"{len(plan.pockets)} pockets from the tool list, "
-        f"{len(miss)} {trays.TRAY_V1} row(s) still MEASURE"
-    )
+    for plan in trays.plan_all(trays.TRAY_V1, d):
+        print(
+            f"  {plan.label}: {plan.w:.1f} x {plan.d:.1f} x {plan.h:.1f} foam, "
+            f"{len(plan.pockets)} pockets ({plan.bores} bores, {plan.filled} filled) from the tool list"
+        )
+    print(f"  {len(miss)} {trays.TRAY_V1} row(s) still MEASURE")
 
     print("\nstock bay: one comb under the cap, grooves in the deck")
     print(

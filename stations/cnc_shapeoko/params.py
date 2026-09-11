@@ -147,6 +147,14 @@ SOURCES = {
                   "\"the drawer should be constructed 1-1/16in [27.0mm] less than "
                   "the cabinet opening\". 13.5mm per side, which is the 12.7 "
                   "minimum plus most of its +0.8 band.",
+    "kaizen_top_layer_t": "FastCap Kaizen Foam 30mm B/W, the maker's own sheet: "
+                  "a 1/8in black cap over the white core, about 3.2mm; sheet "
+                  "thickness +3 / -1. Frontier scan 2026-09-11 "
+                  "(notes.aaand.space/cnc-cutter-pockets.html, A-05). The 5.0 "
+                  "that parts/trays.py carried until then came from a reseller "
+                  "listing. NOT calipered: the blank in hand sets it. Read by "
+                  "parts/trays.py (TOP_LAYER_T), which owns every label depth "
+                  "and floor-is-white check that leans on it.",
     "er16_collet_od": "DIN 6499 / ISO 15488 ER collet series, ER-16 body: 17.0mm "
                   "OD x 27.5mm long. Chart: "
                   "https://carbideprocessors.com/content/collet-guide-chart.pdf "
@@ -709,6 +717,8 @@ CONFIDENCE = {
     "lungs_side_clear": "medium",   # a hand's clearance, chosen not sourced
     "drawer_slide_side_clear": "high",      # Accuride 3832 sheet, the constraint
     "drawer_slide_build_under": "high",     # same sheet, the recommendation
+    "kaizen_top_layer_t": "MEASURE",    # FastCap catalog 3.2; calipers on the blank
+                                        # in hand close it ("measured")
     "er16_collet_od": "high",       # DIN 6499 standard size, not calipered
     "footprint_x": "high",       # carbide3d spec table
     "footprint_y": "high",       # carbide3d spec table

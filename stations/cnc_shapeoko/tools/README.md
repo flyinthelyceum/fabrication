@@ -4,15 +4,16 @@ Canonical, editable list lives in the Google Sheet "CNC Station – Tool List v1
 `tool_list.csv` and `tool_list_add.csv` here are point-in-time snapshots of the Sheet's TRAY and ADD tabs, committed for the build123d tray generator to read.
 Regenerate by exporting the Sheet's TRAY tab (File > Download > CSV) over `tool_list.csv`, and the ADD tab over `tool_list_add.csv` — never hand-edit these snapshots, with one exception: `capture_ingest.py` upserts the row it just captured, and the same row lands in the Sheet through the CAPTURE tab, so the two stay in step. The ADD tab's subtotal rows (blank id) are dropped from the snapshot.
 
-## Capture (spec v3, approved 2026-09-04; photo capture 2026-09-11)
+## Capture (spec v3, approved 2026-09-04; photo capture 2026-09-11; bores and tiles 2026-09-11)
 
-Trays are milled from two-tone Kaizen foam on the Shapeoko, one piece per drawer. A pocket comes from one of three socket rules in `parts/trays.py` and nowhere else:
+Trays are milled from two-tone Kaizen foam on the Shapeoko. Drawer 1 is TWO tiles (`tray_d1_a.dxf`, the cutter bore grid at the front, 271 x 150; `tray_d1_b.dxf`, collets, wrenches and sealed spares behind it, 271 x 314), each its own file so a tile is re-milled alone when a cutter is bought; D2 and D3 are one tray each. The `tile` column of the TRAY tab says which tile a D1 row is on. A pocket comes from one of four socket rules in `parts/trays.py` and nowhere else (ruled 2026-09-11 off the frontier scan at notes.aaand.space/cnc-cutter-pockets.html):
 
-- `cutter` — a CATALOG row: `oal_mm` by its largest diameter
-- `collet` — a CATALOG row: `oal_mm` by the DIN 6499 ER-16 body
-- `captured` — a CAPTURED row: the pocket IS the tool's silhouette plus `FOAM_CLEAR`, from `captures/T0xx.dxf`, at a depth of `height_class` plus `FOAM_DEPTH_ALLOW`
+- `bore` — a CATALOG cutter: a bore of `shank_d_mm` + 0.25, 25 deep (20 for a 1/8 shank), cutting edge UP, on the ruled grid `trays.BORE_ROWS` (10 x 3.4 at 15 pitch, 20 x 6.6 at 20, 3 x 6.6 at 32 for wide bodies over 20 mm like the McFly, 2 x 9.8 at 25). A cutter longer than `stand_oal_max` (67 for a 1/4 shank under D1's 82 clear) cannot stand and falls back to `captured`; the gate says so.
+- `collet` — a CATALOG collet: a 17.6 bore, 22 deep, upright, nut off; 14 bores in rows of up to 7 on Tile B, three filled today.
+- `captured` — a CAPTURED row: the pocket IS the tool's silhouette plus `FOAM_CLEAR`, from `captures/T0xx.dxf`, at a depth of `height_class` plus `FOAM_DEPTH_ALLOW`, with a finger scoop
+- `tube` — a sealed spare from the ADD tab (`tool_list_add.csv`, category "spares", status proposed or owned): one lying pocket per cutter in the pack, so the count reads from the drawer. Tube sizes are estimates until one is calipered.
 
-Everything that is not a cutter or a collet gets captured: the tool lies on a capture sheet, a phone photographs it, the software reads its outline. The bounding-box-plus-clearance rule and its three caliper numbers are gone (ruled 2026-09-03): a wrench is not a box.
+A bore with a tool carries its label; a bore with no label is by definition free. Bores get no scoop. Everything that is not a cutter, a collet or a sealed spare gets captured: the tool lies on a capture sheet, a phone photographs it, the software reads its outline. The bounding-box-plus-clearance rule and its three caliper numbers are gone (ruled 2026-09-03): a wrench is not a box. Rows with `status=struck` do not exist; rows of kind `bin` or `case` (`dims_status=NONE`) get no pocket by design.
 
 ### The procedure (this is the laminated card, `capture_card.pdf`)
 
@@ -42,7 +43,7 @@ From 2026-09-04 to 2026-09-11 the procedure was SHEET / HEIGHT / LAY / TRACE / P
 
 **A capture sheet never has to be bigger than the drawer.** Anything that will not lie in a drawer does not get a foam pocket, so it never gets captured. That is the whole sizing rule, and it is what sets the top of the family.
 
-The drawers are `parts/drawers.py`. After the 2026-09-04 inset-front ruling every box is 259 wide outside; 18mm birch a side, 500mm slides, a front rabbet and a back set in one thickness with its own thickness behind it give the **clear interior 446 deep x 223 wide** (`drawers.interior`, same for all three boxes). The family was sized when the collar added 7mm a side to every tool; without it every window has 14mm more to give.
+The drawers are `parts/drawers.py`. `drawers.interior` is canonical: D1's clear interior is **271 wide x 464 deep x 82 high** (the 446 x 223 this paragraph carried until 2026-09-11 was a stale brief figure; the scan's C-03 caught it). The family was sized when the collar added 7mm a side to every tool; without it every window has 14mm more to give.
 
 | size | page mm | window mm | largest tool | tag ids | tag mm | what it is for |
 |---|---|---|---|---|---|---|
@@ -103,6 +104,9 @@ If the sheet did not print at 100% (a printer's own margins forced a smaller sca
 | `height_class` | 10, 20, 30, 40, 50: the measured height rounded up to the next ten | the ingest, from the Form's height |
 | `bbox_h_mm` | the measured height, mm | the ingest, from the Form's height |
 | `silhouette` | `captures/T0xx.dxf`, relative to this directory | the ingest |
+| `tile` | `A` or `B` for a D1 row: which tile it lives on | by hand, 2026-09-11 |
+| `label` | twelve characters, what is milled beside the pocket (the cutter number alone for Carbide 3D parts) | by hand |
+| `status` | `active`, or `struck` (merged or does not exist; the row is skipped) | by hand; `status_note` says why |
 
 `bbox_l_mm`, `bbox_w_mm` stay in the schema as the ingest's record of L and W; `trays.py` reads none of the three bbox columns. `socket_note` stays as a free note.
 
@@ -130,13 +134,13 @@ The Sheet's LOG tab (date, reading, who) is the human half of the station log; t
 
 ## DXF layers the tray export writes (C16)
 
-The foam tray goes out as one DXF per drawer, `tray_<drawer>.dxf`, with the geometry on named layers so the CAM reader (Carbide Create) takes depth from the layer and never from a guess:
+The foam goes out as one DXF per tile, `tray_<drawer>[_<tile>].dxf` (`tray_d1_a`, `tray_d1_b`, `tray_d2`, `tray_d3`), with the geometry on named layers so the CAM reader (Carbide Create) takes depth from the layer and never from a guess:
 
-- `OUTLINE` — the tray blank, through; the drawer's inside floor
-- `POCKET_D<depth>` — one layer per pocket depth in mm, e.g. `POCKET_D8.35`; closed loops (pocket plus its finger scoop), pocket to that depth from the top face with the 1/8in flat endmill (`lib.house.POCKET_TOOL_D`)
-- `TEXT_D<depth>` — label glyphs, milled through the black top layer with a text cutter; the depth is the top layer plus a bite
+- `OUTLINE` — the tile blank, through; the drawer's inside width by the tile's depth
+- `POCKET_D<depth>` — one layer per pocket depth in mm (`POCKET_D20` the 1/8 bores, `POCKET_D25` the other cutter bores, `POCKET_D22` the collet bores and the clamp bars, `POCKET_D12` the wrenches, `POCKET_D15` / `POCKET_D12` the tubes); closed loops (a bore is its circle; a lying pocket carries its finger scoop), pocket to that depth from the top face with the #102 1/8in flat endmill (`lib.house.POCKET_TOOL_D`)
+- `TEXT_D<depth>` — the labels as single-stroke CENTRELINES, open polylines. Cut as a contour ON the line, no offset, with `trays.LABEL_BIT` (the #112 1/16in flat, ADD A031) to the depth in the layer name (`TEXT_D3.7`: the 3.2 black cap plus a 0.5 bite). Not a pocket and not a V-carve: a V bit's depth is set by its stroke width and at label size never reaches white (the scan's C-01); a flat's groove is white across its whole floor. The depth, the stroke and the cap height (6.5) are all computed from the bit and the cap in `trays.py`; switch `LABEL_BIT` and every label follows.
 
-Text depth and pocket depths are both read off the layer name. The 30mm two-tone blank is black over white; every pocket floor is at least `FOAM_REVEAL` into the white.
+Text depth and pocket depths are both read off the layer name. The 30mm two-tone blank is black over white; every pocket floor is at least `FOAM_REVEAL` into the white. `TOP_LAYER_T` (3.2, FastCap's 1/8in cap) is a MEASURE until calipers on the blank in hand set it (`params.CONFIDENCE["kaizen_top_layer_t"]`). Run `PYTHONPATH=. .venv/bin/python -m stations.cnc_shapeoko.parts.trays` for the bore table, the label-cutter table and a top-view SVG of each D1 tile beside its DXF.
 
 ## DXF layers the birch callouts write (C17)
 
@@ -157,7 +161,7 @@ Three nests, three stocks, one output folder `export/cnc_shapeoko/nest/`:
 
 - `sheet_NN.dxf` — 18mm 5x5 Baltic birch, every solid in `assembly.birch_components` (groups carcass, plinth, drawer, carriage). The deck and the top cap are track-saw parts by the 2026-09-02 ruling and take a sheet each, flagged TRACK SAW. Everything else is Shapeoko, and because the travel (1237) is shorter than the sheet (1525) on both axes, every Shapeoko sheet is ripped first: full-width rips between shelves, crosscuts between segments, every blank's parts within the travel less one cutter diameter. The rips are drawn.
 - `laser_NN.dxf` — 3mm clear acrylic on the Universal's large bed (`LASER_BED_LARGE`): the rear door's reveal, the console's reveal and three panes, the cradle's lip.
-- `foam_NN.dxf` — two-tone Kaizen foam, one tray per drawer from `trays.plan`.
+- `foam_NN.dxf` — two-tone Kaizen foam, one blank per tray tile (four: D1's two tiles, D2, D3) from `trays.plan_all`.
 - `manifest.csv` — one row per placement: file, part, x, y, size as placed, grain rule, shelf, segment.
 
 Rectangles only, greedy, biggest first, 10mm kerf/margin between rectangles and to every blank edge. The count is a ceiling the shop can only beat. Grain is along the sheet's X; standing seen panels keep theirs vertical, rails and drawer panels along their length, the rest may turn — shop convention, carried as a RULING WANTED line in the gate until Jared confirms or names exceptions in `nest.GRAIN_OVERRIDES`.
