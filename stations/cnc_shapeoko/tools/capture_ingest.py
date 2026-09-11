@@ -118,18 +118,22 @@ mapped through the homography into sheet mm; exact for a phone held flat,
 which is what the card says to do. No EXIF (a screenshot, a stripped
 upload): D = D_FALLBACK_MM and the Result says so.
 
-THE GATE ON D IS AN OVERSIZE BOUND, NOT A FLOOR. With no shrink applied,
-the one error left is a tool whose widest edge is NOT on the paper (a round
+THE OVERSIZE BOUND IS A WARNING, NOT A GATE. With no shrink applied, the
+one error left is a tool whose widest edge is NOT on the paper (a round
 bar, a tapered handle): at mid-height it projects outward, and at a
 distance L from the nadir (the worst place for it, the nadir at one end of
-the tool) by L * (h / 2) / D. That is worst_oversize; over OVERSIZE_MAX the
-capture rejects as too close for a tool this size and names the D that
-would do. So the photo is identified, rectified and segmented FIRST, L is
-measured, and then the gate runs. A hard floor stays only where the model
-itself breaks: D under D_HARD_MIN_MM (a phone almost on the paper). The
-first real photos (2026-09-11) showed a flat 300 floor rejecting a small
-tool it would have measured to 0.8mm, and a residual gate at h / 2 reading
-a flat clamp bar 1.3mm short; this is the third gate that day.
+the tool) by L * (h / 2) / D. That is the oversize bound; over OVERSIZE_MAX
+the capture still goes through, and the Result's reason and the preview
+carry "if this tool is round its pocket may read up to X mm long; hold the
+phone higher for round tools". A slab is not round and its bound is moot
+(as a rejection it would have wanted the pendant shot from 2300mm), and a
+round tool's pocket errs large, which the foam tolerates. The one distance
+REJECTION is D under D_HARD_MIN_MM, where the model itself breaks (a phone
+almost on the paper). The first real photos (2026-09-11) showed a flat 300
+floor rejecting a small tool it would have measured to 0.8mm, a residual
+gate at h / 2 reading a flat clamp bar 1.3mm short, and an oversize gate
+that would have refused every slab longer than a hand; this is the fourth
+shape of it that day.
 
 THE SHEET SIZE IS NEVER AN ARGUMENT
 ===================================
@@ -422,11 +426,13 @@ The Result's reason names it so the digest shows the capture ran on an
 assumption. CONFIDENCE: estimate."""
 
 OVERSIZE_MAX = 2.0
-"""The largest amount a tool's widest edge may read large, L * (h / 2) / D,
-before the capture rejects as too close for a tool this size. Twice
-FOAM_CLEAR: a pocket that big still takes the tool with a loose fit; beyond
-it the phone goes higher. See THE GATE ON D IS AN OVERSIZE BOUND. SOURCE:
-Jared, 2026-09-11, with the T056 calibration. CONFIDENCE: choice."""
+"""The largest amount a ROUND tool's widest edge may read large,
+L * (h / 2) / D, before the capture carries a warning. Twice FOAM_CLEAR: a
+pocket that big still takes the tool with a loose fit; beyond it the phone
+goes higher, if the tool is round. A warning, never a rejection: a slab's
+widest edge is on the paper and the bound does not apply to it. See THE
+OVERSIZE BOUND IS A WARNING. SOURCE: Jared, 2026-09-11, with the T056
+calibration; made a warning the same afternoon. CONFIDENCE: choice."""
 
 RESIDUAL_MAX = 1.0
 """The residual gate of 2026-09-11 midday, (L / 2)(h / 2) / D against this,
@@ -738,7 +744,9 @@ def _write_dxf(pts_mm: np.ndarray, path: Path) -> None:
     ex.write(str(path))
 
 
-def _write_preview(rect: np.ndarray, trace_mm: np.ndarray, pocket_sheet_mm: np.ndarray, text: str, path: Path, spec: sheet.SheetSpec) -> None:
+def _write_preview(rect: np.ndarray, trace_mm: np.ndarray, pocket_sheet_mm: np.ndarray, text: str | list[str], path: Path, spec: sheet.SheetSpec) -> None:
+    """``text`` is one line or several, drawn from the window's top-left
+    corner downward."""
     s = PREVIEW_PX_PER_MM / PX_PER_MM
     img = cv2.resize(rect, None, fx=s, fy=s, interpolation=cv2.INTER_AREA)
     if img.ndim == 2:
@@ -746,9 +754,10 @@ def _write_preview(rect: np.ndarray, trace_mm: np.ndarray, pocket_sheet_mm: np.n
     cv2.polylines(img, [np.round(trace_mm * PREVIEW_PX_PER_MM).astype(np.int32)], True, TRACE_COLOUR, 2, cv2.LINE_AA)
     cv2.polylines(img, [np.round(pocket_sheet_mm * PREVIEW_PX_PER_MM).astype(np.int32)], True, POCKET_COLOUR, 2, cv2.LINE_AA)
     x0, y0, _x1, _y1 = spec.field_rect()
-    org = (int((x0 + 4) * PREVIEW_PX_PER_MM), int((y0 + 12) * PREVIEW_PX_PER_MM))
-    cv2.putText(img, text, org, cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 4, cv2.LINE_AA)
-    cv2.putText(img, text, org, cv2.FONT_HERSHEY_SIMPLEX, 0.7, POCKET_COLOUR, 2, cv2.LINE_AA)
+    for i, line in enumerate([text] if isinstance(text, str) else text):
+        org = (int((x0 + 4) * PREVIEW_PX_PER_MM), int((y0 + 12 + 10 * i) * PREVIEW_PX_PER_MM))
+        cv2.putText(img, line, org, cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 4, cv2.LINE_AA)
+        cv2.putText(img, line, org, cv2.FONT_HERSHEY_SIMPLEX, 0.7, POCKET_COLOUR, 2, cv2.LINE_AA)
     path.parent.mkdir(parents=True, exist_ok=True)
     cv2.imwrite(str(path), img)
 
@@ -1080,15 +1089,11 @@ def _ingest_photo(img: np.ndarray, image_path: Path, tag: str, height_mm: float,
     if len(tool_true) < 3:
         return _reject("silhouette is not a polygon", spec.name)
     tool_local, L, W, M = _align_to_min_rect(tool_true)
-    oversize = L * (height_mm / 2) / D                # see THE GATE ON D IS AN OVERSIZE BOUND
+    oversize = L * (height_mm / 2) / D                # see THE OVERSIZE BOUND IS A WARNING
+    warning = ""
     if oversize > OVERSIZE_MAX:
-        need = math.ceil(L * (height_mm / 2) / OVERSIZE_MAX / 50) * 50
-        return _reject(
-            f"too close for a tool this size ({D:.0f} mm above the sheet, {L:.0f} long, {height_mm:g} tall): its "
-            f"widest edge could read up to {oversize:.1f} mm large; hold the phone about {need} mm above the sheet "
-            "(the sheet about a third of the screen)",
-            size=spec.name,
-        )
+        warning = f"if this tool is round its pocket may read up to {oversize:.1f} mm long; hold the phone higher for round tools"
+        notes.insert(0, warning)
     pocket_local_raw = _offset_polygon(tool_local, FOAM_CLEAR)
     pocket_min = pocket_local_raw.min(axis=0)
     pocket_local = pocket_local_raw - pocket_min
@@ -1101,7 +1106,8 @@ def _ingest_photo(img: np.ndarray, image_path: Path, tag: str, height_mm: float,
     _write_dxf(pocket_local, dxf_path)
     _write_preview(
         rect, sil_mm, pocket_sheet,
-        f"{tag}  {spec.name} {field}  L {L:.1f}  W {W:.1f}  H {height_mm:g} (class {height_class:g})  D {D:.0f}  h_eff {h_eff:g}  over<={oversize:.1f}  {len(tags)} tags  print_scale {print_scale:.3f}",
+        [f"{tag}  {spec.name} {field}  L {L:.1f}  W {W:.1f}  H {height_mm:g} (class {height_class:g})  D {D:.0f}  h_eff {h_eff:g}  over<={oversize:.1f}  {len(tags)} tags  print_scale {print_scale:.3f}"]
+        + ([warning] if warning else []),
         preview_path, spec,
     )
     if csv_path is not None:

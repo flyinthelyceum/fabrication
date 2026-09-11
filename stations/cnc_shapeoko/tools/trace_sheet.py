@@ -345,7 +345,7 @@ RULES = (
     "clear of the border.",
     "MEASURE: its tallest point above the sheet, in mm, as it lies. A bottle on its side is its diameter.",
     "SHOOT: from straight above, phone flat, the sheet about a third of the screen, all four corner "
-    "squares in frame, no flash.",
+    "squares in frame, no flash. The bigger and rounder the tool, the higher the phone.",
     "SUBMIT: the form \u201cCNC tray capture\u201d: tag, height, photo. Does not fit the window: take a bigger sheet.",
 )
 """The whole procedure, on the sheet, where the hand is: LAY, MEASURE, SHOOT,
@@ -369,7 +369,7 @@ CARD_SUB = "one tool, about a minute"
 CARD_STEPS = (
     ("LAY", "Take a capture sheet: the smallest size the tool lies in with a finger's width of magenta all round. Lay the tool FLAT inside the magenta window, on its widest face, as it sits in the drawer, clear of the border. Note its TAG (T0__, from the drawer label)."),
     ("MEASURE", "Measure the tool's tallest point above the sheet with the ruler, in mm, as it lies. A bottle on its side is its diameter."),
-    ("SHOOT", "Stand over the sheet. Phone flat, high enough that the whole sheet is about a third of the screen, all four corner squares showing. The bigger the tool, the higher the phone. No flash, no lamp shadow. Do not move the tool."),
+    ("SHOOT", "Stand over the sheet. Phone flat, high enough that the whole sheet is about a third of the screen, all four corner squares showing. The bigger and rounder the tool, the higher the phone. No flash, no lamp shadow. Do not move the tool."),
     ("SUBMIT", "Open the form \u201cCNC tray capture\u201d: tag, height in mm, the photo. Done. The software reads the corner squares to know which paper you used and takes the tool's own outline out of the magenta. The tray regenerates; a rejected sheet comes back with one line saying why."),
 )
 CARD_EXCEPTIONS = (

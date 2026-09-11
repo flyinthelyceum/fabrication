@@ -25,13 +25,13 @@ PHOTO SOURCE
     P4. No EXIF (a PNG): the capture still runs, D falls back to 650, and
         the Result's reason says so.
     P5. Reject paths: a sheet with only a pencil loop (no tool in the
-        window), a tool across the window edge, two tools, the phone at 250
-        over the 100 x 50 stadium (too close for a tool this size), a 55mm
-        height (taller than any drawer), a height that is not a number.
-        Each rejects with its reason and writes nothing.
-    P6. The oversize gate: at D 262 a 50 x 30 tool 16 tall passes (could
-        read 1.5mm large) and the 100 x 50 stadium 40 tall rejects (7.6mm),
-        naming the D to use. Heights arrive as "16mml" and "40.00".
+        window), a tool across the window edge, two tools, a 55mm height
+        (taller than any drawer), a height that is not a number. Each
+        rejects with its reason and writes nothing.
+    P6. The oversize warning: at D 262 a 50 x 30 tool 16 tall captures clean
+        (could read 1.5mm large) and the 100 x 50 stadium 40 tall captures
+        within 0.5mm with the round-tool warning (7.6mm) first in its
+        reason. Heights arrive as "16mml" and "40.00".
     P7. The magenta window (the committed sheet, 2026-09-11 11:00 on): a
         white stadium and a light grey shiny one, with shadow and highlight,
         keyed on chroma and recovered within 0.5mm; field_kind says magenta
@@ -244,20 +244,28 @@ one (the Vactra cap), a light shiny one (bare aluminium)."""
 
 def draw_photo_tool(canvas: np.ndarray, to_px, outline_mm: np.ndarray, h_edge: float,
                     pencil_out_mm: float | None = None, highlight: bool = True, tool=TOOL_DARK) -> None:
-    """A tool with a soft shadow, a soft highlight streak along it and a
-    patch of another tone, its silhouette edge at ``h_edge``; optionally a
-    pencil line on the paper ``pencil_out_mm`` outside it. ``tool`` picks
-    the tones (TOOL_DARK, TOOL_WHITE, TOOL_GREY)."""
+    """A tool with a soft shadow (8mm penumbra), a soft highlight streak
+    along it (1.5mm wide, 2mm blur, four fifths of the length) and a patch of
+    another tone, its silhouette edge at ``h_edge``; optionally a pencil line
+    on the paper ``pencil_out_mm`` outside it. ``tool`` picks the tones
+    (TOOL_DARK, TOOL_WHITE, TOOL_GREY). Every size is in sheet mm, so the
+    same tool looks the same at any D; sized in pixels, the streak became a
+    3mm band at D 262 that ran out through the cap and cut a 7mm strip off
+    the stadium, which is the documented limit, not a test of the gate."""
     body, peak, patch_colour = tool
+    k0 = np.linalg.norm(to_px((1, 0)) - to_px((0, 0)))          # frame px per sheet mm: every size below is in mm
+
+    def odd(mm: float) -> int:
+        return max(int(round(mm * k0)) | 1, 3)
+
     if pencil_out_mm is not None:
         cx, cy = outline_mm.mean(axis=0)
         ring = stadium(cx, cy, TOOL_L + 2 * pencil_out_mm, TOOL_W + 2 * pencil_out_mm)
         px = np.round(to_px(ring, 0.0) * (1 << DRAW_SHIFT)).astype(np.int32)
-        k0 = np.linalg.norm(to_px((1, 0)) - to_px((0, 0)))
         cv2.polylines(canvas, [px], True, (110, 110, 110), max(int(round(0.8 * k0)), 1), cv2.LINE_AA, shift=DRAW_SHIFT)
     sh = np.zeros(canvas.shape[:2], np.float32)
     cv2.fillPoly(sh, [np.round(to_px(outline_mm + 1.5, 0.0)).astype(np.int32)], 1.0)
-    sh = cv2.GaussianBlur(sh, (41, 41), 0)
+    sh = cv2.GaussianBlur(sh, (odd(8.0), odd(8.0)), 0)
     canvas[:] = (canvas.astype(np.float32) * (1 - SHADOW * sh[..., None])).astype(np.uint8)
     poly = np.round(to_px(outline_mm, h_edge) * (1 << DRAW_SHIFT)).astype(np.int32)
     cv2.fillPoly(canvas, [poly], body, cv2.LINE_AA, shift=DRAW_SHIFT)
@@ -270,8 +278,8 @@ def draw_photo_tool(canvas: np.ndarray, to_px, outline_mm: np.ndarray, h_edge: f
         n = np.array([-d[1], d[0]])
         c0 = np.array([cx, cy]) + n * W * 0.35
         hl = np.zeros(canvas.shape[:2], np.float32)
-        cv2.line(hl, tuple(np.round(c0 - d * L / 2).astype(int)), tuple(np.round(c0 + d * L / 2).astype(int)), 1.0, max(int(W * 0.06), 3))
-        hl = cv2.GaussianBlur(hl, (21, 21), 0)
+        cv2.line(hl, tuple(np.round(c0 - d * L / 2).astype(int)), tuple(np.round(c0 + d * L / 2).astype(int)), 1.0, max(int(round(1.5 * k0)), 3))
+        hl = cv2.GaussianBlur(hl, (odd(2.0), odd(2.0)), 0)
         canvas[:] = np.clip(canvas.astype(np.float32) + hl[..., None] * (peak - body[0]), 0, 255).astype(np.uint8)
         patch = to_px(outline_mm.mean(axis=0) + np.array([[-8, -6], [8, -6], [8, 6], [-8, 6]]), h_edge)
         cv2.fillPoly(canvas, [np.round(patch).astype(np.int32)], patch_colour, cv2.LINE_AA)
@@ -510,10 +518,11 @@ def test_photo_no_exif(tmp: Path) -> None:
 
 def test_photo_oversize_gate(tmp: Path) -> None:
     """The same D 262 that rejected T042 on the flat floor: a 50 x 30 tool 16
-    tall could read (50 x 8) / 262 = 1.5mm large and passes; the 100 x 50
-    stadium 40 tall could read (100 x 20) / 262 = 7.6mm large and rejects,
-    naming about 1000mm. Both tools are drawn with their edge ON the paper
-    (h_eff = 0), which is what the pipeline now assumes."""
+    tall could read (50 x 8) / 262 = 1.5mm large and passes clean; the
+    100 x 50 stadium 40 tall could read (100 x 20) / 262 = 7.6mm large and
+    is STILL captured, within 0.5mm (its edge is on the paper), with the
+    round-tool warning first in its reason. Both tools are drawn with their
+    edge ON the paper (h_eff = 0), which is what the pipeline now assumes."""
     D = 262.0
     cx, cy = field_centre()
     small_l, small_w, small_h = 50.0, 30.0, 16.0
@@ -522,14 +531,16 @@ def test_photo_oversize_gate(tmp: Path) -> None:
     assert r.ok, r.reason
     assert abs(r.L - small_l) <= PHOTO_TOL_MM and abs(r.W - small_w) <= PHOTO_TOL_MM, (r.L, r.W)
     assert abs(r.D - D) <= 0.03 * D, r.D
-    print(f"  small tool (50 x 30, h 16 from '16mml') at D {D:g}: accepted, L {r.L:.3f} W {r.W:.3f}, oversize bound {r.L * 8 / r.D:.2f}")
+    assert r.reason == "", r.reason
+    print(f"  small tool (50 x 30, h 16 from '16mml') at D {D:g}: accepted, no warning, L {r.L:.3f} W {r.W:.3f}, oversize bound {r.L * 8 / r.D:.2f}")
     big_h = 40.0
     p = photo_case("photo_residual_big", tmp, D, lambda im, to: draw_photo_tool(im, to, stadium(cx, cy, TOOL_L, TOOL_W), ci.H_EFF_FRAC * big_h), nadir=(cx + 15, cy - 10), roll=0.0)
     out = tmp / "captures_residual_big"
     r = ci.ingest(p, "T999", "40.00", out_dir=out, csv_path=None)
-    assert not r.ok and "too close for a tool this size" in r.reason and "1000 mm" in r.reason, r
-    assert_nothing_written(out)
-    print(f"  big tool (100 x 50, h 40 from '40.00') at D {D:g}: rejected, '{r.reason}'")
+    _check_photo(r, D, "P6 big tool")
+    assert r.reason.startswith("if this tool is round its pocket may read up to 7.6 mm long"), r.reason
+    assert r.dxf_path.exists() and r.preview_path.exists()
+    print(f"  big tool (100 x 50, h 40 from '40.00') at D {D:g}: captured, L {r.L:.3f} W {r.W:.3f}, reason '{r.reason}'")
 
 
 def test_photo_magenta(tmp: Path) -> None:
@@ -574,12 +585,11 @@ def test_photo_rejects(tmp: Path) -> None:
         ("photo_pencil_only", D, pencil_only, "20", "no tool found"),
         ("photo_edge", D, lambda im, to: draw_photo_tool(im, to, stadium(x1 - 40, cy, TOOL_L, TOOL_W), h_edge), "20", "touches the edge"),
         ("photo_two_tools", D, lambda im, to: (draw_photo_tool(im, to, stadium(cx, cy - 40, 60, 40), h_edge), draw_photo_tool(im, to, stadium(cx, cy + 40, 60, 40), h_edge)), "20", "two tools"),
-        ("photo_too_close", 250.0, lambda im, to: draw_photo_tool(im, to, outline, h_edge), "20", "too close for a tool this size"),
         ("photo_too_tall", D, lambda im, to: draw_photo_tool(im, to, outline, h_edge), "55", "taller than any drawer"),
         ("photo_height_nan", D, lambda im, to: draw_photo_tool(im, to, outline, h_edge), "tall", "not a number"),
     ]
     for name, d, draw, height, expect in cases:
-        p = photo_case(name, tmp, d, draw, roll=0.0 if d < 300 else 5.0)
+        p = photo_case(name, tmp, d, draw)
         out = tmp / f"captures_{name}"
         csv_copy = tmp / f"tool_list_{name}.csv"
         shutil.copy(HERE / "tool_list.csv", csv_copy)
@@ -637,7 +647,7 @@ def main() -> int:
     test_photo_no_exif(tmp)
     print("P5. reject paths")
     test_photo_rejects(tmp)
-    print("P6. the oversize gate at D 262")
+    print("P6. the oversize warning at D 262")
     test_photo_oversize_gate(tmp)
     print("P7. the magenta window: white and light-grey tools by chroma key")
     test_photo_magenta(tmp)
