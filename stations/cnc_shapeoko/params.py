@@ -358,8 +358,9 @@ this constant, so the fitted unit can no longer be quoted the wrong filter."""
 
 UPTJ14 = {
     "name": "UPERFECT UPTJ14 15.6in touchscreen",
-    "env": None,                    # outside W x H. MEASURE: the listing
-                                    # publishes no plan dimension, only thin.
+    "env": (355.6, 211.1),          # outside W x H. MEASURED 2026-09-04, Jared,
+                                    # rule + calipers: 14in x 8-5/16in; chassis
+                                    # diagonal 16.3in for a 15.6in panel, OK.
     "thickness": 5.842,             # listing: "0.23in thin" (chassis, kickstand
                                     # folded)
     "weight_kg": 0.635,             # listing: "1.4lbs"
@@ -369,14 +370,19 @@ UPTJ14 = {
                                     # not four; the image shows the pair and a
                                     # review says the same. The arm's 4-hole
                                     # plate lands on two screws.
-    "vesa_offset": None,            # MEASURE: where the pattern sits on the
-                                    # back relative to the outline.
+    "vesa_offset": (178.35, 77.8),  # pair CENTRE: in from the LEFT edge, up
+                                    # from the BOTTOM edge. MEASURED 2026-09-04,
+                                    # Jared: 140.85 to the left hole + 37.5 half
+                                    # span; W/2 = 177.8, so the pattern is
+                                    # centred to 0.55, which cross-checks env.
     "usb_c_count": 2,               # listing text and port image
     "usb_c_side": "RIGHT edge facing the screen; buttons and headphone jack "
                   "on the LEFT edge",      # listing port image, corroborated
                                     # by a review on the same listing
-    "usb_c_offset": None,           # MEASURE: port centre from the bottom
-                                    # edge and from the back face.
+    "usb_c_offset": (45.0, 3.7),    # port centre: up from the bottom edge,
+                                    # in from the BACK face (2.14 from the
+                                    # front, inside the 5.842 thickness).
+                                    # MEASURED 2026-09-04, Jared.
     "hdmi": "mini HDMI, same edge as the USB-C pair, outboard of them",
     "runs": "RULED 2026-09-09: TWO cables to the panel, HDMI -> mini HDMI "
             "(video) and USB-A -> USB-C (touch + power), 15ft each, in the "
@@ -421,10 +427,11 @@ LX_PRO_ARM = {                      # Ergotron 45-682-292, the SOURCES key
     "pole_above": 135.0,            # drawing: 5.3in base to top of the 5in pole
     "pole_d": 30.0,                 # drawing: 1.2in
     "weight_kg": 3.76,              # ErgoDirect: 8.3 lbs
-    "clamp_plate_holes": None,      # MEASURE: the vertical clamp plate carries
-                                    # a hole field (drawing shows it, no
-                                    # numbers). J04's leg-pattern fit-check
-                                    # needs it.
+    "clamp_plate_holes": "not modelled",  # RULED, Jared (restated 2026-09-11):
+                                    # the screen mounts on its own 75mm VESA
+                                    # PAIR (UPTJ14 vesa_holes = 2); the arm's
+                                    # 4-bolt plate field is not needed and is
+                                    # not measured. Closes the MEASURE.
     "grommet": "not included; 98-728-292 is the grommet base",
     "cable_route": "the arm's channels carry the screen's two cables to a "
                    "gland at the mount; see UPTJ14['runs'] (ruling 2026-09-09)",
@@ -731,9 +738,9 @@ CONFIDENCE = {
     # page or the listing SOURCES names. A dotted key is one value inside that
     # block that the sources do not state; it is None and reads MEASURE.
     "UPTJ14": "datasheet",
-    "UPTJ14.env": "MEASURE",
-    "UPTJ14.vesa_offset": "MEASURE",
-    "UPTJ14.usb_c_offset": "MEASURE",
+    "UPTJ14.env": "measured",       # 2026-09-04, Jared, applied 2026-09-11
+    "UPTJ14.vesa_offset": "measured",   # 2026-09-04, Jared
+    "UPTJ14.usb_c_offset": "measured",  # 2026-09-04, Jared
     "PL183": "datasheet",
     "PL183.cable_behind": "MEASURE",
     "CONSOLE_PLATE": "ruling",      # 2026-09-09, Jared: stainless, waterjet,
@@ -751,7 +758,7 @@ CONFIDENCE = {
     "VFD_WIRING": "read",               # 2026-09-09, silkscreen + photos + manual
     "VFD_WIRING.carbide_confirmed": "MEASURE",
     "45-682-292": "datasheet",
-    "45-682-292.clamp_plate_holes": "MEASURE",
+    "45-682-292.clamp_plate_holes": "ruling",   # Jared: the 75mm VESA pair carries it; plate field not modelled
     "motion_controller_env": "MEASURE",     # forum lead only, not a datasheet
     "motion_controller_mount": "MEASURE",
     "ct15_exhaust": "design",       # RULED 2026-09-04, Jared: "airflow is
