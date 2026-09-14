@@ -30,6 +30,7 @@ pass and are Jared's to rule on, not the model's to paper over: see check() and
 from dataclasses import dataclass
 from math import ceil
 
+from components import carbide_vfd, festool_ct15, shapeoko_5_pro, uperfect_uptj14
 from lib.house import CARCASS_T, GRID, PANEL_T, QUARTER, STOCK_MODULE, on_grid
 
 # Where each number came from. A reader who doubts a value chases it here.
@@ -320,7 +321,8 @@ SOURCES = {
 EXTRACTORS = {
     "CT15": {
         "name": "Festool CT 15 HEPA CLEANTEC",
-        "env": (470.0, 320.0, 435.0),   # DATASHEET (RT6, 2026-09-04): festoolusa
+        "env": (festool_ct15.LENGTH, festool_ct15.WIDTH, festool_ct15.HEIGHT),
+                                        # LIB (RT6, 2026-09-04): festoolusa
                                         # published L x W x H. Supersedes the
                                         # 2026-09-02 caliper (457.2 x 307.975 x
                                         # 428.625), which read ~6.4mm short on
@@ -366,7 +368,8 @@ this constant, so the fitted unit can no longer be quoted the wrong filter."""
 
 UPTJ14 = {
     "name": "UPERFECT UPTJ14 15.6in touchscreen",
-    "env": (355.6, 211.1),          # outside W x H. MEASURED 2026-09-04, Jared,
+    "env": (uperfect_uptj14.WIDTH, uperfect_uptj14.HEIGHT),
+                                    # LIB outside W x H. MEASURED 2026-09-04, Jared,
                                     # rule + calipers: 14in x 8-5/16in; chassis
                                     # diagonal 16.3in for a 15.6in panel, OK.
     "thickness": 5.842,             # listing: "0.23in thin" (chassis, kickstand
@@ -1191,7 +1194,7 @@ class Station:
     at its inner end, the envelope opens by whatever is behind the block. Kept
     because it is a real measurement and the day someone models the gusset as a
     part rather than as a keep-out, this is the shape."""
-    gusset_plate_t: float = 6.35    # MEASURED 2026-09-02, photographs and
+    gusset_plate_t: float = shapeoko_5_pro.GUSSET_PLATE_T   # LIB MEASURED 2026-09-02, photographs and
                                     # calipers, 1/4in. Each gusset is a flat
                                     # plate this thick along the axis it does
                                     # NOT brace, sitting at the leg it braces --
@@ -1308,15 +1311,15 @@ class Station:
                                     # EM60 1.5 kW, single-phase 110 V; P+ / PB
                                     # posts seen. FM1 analog out (freq OR
                                     # current), T1 relay = running. SOURCES.
-    vfd_box: tuple[float, float, float] = (142.875, 184.15, 320.675)   # vertical.
+    vfd_box: tuple[float, float, float] = (carbide_vfd.BOX_W, carbide_vfd.BOX_D, carbide_vfd.BOX_H)   # LIB vertical.
                                     # CALIPERED 2026-09-02, w x d x h. Supersedes the
                                     # brief's 200 x 130 x 300 guess and the forum's
                                     # 152 x 178 x 260. Narrower and deeper than both.
-    vfd_fan: float = 84.1375        # CALIPERED 2026-09-02. Square fan aperture.
+    vfd_fan: float = carbide_vfd.FAN_APERTURE   # LIB 2026-09-02. Square fan aperture.
     vfd_fan_count: int = 2          # both on the vented LEFT face
     vfd_vent_clear: float = 300.0   # carbide 65mm spindle doc, 30cm from the vented
                                     # (left) face to any obstruction
-    vfd_mount_pitch: float = 84.84  # MEASURED 2026-09-09 (Jared, calipers):
+    vfd_mount_pitch: float = carbide_vfd.MOUNT_PITCH   # LIB MEASURED 2026-09-09 (Jared, calipers):
                                     # 3.34in between the two keyholes on the
                                     # back, level pair. Carbide's doc says 85.
 
@@ -1341,7 +1344,7 @@ class Station:
     #   2. intake low, through the plinth and the deck
     #   3. exhaust high, through the top cap's louvre field over the band
     #
-    # Ruled by Jared 2026-09-02, once the drive had been calipered: "Fan aperture
+    # Ruled by Jared 2026-09-02, once the drive had been calipered (lint: not-a-measurement): "Fan aperture
     # for sure. Why would we calculate off of a sealed face?" The requirement had
     # been 1.5x the whole 130 x 300mm left face, which was a guess at an enclosure
     # nobody had measured AND was mostly sealed steel that moves no air. It is now

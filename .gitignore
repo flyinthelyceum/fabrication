@@ -7,4 +7,6 @@ export/*
 
 # CAD build artifacts (STEP/STL regenerate from params)
 out/
-.claude/
+.claude/*
+!.claude/settings.json
+!.claude/hooks/

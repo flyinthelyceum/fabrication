@@ -4,3 +4,6 @@ build123d==0.11.1
 
 # Tool capture ingest (stations/cnc_shapeoko/tools/capture_ingest.py): ArUco lives in contrib.
 opencv-contrib-python-headless==5.0.0.93
+
+# Measured component dimensions; params.py and the parts import them, never restate them.
+components @ git+https://github.com/flyinthelyceum/components.git@components-v1

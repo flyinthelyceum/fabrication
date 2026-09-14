@@ -127,6 +127,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from build123d import Align, Box, Location, Part, Plane
+from components import sct013
 
 from lib.house import GRID, SHEET_4X8, STOCK_MODULE, fits
 from stations.cnc_shapeoko.carcass import (
@@ -272,9 +273,9 @@ with the hinge; window 13 x 13. CONFIDENCE: representative datasheet. The BOM
 line is "Split-core current transformer, 30A" with no SKU; the SCT013-030 is
 what that line buys on Amazon. MEASURE when in hand."""
 
-CT_WINDOW = 13.0
-"""Conductor window of the CT, square. SOURCE: YHDC SCT013 datasheet.
-CONFIDENCE: datasheet. Passes one insulated conductor up to 13mm; the spindle
+CT_WINDOW = sct013.WINDOW
+"""Conductor window of the CT, square. SOURCE: components.sct013 (the maker's
+page). CONFIDENCE: datasheet. Passes one insulated conductor up to 13mm; the spindle
 leg and the extractor's line conductor both do."""
 
 # ---- the extractor receptacle (I92) -----------------------------------
