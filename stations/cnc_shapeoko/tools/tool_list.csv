@@ -30,7 +30,7 @@ T040,M6 x 20 Socket Head Screws (Essential Clamps mounting),D3,case,,,,,,,4,NONE
 T041,M6 x 30 Socket Head Screws (Essential Clamps mounting),D3,case,,,,,,,4,NONE,lives in the T054 organizer case,,,,M6x30 SHCS,active,
 T042,Replacement flat jaws (for Crush-It clamps),D3,captured,,,,,,,4,MEASURE,capture ONE; four pockets,,,,FLAT JAW,active,
 T043,Sweepy thumb screws,D3,case,,,,,,,2,NONE,lives in the T054 organizer case,,,,THUMB SCREW,active,
-T044,Crush-It Essential Clamps with Serrated Jaws,D3,captured,,,,76.1,75.1,38,4,CAPTURED,"capture ONE; four pockets. 25 wide, 11 above the table when seated",40,captures/T044.dxf,,CRUSH-IT,active,
+T044,Crush-It Essential Clamps with Serrated Jaws,D3,captured,,,,,25,,4,MEASURE,"capture ONE; four pockets. 25 wide, 11 above the table when seated",,,,CRUSH-IT,active,
 T045,Crush-It Stops,D3,captured,,,,,,,4,MEASURE,capture ONE; four pockets,,,,CRUSH STOP,active,
 T046,Essential Clamps (bundled in Crush-It set),D3,block,,,,,,,4,MEASURE,,,,,,struck,merged into T056 2026-09-11 (same part C3D-EC; T056 qty 14)
 T047,M6 Teez-Nutz T-nuts,D3,case,,,,,,,24,NONE,lives in the T054 organizer case; T058 merged in 2026-09-11 (12 + 12),,,,T-NUTS,active,
