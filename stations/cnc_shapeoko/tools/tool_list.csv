@@ -40,7 +40,7 @@ T050,M6 x 25mm bolts (Crush-It kit),D3,case,,,,,,,6,NONE,lives in the T054 organ
 T051,M6 x 30mm bolts (Crush-It kit),D3,case,,,,,,,6,NONE,lives in the T054 organizer case,,,,M6x30,active,
 T052,M6 x 35mm bolts (Crush-It kit),D3,case,,,,,,,6,NONE,lives in the T054 organizer case,,,,M6x35,active,
 T053,M6 x 40mm bolts (Crush-It kit),D3,case,,,,,,,6,NONE,lives in the T054 organizer case,,,,M6x40,active,
-T054,Plastic organizer case (Crush-It Nutz 'n Bolts),D3,captured,,,,,,,1,MEASURE,"capture the CASE, closed; holds T039-T041, T043, T047-T053",,,,NUTZ CASE,active,
+T054,Plastic organizer case (Crush-It Nutz 'n Bolts),D3,captured,,,,154.9,103.1,32,1,CAPTURED,"capture the CASE, closed; holds T039-T041, T043, T047-T053",40,captures/T054.dxf,,NUTZ CASE,active,
 T055,Shapeoko 5.1 Pro Joinery Stop,D3,captured,,,,,,,1,MEASURE,,,,,JOINERY STOP,active,
 T056,Essential Clamp bar,D3,captured,,,,70.3,20.5,18,14,CAPTURED,T046 + T057 merged in 2026-09-11: 4 standalone + 6 machine-bundled + 4 Crush-It = 14. Calibration datum: calipers 70.23 x 19.77.,20,captures/T056.dxf,,CLAMP BAR,active,
 T057,Shapeoko Essential Clamps (machine-bundled),D3,block,,,,,,,6,MEASURE,,,,,,struck,merged into T056 2026-09-11 (same part C3D-EC; T056 qty 14)
