@@ -469,6 +469,12 @@ SILHOUETTE_COLOUR = (0, 140, 255)  # BGR: orange, same as the trace
 PREVIEW_PX_PER_MM = 3.0
 TRACE_COLOUR = (0, 140, 255)      # BGR: orange
 POCKET_COLOUR = (220, 200, 0)     # BGR: cyan
+PREVIEW_FONT_SCALE = 0.7
+PREVIEW_LINE_PX = 26
+"""Caption leading, preview px. Was 10mm of sheet, which is the wrong
+unit: the caption is drawn in image space and does not scale with the
+paper, so on TABLOID the lines drifted apart."""
+PREVIEW_TEXT_MARGIN_PX = 6
 
 
 # ================================================================ result
@@ -744,9 +750,42 @@ def _write_dxf(pts_mm: np.ndarray, path: Path) -> None:
     ex.write(str(path))
 
 
+def _text_width(line: str) -> int:
+    """Rendered width of one caption line, in preview pixels."""
+    return cv2.getTextSize(line, cv2.FONT_HERSHEY_SIMPLEX, PREVIEW_FONT_SCALE, 2)[0][0]
+
+
+def _wrap_caption(line: str, avail_px: int) -> list[str]:
+    """Break one caption line so every part fits ``avail_px``.
+
+    The caption separates its fields with two spaces, so it is split on those
+    first and the fields packed greedily: ``L 49.1`` never breaks across two
+    lines. A group that is still too wide on its own (a long warning, which is
+    ordinary prose with single spaces) is then broken on single spaces. A word
+    wider than the image is left alone rather than dropped -- clipping one long
+    token is better than losing the line, which is the bug this replaces.
+    """
+    out: list[str] = []
+    for group in [g for g in line.split("  ") if g]:
+        if out and _text_width(out[-1] + "  " + group) <= avail_px:
+            out[-1] += "  " + group
+            continue
+        if _text_width(group) <= avail_px:
+            out.append(group)
+            continue
+        for word in group.split(" "):
+            if out and _text_width(out[-1] + " " + word) <= avail_px:
+                out[-1] += " " + word
+            else:
+                out.append(word)
+    return out or [line]
+
+
 def _write_preview(rect: np.ndarray, trace_mm: np.ndarray, pocket_sheet_mm: np.ndarray, text: str | list[str], path: Path, spec: sheet.SheetSpec) -> None:
     """``text`` is one line or several, drawn from the window's top-left
-    corner downward."""
+    corner downward. Each is wrapped to the image width: the caption carries
+    D, h_eff and the oversize bound at the end of a long line, and before
+    2026-09-17 they ran off the right edge and could not be read at all."""
     s = PREVIEW_PX_PER_MM / PX_PER_MM
     img = cv2.resize(rect, None, fx=s, fy=s, interpolation=cv2.INTER_AREA)
     if img.ndim == 2:
@@ -754,10 +793,15 @@ def _write_preview(rect: np.ndarray, trace_mm: np.ndarray, pocket_sheet_mm: np.n
     cv2.polylines(img, [np.round(trace_mm * PREVIEW_PX_PER_MM).astype(np.int32)], True, TRACE_COLOUR, 2, cv2.LINE_AA)
     cv2.polylines(img, [np.round(pocket_sheet_mm * PREVIEW_PX_PER_MM).astype(np.int32)], True, POCKET_COLOUR, 2, cv2.LINE_AA)
     x0, y0, _x1, _y1 = spec.field_rect()
-    for i, line in enumerate([text] if isinstance(text, str) else text):
-        org = (int((x0 + 4) * PREVIEW_PX_PER_MM), int((y0 + 12 + 10 * i) * PREVIEW_PX_PER_MM))
-        cv2.putText(img, line, org, cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 4, cv2.LINE_AA)
-        cv2.putText(img, line, org, cv2.FONT_HERSHEY_SIMPLEX, 0.7, POCKET_COLOUR, 2, cv2.LINE_AA)
+    left_px = int((x0 + 4) * PREVIEW_PX_PER_MM)
+    avail_px = max(1, img.shape[1] - left_px - PREVIEW_TEXT_MARGIN_PX)
+    lines: list[str] = []
+    for line in [text] if isinstance(text, str) else text:
+        lines.extend(_wrap_caption(line, avail_px))
+    for i, line in enumerate(lines):
+        org = (left_px, int((y0 + 12) * PREVIEW_PX_PER_MM) + i * PREVIEW_LINE_PX)
+        cv2.putText(img, line, org, cv2.FONT_HERSHEY_SIMPLEX, PREVIEW_FONT_SCALE, (0, 0, 0), 4, cv2.LINE_AA)
+        cv2.putText(img, line, org, cv2.FONT_HERSHEY_SIMPLEX, PREVIEW_FONT_SCALE, POCKET_COLOUR, 2, cv2.LINE_AA)
     path.parent.mkdir(parents=True, exist_ok=True)
     cv2.imwrite(str(path), img)
 
