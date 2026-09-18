@@ -23,7 +23,7 @@ T033,Jog Pendant,D2,captured,,,,,,,1,MEASURE,"TABLOID sheet; pendant only, not t
 T034,Metric Allen (hex) key set,D2,captured,,,,,,,1,MEASURE,"in its holder, as it sits (T032 merged in)",,,,HEX KEYS,active,
 T035,Pipettes,D2,bin,,,,,,,6,NONE,bin pocket; no capture,,,,PIPETTES,active,
 T036,Silicone O-rings,D2,bin,,,,,,,5,NONE,bin pocket; no capture,,,,O-RINGS,active,
-T037,Brush dust-boot base (polycarbonate),D2,captured,,,,25.3,21.5,25,1,CAPTURED,moved D3 -> D2 2026-09-11,30,captures/T037.dxf,,BOOT BRUSH,active,
+T037,Brush dust-boot base (polycarbonate),D2,captured,,,,,,,1,MEASURE,moved D3 -> D2 2026-09-11,,,,BOOT BRUSH,active,
 T038,"Brush-free dust-boot base (polycarbonate, for visibility)",D2,captured,,,,,,,1,MEASURE,moved D3 -> D2 2026-09-11,,,,BOOT CLEAR,active,
 T039,M6 x 18mm socket head cap screws (Joinery Stop mounting),D3,case,,,,,,,4,NONE,lives in the T054 organizer case,,,,M6x18 SHCS,active,
 T040,M6 x 20 Socket Head Screws (Essential Clamps mounting),D3,case,,,,,,,4,NONE,lives in the T054 organizer case,,,,M6x20 SHCS,active,
