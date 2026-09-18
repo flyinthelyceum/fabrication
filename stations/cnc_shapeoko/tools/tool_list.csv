@@ -19,7 +19,7 @@ T029,2-meter USB cable (removable),D2,bin,,,,,,,1,NONE,"bin pocket, coiled; no c
 T030,Quick Draw pen holder,D2,captured,,,,,,,1,MEASURE,,,,,PEN HOLDER,active,
 T031,"Mobil Vactra Way Oil, 2oz",D2,captured,,,,75.9,28.3,19,1,CAPTURED,"lies on its side: height is its diameter (about 23), not the 72 standing height",20,captures/T031.dxf,,VACTRA OIL,active,
 T032,Assembly hex keys / assembly tools,D2,hex,,,,,,,1,MEASURE,,,,,,struck,"merged into T034 2026-09-11: one set of six keys in the drawer photos, not two sets"
-T033,Jog Pendant,D2,captured,,,,,,,1,MEASURE,"TABLOID sheet; pendant only, not the cable",,,,PENDANT,active,
+T033,Jog Pendant,D2,captured,,,,223.2,65.6,35,1,CAPTURED,"TABLOID sheet; pendant only, not the cable",40,captures/T033.dxf,,PENDANT,active,
 T034,Metric Allen (hex) key set,D2,captured,,,,,,,1,MEASURE,"in its holder, as it sits (T032 merged in)",,,,HEX KEYS,active,
 T035,Pipettes,D2,bin,,,,,,,6,NONE,bin pocket; no capture,,,,PIPETTES,active,
 T036,Silicone O-rings,D2,bin,,,,,,,5,NONE,bin pocket; no capture,,,,O-RINGS,active,
@@ -30,7 +30,7 @@ T040,M6 x 20 Socket Head Screws (Essential Clamps mounting),D3,case,,,,,,,4,NONE
 T041,M6 x 30 Socket Head Screws (Essential Clamps mounting),D3,case,,,,,,,4,NONE,lives in the T054 organizer case,,,,M6x30 SHCS,active,
 T042,Replacement flat jaws (for Crush-It clamps),D3,captured,,,,,,,4,MEASURE,capture ONE; four pockets,,,,FLAT JAW,active,
 T043,Sweepy thumb screws,D3,case,,,,,,,2,NONE,lives in the T054 organizer case,,,,THUMB SCREW,active,
-T044,Crush-It Essential Clamps with Serrated Jaws,D3,captured,,,,,25,,4,MEASURE,"capture ONE; four pockets. 25 wide, 11 above the table when seated",,,,CRUSH-IT,active,
+T044,Crush-It Essential Clamps with Serrated Jaws,D3,captured,,,,72.0,25.8,12,4,CAPTURED,"capture ONE; four pockets. 25 wide, 11 above the table when seated",20,captures/T044.dxf,,CRUSH-IT,active,
 T045,Crush-It Stops,D3,captured,,,,,,,4,MEASURE,capture ONE; four pockets,,,,CRUSH STOP,active,
 T046,Essential Clamps (bundled in Crush-It set),D3,block,,,,,,,4,MEASURE,,,,,,struck,merged into T056 2026-09-11 (same part C3D-EC; T056 qty 14)
 T047,M6 Teez-Nutz T-nuts,D3,case,,,,,,,24,NONE,lives in the T054 organizer case; T058 merged in 2026-09-11 (12 + 12),,,,T-NUTS,active,
