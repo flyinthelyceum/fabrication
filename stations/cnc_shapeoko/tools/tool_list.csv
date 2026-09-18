@@ -17,7 +17,7 @@ T027,ER-16 collet nut (M19 thread),D1,block,,,,,,,1,MEASURE,,,,,,struck,Jared 20
 T028,Spare carbide inserts for McFly (included set),D1,block,,,,,,,4,MEASURE,,,,,,struck,"Jared 2026-09-11: the inserts live in the McFly body, nothing loose to store"
 T029,2-meter USB cable (removable),D2,bin,,,,,,,1,NONE,"bin pocket, coiled; no capture",,,,USB CABLE,active,
 T030,Quick Draw pen holder,D2,captured,,,,,,,1,MEASURE,,,,,PEN HOLDER,active,
-T031,"Mobil Vactra Way Oil, 2oz",D2,captured,,,,,,,1,MEASURE,"lies on its side: height is its diameter (about 23), not the 72 standing height",,,,VACTRA OIL,active,
+T031,"Mobil Vactra Way Oil, 2oz",D2,captured,,,,75.9,28.3,19,1,CAPTURED,"lies on its side: height is its diameter (about 23), not the 72 standing height",20,captures/T031.dxf,,VACTRA OIL,active,
 T032,Assembly hex keys / assembly tools,D2,hex,,,,,,,1,MEASURE,,,,,,struck,"merged into T034 2026-09-11: one set of six keys in the drawer photos, not two sets"
 T033,Jog Pendant,D2,captured,,,,,,,1,MEASURE,"TABLOID sheet; pendant only, not the cable",,,,PENDANT,active,
 T034,Metric Allen (hex) key set,D2,captured,,,,,,,1,MEASURE,"in its holder, as it sits (T032 merged in)",,,,HEX KEYS,active,
