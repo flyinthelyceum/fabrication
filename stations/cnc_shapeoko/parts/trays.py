@@ -979,6 +979,21 @@ def tiles_for(key: str, d: Datums = D) -> tuple[TileSpec, ...]:
     return tuple(out)
 
 
+class PocketTooThin(ValueError):
+    """A captured loop with a limb narrower than the pocket cutter. Opening it
+    by ``POCKET_R`` deletes that limb and leaves a region the kernel will not
+    return, so the pocket has no millable outline at all. Carries the pocket so
+    the gate can name it instead of dying inside the kernel."""
+
+    def __init__(self, pocket: "Pocket"):
+        self.pocket = pocket
+        super().__init__(
+            f"pocket {pocket.tool_id or pocket.row} ({pocket.label!r}) has a limb "
+            f"narrower than the {POCKET_TOOL_D:g} endmill: opening its captured "
+            "loop leaves nothing the cutter can follow"
+        )
+
+
 @dataclass(frozen=True)
 class Pocket:
     """One pocket, its scoop and its label, in tile-local XY (X across the
@@ -1089,7 +1104,10 @@ class Pocket:
         sk = parts[0]
         for p in parts[1:]:
             sk = sk + p
-        return offset(offset(sk, -POCKET_R, kind=Kind.ARC), POCKET_R, kind=Kind.ARC)
+        try:
+            return offset(offset(sk, -POCKET_R, kind=Kind.ARC), POCKET_R, kind=Kind.ARC)
+        except RuntimeError as exc:  # kernel: "Unexpected result type"
+            raise PocketTooThin(self) from exc
 
     def label_strokes(self) -> list[tuple[tuple[float, float], ...]]:
         """The label's centrelines in tile XY."""
@@ -1423,7 +1441,14 @@ def layers(p: TrayPlan) -> dict[str, list]:
         "OUTLINE": list(Rectangle(p.w, p.d, align=(Align.MIN, Align.MIN)).faces()),
     }
     for pk in p.pockets:
-        out.setdefault(f"POCKET_D{pk.depth:g}", []).extend(pk.outline().faces())
+        try:
+            outline = pk.outline()
+        except PocketTooThin:
+            # No millable outline exists. Omit it rather than emit geometry the
+            # cutter cannot follow; ``check_trays`` reports the same pocket as
+            # BLOCKING, so nothing reaches the machine on a gate this leaves red.
+            continue
+        out.setdefault(f"POCKET_D{pk.depth:g}", []).extend(outline.faces())
     text: list = []
     for pk in p.pockets:
         for s in pk.label_strokes():
@@ -1567,7 +1592,15 @@ def check_trays(d: Datums = D, rows: list[ToolRow] | None = None) -> list[str]:
                 )
             if pk.depth < TOP_LAYER_T:
                 notes.append(f"pocket {pk.tool_id} on {name} is {pk.depth:.1f} deep in a {TOP_LAYER_T:g}mm top layer: its floor is black")
-            for e in pk.outline().edges().filter_by(GeomType.CIRCLE):
+            try:
+                edges = pk.outline().edges().filter_by(GeomType.CIRCLE)
+            except PocketTooThin as exc:
+                notes.append(
+                    f"{exc} on {name}. Widen the limb, recapture the tool on a "
+                    "plain rectangle, or cut this tile with a smaller pocket tool"
+                )
+                continue
+            for e in edges:
                 if e.radius < POCKET_R - 1e-6:
                     notes.append(
                         f"pocket {pk.tool_id} on {name} has a {e.radius:.2f} corner the "
@@ -1655,6 +1688,29 @@ def check_trays(d: Datums = D, rows: list[ToolRow] | None = None) -> list[str]:
                 f"the {other} tray cuts the day they are photographed. MEASURE THIS."
             )
 
+    return notes
+
+
+def check_pocket_outlines(d: Datums = D, rows: list[ToolRow] | None = None) -> list[str]:
+    """Every drawer's pockets, not just ``TRAY_V1``'s: which ones have no
+    millable outline at all.
+
+    ``check_trays`` reads one drawer, because the tile rules it enforces are
+    D1's. ``nest.flats`` cuts all three. A captured loop with a limb narrower
+    than the pocket cutter opens to nothing, so ``layers`` omits it and the
+    tray mills short in silence; this is the check that makes that loud."""
+    notes: list[str] = []
+    for spec in DRAWERS:
+        for p in plan_all(spec.key, d, rows):
+            for pk in p.pockets:
+                try:
+                    pk.outline()
+                except PocketTooThin as exc:
+                    notes.append(
+                        f"{exc} on {p.label}. It is omitted from the DXF, so the tray mills "
+                        "short. Recapture the tool as a plain rectangle, widen the limb, or "
+                        "cut this tile with a smaller pocket tool."
+                    )
     return notes
 
 

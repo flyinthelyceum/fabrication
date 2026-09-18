@@ -137,6 +137,7 @@ def collect() -> list[tuple[str, str, str]]:
         ("stiles", stiles.check_stiles(d)),
         ("drawers", drawers.check_drawers(d)),
         ("trays", trays.check_trays(d)),
+        ("trays", trays.check_pocket_outlines(d)),
         ("spine_panel", spine_panel.check_spine(d)),
         ("top_cap", top_cap.check_top_cap(d)),
         ("mast_base", mast_base.check_mast_base(d)),
