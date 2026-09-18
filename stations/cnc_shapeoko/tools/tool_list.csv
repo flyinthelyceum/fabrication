@@ -45,7 +45,7 @@ T055,Shapeoko 5.1 Pro Joinery Stop,D3,captured,,,,154.4,46.1,8,1,CAPTURED,,10,ca
 T056,Essential Clamp bar,D3,captured,,,,70.3,20.5,18,14,CAPTURED,T046 + T057 merged in 2026-09-11: 4 standalone + 6 machine-bundled + 4 Crush-It = 14. Calibration datum: calipers 70.23 x 19.77.,20,captures/T056.dxf,,CLAMP BAR,active,
 T057,Shapeoko Essential Clamps (machine-bundled),D3,block,,,,,,,6,MEASURE,,,,,,struck,merged into T056 2026-09-11 (same part C3D-EC; T056 qty 14)
 T058,Teez Nutz T-nuts (Crush-It kit),D3,block,,,,,,,12,MEASURE,,,,,,struck,merged into T047 2026-09-11 (T047 qty 24)
-T062,Digital calipers,D2,captured,,,,,,,1,MEASURE,owned (Jared 2026-09-11); lay closed,,,,CALIPERS,active,
+T062,Digital calipers,D2,captured,,,,237.2,71.8,10,1,CAPTURED,owned (Jared 2026-09-11); lay closed,10,captures/T062.dxf,,CALIPERS,active,
 T063,BitZero V2 touch probe,D2,captured,,,,49.1,45.9,34,1,CAPTURED,"owned (Jared 2026-09-11); Carbide 3D BitZero V2 assumed, body only, cable coiled beside",40,captures/T063.dxf,,BITZERO,active,
 T064,Deburring tool,D2,captured,,,,,,,1,MEASURE,owned (Jared 2026-09-11),,,,DEBURR,active,
 T065,Brush (chip/dust),D2,captured,,,,,,,1,MEASURE,owned (Jared 2026-09-11),,,,BRUSH,active,
