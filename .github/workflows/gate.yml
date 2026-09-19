@@ -1,0 +1,79 @@
+name: Station gate
+
+# Runs `stations.cnc_shapeoko.check`, the one command that answers whether the
+# model is safe to cut. It exits non-zero on BLOCKING, so a red check here means
+# geometry that would waste sheet.
+#
+# Written 2026-09-18, the day a pocket with a limb narrower than the cutter
+# crashed the gate inside the OCP kernel and a guard for it was pushed straight
+# to master with nothing but a human running the command by hand. That is the
+# gap this closes: until now the only thing running the gate was somebody
+# remembering to.
+#
+# Slow on purpose. build123d pulls roughly 150 MB of geometry kernel, so this is
+# a few minutes per run rather than seconds.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "stations/**"
+      - "requirements.txt"
+      - ".github/workflows/gate.yml"
+  pull_request:
+    paths:
+      - "stations/**"
+      - "requirements.txt"
+      - ".github/workflows/gate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Is this model safe to cut
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install
+        # requirements.txt pins `components` to the components-v1 TAG, not main.
+        # So this gate reads the measurements frozen at that tag, and any caliper
+        # value recorded since is invisible here. That is a real limitation and
+        # it is deliberate for now: bumping the pin is a decision about the whole
+        # build, not something a CI file should make quietly.
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run the gate
+        # Exit code follows BLOCKING alone, by design, so a standing note can
+        # never stop the shop. Full output goes to the log and the summary.
+        run: |
+          set -o pipefail
+          python -m stations.cnc_shapeoko.check 2>&1 | tee gate-output.txt
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Station gate"
+            echo ""
+            echo '```'
+            tail -40 gate-output.txt 2>/dev/null || echo "gate produced no output"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-output
+          path: gate-output.txt
+          retention-days: 30
