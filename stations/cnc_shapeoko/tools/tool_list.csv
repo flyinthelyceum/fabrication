@@ -50,3 +50,7 @@ T063,BitZero V2 touch probe,D2,captured,,,,49.1,45.9,34,1,CAPTURED,"owned (Jared
 T064,Deburring tool,D2,captured,,,,,,,1,MEASURE,owned (Jared 2026-09-11). D2 CONFIRMED by Jared 2026-09-21,,,,DEBURR,active,
 T065,Brush (chip/dust),D2,captured,,,,,,,1,MEASURE,owned (Jared 2026-09-11). D2 CONFIRMED by Jared 2026-09-21,,,,BRUSH,active,
 T066,Dust-boot upper collar (polycarbonate),D2,captured,,,,148.6,67.4,,1,CAPTURED,"clear polycarbonate: trace on the WHITE card (ruling 2026-09-21), traced 2026-09-21, slot 40; ID photo 2026-09-21 IMG_4714 at /tmp/imsg-relay-attachments/EB650DCE-IMG_4714.png",40,captures/T066.dxf,,BOOT COLLAR,active,
+T067,T-handle hex driver 5x150,D2,captured,5,,150,181.6,113.2,23,1,CAPTURED,,30,captures/T067.dxf,,T 5MM,active,
+T068,T-handle hex driver 4x150,D2,captured,4,,150,172.8,89.1,18,1,CAPTURED,,20,captures/T068.dxf,,T 4MM,active,
+T069,T-handle hex driver 3x150,D2,captured,3,,150,167.3,86.5,18,1,CAPTURED,,20,captures/T069.dxf,,T 3MM,active,
+T070,T-handle hex driver 2.5x150,D2,captured,2.5,,150,164.6,85.2,18,1,MEASURE,"PROVISIONAL, extrapolated from T067-T069 on 2026-09-21; replace by capture when the tool arrives",20,,,T 2.5MM,active,
