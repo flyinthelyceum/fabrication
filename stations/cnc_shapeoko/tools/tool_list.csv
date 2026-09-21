@@ -16,10 +16,10 @@ T026,22mm collet-nut wrench,D1,captured,,,,163.8,49.1,,1,CAPTURED,captured by th
 T027,ER-16 collet nut (M19 thread),D1,block,,,,,,,1,MEASURE,,,,,,struck,Jared 2026-09-11: does not exist as a stored item; the one nut lives on the spindle
 T028,Spare carbide inserts for McFly (included set),D1,block,,,,,,,4,MEASURE,,,,,,struck,"Jared 2026-09-11: the inserts live in the McFly body, nothing loose to store"
 T029,2-meter USB cable (removable),D2,bin,,,,,,,1,NONE,"bin pocket, coiled; no capture",,,,USB CABLE,active,
-T030,Quick Draw pen holder,D2,captured,,,,104.1,84.7,28,1,CAPTURED,"RESHOOT (Jared 2026-09-21): 3.7mm parallax; phone straight above the sheet centre and higher, the sheet small in the frame",30,captures/T030.dxf,,PEN HOLDER,active,
+T030,Quick Draw pen holder,D2,captured,,,,103.7,85.0,28,1,CAPTURED,"RESHOOT (Jared 2026-09-21): 3.7mm parallax; phone straight above the sheet centre and higher, the sheet small in the frame",30,captures/T030.dxf,,PEN HOLDER,active,
 T031,"Mobil Vactra Way Oil, 2oz",D2,captured,,,,75.9,28.3,19,1,CAPTURED,"lies on its side: height is its diameter (about 23), not the 72 standing height",20,captures/T031.dxf,,VACTRA OIL,active,
 T032,Assembly hex keys / assembly tools,D2,hex,,,,,,,1,MEASURE,,,,,,struck,"merged into T034 2026-09-11: one set of six keys in the drawer photos, not two sets"
-T033,Jog Pendant,D2,captured,,,,223.2,65.6,35,1,CAPTURED,"TABLOID sheet; pendant only, not the cable. RESHOOT (Jared 2026-09-21): shot too close for a 35mm-tall tool, up to 7.6mm parallax; phone straight above the sheet centre and higher, the sheet small in the frame, tags still readable",40,captures/T033.dxf,,PENDANT,active,
+T033,Jog Pendant,D2,captured,,,,223.2,65.3,35,1,CAPTURED,"TABLOID sheet; pendant only, not the cable. RESHOOT (Jared 2026-09-21): shot too close for a 35mm-tall tool, up to 7.6mm parallax; phone straight above the sheet centre and higher, the sheet small in the frame, tags still readable",40,captures/T033.dxf,,PENDANT,active,
 T034,Metric Allen (hex) key set,D2,captured,,,,,,,1,MEASURE,"in its holder, as it sits (T032 merged in). RULED 2026-09-21: T034 = the metric L-key set; T-handles for the most-used sizes come in as NEW entries, sizes pending Jared at the machine",,,,HEX KEYS,active,
 T035,Pipettes,D2,bin,,,,,,,6,NONE,bin pocket; no capture,,,,PIPETTES,active,
 T036,Silicone O-rings,D2,bin,,,,,,,5,NONE,bin pocket; no capture,,,,O-RINGS,active,
