@@ -391,6 +391,14 @@ def _probe(
     return sum(s.volume for s in shared)     # a ShapeList of pieces
 
 
+def _union_area(faces) -> float:
+    """Area of the faces fused into one region; overlaps counted once."""
+    fused = faces[0]
+    for f in faces[1:]:
+        fused = fused.fuse(f)
+    return sum(f.area for f in fused.faces())
+
+
 def check_callouts(
     part: Part,
     callouts: list[Callout],
@@ -445,8 +453,14 @@ def check_callouts(
                 continue
             if bb.min.X - 1e-6 <= cen.X <= bb.max.X + 1e-6 and bb.min.Y - 1e-6 <= cen.Y <= bb.max.Y + 1e-6:
                 floor += f.area
-        want = sum(f.area for f in sk.faces())
-        if abs(floor - want) > 0.05:
+        # the word as ONE region: two glyphs that touch (DejaVu's letters on
+        # CI, where the house font is absent) would otherwise count their
+        # overlap twice and fail a word that carves clean
+        want = _union_area(sk.faces())
+        # two boolean paths (a fuse, a cut) disagree by ~0.1mm2 on the same
+        # word; a letter over a cut edge is square millimetres. Below the
+        # kerf's own square the carve cannot express the difference anyway.
+        if abs(floor - want) > VBIT_KERF ** 2:
             notes.append(
                 f"{tag}{c.text} is carved into {floor:.1f}mm2 of floor and its letters "
                 f"are {want:.1f}mm2: {want - floor:.1f}mm2 of the word hangs over a cut or "
