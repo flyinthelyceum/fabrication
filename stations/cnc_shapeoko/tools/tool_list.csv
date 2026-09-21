@@ -20,11 +20,11 @@ T030,Quick Draw pen holder,D2,captured,,,,104.1,84.7,28,1,CAPTURED,,30,captures/
 T031,"Mobil Vactra Way Oil, 2oz",D2,captured,,,,75.9,28.3,19,1,CAPTURED,"lies on its side: height is its diameter (about 23), not the 72 standing height",20,captures/T031.dxf,,VACTRA OIL,active,
 T032,Assembly hex keys / assembly tools,D2,hex,,,,,,,1,MEASURE,,,,,,struck,"merged into T034 2026-09-11: one set of six keys in the drawer photos, not two sets"
 T033,Jog Pendant,D2,captured,,,,223.2,65.6,35,1,CAPTURED,"TABLOID sheet; pendant only, not the cable",40,captures/T033.dxf,,PENDANT,active,
-T034,Metric Allen (hex) key set,D2,captured,,,,,,,1,MEASURE,"in its holder, as it sits (T032 merged in)",,,,HEX KEYS,active,
+T034,Metric Allen (hex) key set,D2,captured,,,,,,,1,MEASURE,"in its holder, as it sits (T032 merged in). RULED 2026-09-21: T034 = the metric L-key set; T-handles for the most-used sizes come in as NEW entries, sizes pending Jared at the machine",,,,HEX KEYS,active,
 T035,Pipettes,D2,bin,,,,,,,6,NONE,bin pocket; no capture,,,,PIPETTES,active,
 T036,Silicone O-rings,D2,bin,,,,,,,5,NONE,bin pocket; no capture,,,,O-RINGS,active,
-T037,Brush dust-boot base (polycarbonate),D2,captured,,,,,,,1,MEASURE,moved D3 -> D2 2026-09-11,,,,BOOT BRUSH,active,
-T038,"Brush-free dust-boot base (polycarbonate, for visibility)",D2,captured,,,,,,,1,MEASURE,moved D3 -> D2 2026-09-11,,,,BOOT CLEAR,active,
+T037,Brush dust-boot base (polycarbonate),D2,captured,,,,,,,1,MEASURE,"moved D3 -> D2 2026-09-11. RULED 2026-09-21: clear polycarbonate, capture on the WHITE sheet with a pen trace (magenta fails clear bodies); hardware stays ATTACHED",,,,BOOT BRUSH,active,
+T038,"Brush-free dust-boot base (polycarbonate, for visibility)",D2,captured,,,,,,,1,MEASURE,"moved D3 -> D2 2026-09-11. RULED 2026-09-21: clear polycarbonate, capture on the WHITE sheet with a pen trace (magenta fails clear bodies); hardware stays ATTACHED",,,,BOOT CLEAR,active,
 T039,M6 x 18mm socket head cap screws (Joinery Stop mounting),D3,case,,,,,,,4,NONE,lives in the T054 organizer case,,,,M6x18 SHCS,active,
 T040,M6 x 20 Socket Head Screws (Essential Clamps mounting),D3,case,,,,,,,4,NONE,lives in the T054 organizer case,,,,M6x20 SHCS,active,
 T041,M6 x 30 Socket Head Screws (Essential Clamps mounting),D3,case,,,,,,,4,NONE,lives in the T054 organizer case,,,,M6x30 SHCS,active,
@@ -47,5 +47,5 @@ T057,Shapeoko Essential Clamps (machine-bundled),D3,block,,,,,,,6,MEASURE,,,,,,s
 T058,Teez Nutz T-nuts (Crush-It kit),D3,block,,,,,,,12,MEASURE,,,,,,struck,merged into T047 2026-09-11 (T047 qty 24)
 T062,Digital calipers,D2,captured,,,,237.2,71.8,10,1,CAPTURED,owned (Jared 2026-09-11); lay closed,10,captures/T062.dxf,,CALIPERS,active,
 T063,BitZero V2 touch probe,D2,captured,,,,49.1,45.9,34,1,CAPTURED,"owned (Jared 2026-09-11); Carbide 3D BitZero V2 assumed, body only, cable coiled beside",40,captures/T063.dxf,,BITZERO,active,
-T064,Deburring tool,D2,captured,,,,,,,1,MEASURE,owned (Jared 2026-09-11),,,,DEBURR,active,
-T065,Brush (chip/dust),D2,captured,,,,,,,1,MEASURE,owned (Jared 2026-09-11),,,,BRUSH,active,
+T064,Deburring tool,D2,captured,,,,,,,1,MEASURE,owned (Jared 2026-09-11). D2 CONFIRMED by Jared 2026-09-21,,,,DEBURR,active,
+T065,Brush (chip/dust),D2,captured,,,,,,,1,MEASURE,owned (Jared 2026-09-11). D2 CONFIRMED by Jared 2026-09-21,,,,BRUSH,active,
