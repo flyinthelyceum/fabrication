@@ -40,7 +40,9 @@ AFTER A MODEL CHANGE
 ====================
 
 Run this script, commit ``cutlist/parts.json`` and ``cutlist/cut-list.html``,
-and republish the page (ask Claude: "republish the cut list"). Progress lives in the page's database,
+and republish the page (ask Claude: "republish the cut list"). The same run
+updates the students' Google Sheet (``scripts/cutlist_gsheet.py``) without
+touching their ticks; ``--no-sheet`` skips it. Progress lives in the page's database,
 keyed by part id, so a republish never wipes it.
 """
 
@@ -269,6 +271,11 @@ def main() -> int:
         print(f"  {v['label']}: {v['needed']} needed, {v['on_hand']} on hand ({v['status']}){flag}")
     if strip(old) and strip(old) != strip(new + "\n"):
         print("  parts changed since the last run: commit parts.json and republish the page")
+    # the student-writable Google Sheet, if this machine has one (scripts/cutlist_gsheet.py)
+    sys.path.insert(0, str(Path(__file__).parent))
+    import cutlist_gsheet
+    if cutlist_gsheet.CONF.exists() and "--no-sheet" not in sys.argv:
+        print(f"  sheet: {cutlist_gsheet.sync(doc)}")
     return 0
 
 
