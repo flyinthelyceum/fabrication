@@ -1,0 +1,5993 @@
+{
+ "generated": "2026-09-23T23:29:57+00:00",
+ "sources": [
+  "fabrication@2c64718",
+  "workbench@2301497"
+ ],
+ "stock": {
+  "bb18-4x8": {
+   "label": "18mm Baltic birch BB/BB, 4x8",
+   "t": 18.0,
+   "size": [
+    2438.4,
+    1219.2
+   ],
+   "on_hand": 19,
+   "status": "on hand",
+   "needed": 13
+  },
+  "bb12-4x8": {
+   "label": "12mm Baltic birch BB/BB, 4x8",
+   "t": 12.0,
+   "size": [
+    2438.4,
+    1219.2
+   ],
+   "on_hand": 0,
+   "status": "backordered (10 on order, Spellman SO 1044690)",
+   "needed": 5
+  },
+  "bb12-5x5": {
+   "label": "12mm Baltic birch BB/BB, 5x5",
+   "t": 12.0,
+   "size": [
+    1525.0,
+    1525.0
+   ],
+   "on_hand": 1,
+   "status": "on hand",
+   "needed": 1
+  },
+  "bb5-4x8": {
+   "label": "5.2mm import birch A-3, 4x8",
+   "t": 5.2,
+   "size": [
+    2438.4,
+    1219.2
+   ],
+   "on_hand": 9,
+   "status": "on hand",
+   "needed": 2
+  },
+  "mdf19-4x8": {
+   "label": "3/4in MDF (Duraply), 4x8",
+   "t": 19.05,
+   "size": [
+    2438.4,
+    1219.2
+   ],
+   "on_hand": 7,
+   "status": "on hand",
+   "needed": 7
+  }
+ },
+ "sheets": [
+  {
+   "id": "wb-18mm-01",
+   "project": "Workbench fleet",
+   "stock": "bb18-4x8",
+   "title": "Workbench 18mm sheet 1",
+   "method": "CNC",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-18mm-01-x1",
+     "text": "Track saw: crosscut the 4x8 in half into two 48\" (1219mm) square blanks, A and B."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "A",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-shelf_plate-001",
+       "name": "shelf_plate",
+       "l": 998.7,
+       "w": 519.3,
+       "t": 18.0,
+       "geom": "998.7x519.3x18",
+       "size_in": "39 5/16\" x 20 7/16\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 998.7,
+       "pw": 519.3
+      },
+      {
+       "id": "wb-case_divider-001",
+       "name": "case_divider",
+       "l": 287.0,
+       "w": 146.0,
+       "t": 18.0,
+       "geom": "287.0x146.0x18",
+       "size_in": "11 5/16\" x 5 3/4\"",
+       "x": 1017.0,
+       "y": 10.0,
+       "pl": 146.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-shelf_plate-002",
+       "name": "shelf_plate",
+       "l": 998.7,
+       "w": 519.3,
+       "t": 18.0,
+       "geom": "998.7x519.3x18",
+       "size_in": "39 5/16\" x 20 7/16\"",
+       "x": 10.0,
+       "y": 537.6,
+       "pl": 998.7,
+       "pw": 519.3
+      },
+      {
+       "id": "wb-case_divider-002",
+       "name": "case_divider",
+       "l": 287.0,
+       "w": 146.0,
+       "t": 18.0,
+       "geom": "287.0x146.0x18",
+       "size_in": "11 5/16\" x 5 3/4\"",
+       "x": 1017.0,
+       "y": 537.6,
+       "pl": 146.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-drawer_hold_back-001",
+       "name": "drawer_hold_back",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 1065.3,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-001",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 1065.3,
+       "pl": 305.0,
+       "pw": 106.0
+      }
+     ]
+    },
+    {
+     "name": "B",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-shelf_plate-003",
+       "name": "shelf_plate",
+       "l": 998.7,
+       "w": 519.3,
+       "t": 18.0,
+       "geom": "998.7x519.3x18",
+       "size_in": "39 5/16\" x 20 7/16\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 998.7,
+       "pw": 519.3
+      },
+      {
+       "id": "wb-case_divider-003",
+       "name": "case_divider",
+       "l": 287.0,
+       "w": 146.0,
+       "t": 18.0,
+       "geom": "287.0x146.0x18",
+       "size_in": "11 5/16\" x 5 3/4\"",
+       "x": 1017.0,
+       "y": 10.0,
+       "pl": 146.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-shelf_plate-004",
+       "name": "shelf_plate",
+       "l": 998.7,
+       "w": 519.3,
+       "t": 18.0,
+       "geom": "998.7x519.3x18",
+       "size_in": "39 5/16\" x 20 7/16\"",
+       "x": 10.0,
+       "y": 537.6,
+       "pl": 998.7,
+       "pw": 519.3
+      },
+      {
+       "id": "wb-case_divider-004",
+       "name": "case_divider",
+       "l": 287.0,
+       "w": 146.0,
+       "t": 18.0,
+       "geom": "287.0x146.0x18",
+       "size_in": "11 5/16\" x 5 3/4\"",
+       "x": 1017.0,
+       "y": 537.6,
+       "pl": 146.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-drawer_hold_back-002",
+       "name": "drawer_hold_back",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 1065.3,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-002",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 1065.3,
+       "pl": 305.0,
+       "pw": 106.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-18mm-02",
+   "project": "Workbench fleet",
+   "stock": "bb18-4x8",
+   "title": "Workbench 18mm sheet 2",
+   "method": "CNC",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-18mm-02-x1",
+     "text": "Track saw: crosscut the 4x8 in half into two 48\" (1219mm) square blanks, A and B."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "A",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-shelf_plate-005",
+       "name": "shelf_plate",
+       "l": 998.7,
+       "w": 519.3,
+       "t": 18.0,
+       "geom": "998.7x519.3x18",
+       "size_in": "39 5/16\" x 20 7/16\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 998.7,
+       "pw": 519.3
+      },
+      {
+       "id": "wb-case_divider-005",
+       "name": "case_divider",
+       "l": 287.0,
+       "w": 146.0,
+       "t": 18.0,
+       "geom": "287.0x146.0x18",
+       "size_in": "11 5/16\" x 5 3/4\"",
+       "x": 1017.0,
+       "y": 10.0,
+       "pl": 146.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-shelf_plate-006",
+       "name": "shelf_plate",
+       "l": 998.7,
+       "w": 519.3,
+       "t": 18.0,
+       "geom": "998.7x519.3x18",
+       "size_in": "39 5/16\" x 20 7/16\"",
+       "x": 10.0,
+       "y": 537.6,
+       "pl": 998.7,
+       "pw": 519.3
+      },
+      {
+       "id": "wb-case_divider-006",
+       "name": "case_divider",
+       "l": 287.0,
+       "w": 146.0,
+       "t": 18.0,
+       "geom": "287.0x146.0x18",
+       "size_in": "11 5/16\" x 5 3/4\"",
+       "x": 1017.0,
+       "y": 537.6,
+       "pl": 146.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-drawer_hold_back-003",
+       "name": "drawer_hold_back",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 1065.3,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-003",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 1065.3,
+       "pl": 305.0,
+       "pw": 106.0
+      }
+     ]
+    },
+    {
+     "name": "B",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-shelf_plate-007",
+       "name": "shelf_plate",
+       "l": 998.7,
+       "w": 519.3,
+       "t": 18.0,
+       "geom": "998.7x519.3x18",
+       "size_in": "39 5/16\" x 20 7/16\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 998.7,
+       "pw": 519.3
+      },
+      {
+       "id": "wb-case_divider-007",
+       "name": "case_divider",
+       "l": 287.0,
+       "w": 146.0,
+       "t": 18.0,
+       "geom": "287.0x146.0x18",
+       "size_in": "11 5/16\" x 5 3/4\"",
+       "x": 1017.0,
+       "y": 10.0,
+       "pl": 146.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-shelf_plate-008",
+       "name": "shelf_plate",
+       "l": 998.7,
+       "w": 519.3,
+       "t": 18.0,
+       "geom": "998.7x519.3x18",
+       "size_in": "39 5/16\" x 20 7/16\"",
+       "x": 10.0,
+       "y": 537.6,
+       "pl": 998.7,
+       "pw": 519.3
+      },
+      {
+       "id": "wb-case_divider-008",
+       "name": "case_divider",
+       "l": 287.0,
+       "w": 146.0,
+       "t": 18.0,
+       "geom": "287.0x146.0x18",
+       "size_in": "11 5/16\" x 5 3/4\"",
+       "x": 1017.0,
+       "y": 537.6,
+       "pl": 146.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-drawer_hold_back-004",
+       "name": "drawer_hold_back",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 1065.3,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-004",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 1065.3,
+       "pl": 305.0,
+       "pw": 106.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-18mm-03",
+   "project": "Workbench fleet",
+   "stock": "bb18-4x8",
+   "title": "Workbench 18mm sheet 3",
+   "method": "CNC",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-18mm-03-x1",
+     "text": "Track saw: crosscut the 4x8 in half into two 48\" (1219mm) square blanks, A and B."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "A",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-shelf_plate-009",
+       "name": "shelf_plate",
+       "l": 998.7,
+       "w": 519.3,
+       "t": 18.0,
+       "geom": "998.7x519.3x18",
+       "size_in": "39 5/16\" x 20 7/16\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 998.7,
+       "pw": 519.3
+      },
+      {
+       "id": "wb-case_divider-009",
+       "name": "case_divider",
+       "l": 287.0,
+       "w": 146.0,
+       "t": 18.0,
+       "geom": "287.0x146.0x18",
+       "size_in": "11 5/16\" x 5 3/4\"",
+       "x": 1017.0,
+       "y": 10.0,
+       "pl": 146.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-shelf_plate-010",
+       "name": "shelf_plate",
+       "l": 998.7,
+       "w": 519.3,
+       "t": 18.0,
+       "geom": "998.7x519.3x18",
+       "size_in": "39 5/16\" x 20 7/16\"",
+       "x": 10.0,
+       "y": 537.6,
+       "pl": 998.7,
+       "pw": 519.3
+      },
+      {
+       "id": "wb-case_divider-010",
+       "name": "case_divider",
+       "l": 287.0,
+       "w": 146.0,
+       "t": 18.0,
+       "geom": "287.0x146.0x18",
+       "size_in": "11 5/16\" x 5 3/4\"",
+       "x": 1017.0,
+       "y": 537.6,
+       "pl": 146.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-drawer_hold_back-005",
+       "name": "drawer_hold_back",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 1065.3,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-005",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 1065.3,
+       "pl": 305.0,
+       "pw": 106.0
+      }
+     ]
+    },
+    {
+     "name": "B",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-case_end-001",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-case_end-002",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 352.4,
+       "y": 10.0,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-case_end-003",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 694.7,
+       "y": 10.0,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_hold_side-001",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 1037.1,
+       "y": 10.0,
+       "pl": 134.0,
+       "pw": 261.0
+      },
+      {
+       "id": "wb-case_end-004",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 323.4,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-case_end-005",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 352.4,
+       "y": 323.4,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-case_end-006",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 694.7,
+       "y": 323.4,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_hold_side-002",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 1037.1,
+       "y": 323.4,
+       "pl": 134.0,
+       "pw": 261.0
+      },
+      {
+       "id": "wb-case_end-007",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 636.7,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-case_end-008",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 352.4,
+       "y": 636.7,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-case_end-009",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 694.7,
+       "y": 636.7,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_hold_side-003",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 1037.1,
+       "y": 636.7,
+       "pl": 134.0,
+       "pw": 261.0
+      },
+      {
+       "id": "wb-bearing_strip-001",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 950.1,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_side-001",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 950.1,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-shelf_upstand-001",
+       "name": "shelf_upstand",
+       "l": 998.7,
+       "w": 80.3,
+       "t": 18.0,
+       "geom": "998.7x80.3x18",
+       "size_in": "39 5/16\" x 3 3/16\"",
+       "x": 10.0,
+       "y": 1110.0,
+       "pl": 998.7,
+       "pw": 80.3
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-18mm-04",
+   "project": "Workbench fleet",
+   "stock": "bb18-4x8",
+   "title": "Workbench 18mm sheet 4",
+   "method": "CNC",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-18mm-04-x1",
+     "text": "Track saw: crosscut the 4x8 in half into two 48\" (1219mm) square blanks, A and B."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "A",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-case_end-010",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-case_end-011",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 352.4,
+       "y": 10.0,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-case_end-012",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 694.7,
+       "y": 10.0,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_hold_side-004",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 1037.1,
+       "y": 10.0,
+       "pl": 134.0,
+       "pw": 261.0
+      },
+      {
+       "id": "wb-case_end-013",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 323.4,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-case_end-014",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 352.4,
+       "y": 323.4,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-case_end-015",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 694.7,
+       "y": 323.4,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_hold_side-005",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 1037.1,
+       "y": 323.4,
+       "pl": 134.0,
+       "pw": 261.0
+      },
+      {
+       "id": "wb-case_end-016",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 636.7,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-case_end-017",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 352.4,
+       "y": 636.7,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-case_end-018",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 694.7,
+       "y": 636.7,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_hold_side-006",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 1037.1,
+       "y": 636.7,
+       "pl": 134.0,
+       "pw": 261.0
+      },
+      {
+       "id": "wb-bearing_strip-002",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 950.1,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_side-002",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 950.1,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-shelf_upstand-002",
+       "name": "shelf_upstand",
+       "l": 998.7,
+       "w": 80.3,
+       "t": 18.0,
+       "geom": "998.7x80.3x18",
+       "size_in": "39 5/16\" x 3 3/16\"",
+       "x": 10.0,
+       "y": 1110.0,
+       "pl": 998.7,
+       "pw": 80.3
+      }
+     ]
+    },
+    {
+     "name": "B",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-case_end-019",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-case_end-020",
+       "name": "case_end",
+       "l": 334.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "334.0x305.0x18",
+       "size_in": "13 1/8\" x 12\"",
+       "x": 352.4,
+       "y": 10.0,
+       "pl": 334.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_hold_side-007",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 694.7,
+       "y": 10.0,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-drawer_hold_side-008",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 964.1,
+       "y": 10.0,
+       "pl": 134.0,
+       "pw": 261.0
+      },
+      {
+       "id": "wb-case_floor-001",
+       "name": "case_floor",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 323.4,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_hold_side-009",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 323.4,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-case_floor-002",
+       "name": "case_floor",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 636.7,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_hold_side-010",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 636.7,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-bearing_strip-003",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 950.1,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_side-003",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 950.1,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-shelf_upstand-003",
+       "name": "shelf_upstand",
+       "l": 998.7,
+       "w": 80.3,
+       "t": 18.0,
+       "geom": "998.7x80.3x18",
+       "size_in": "39 5/16\" x 3 3/16\"",
+       "x": 10.0,
+       "y": 1110.0,
+       "pl": 998.7,
+       "pw": 80.3
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-18mm-05",
+   "project": "Workbench fleet",
+   "stock": "bb18-4x8",
+   "title": "Workbench 18mm sheet 5",
+   "method": "CNC",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-18mm-05-x1",
+     "text": "Track saw: crosscut the 4x8 in half into two 48\" (1219mm) square blanks, A and B."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "A",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-case_floor-003",
+       "name": "case_floor",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_hold_side-011",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 10.0,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-case_floor-004",
+       "name": "case_floor",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 323.4,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_hold_side-012",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 323.4,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-case_floor-005",
+       "name": "case_floor",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 636.7,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_hold_side-013",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 636.7,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-bearing_strip-004",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 950.1,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_side-004",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 950.1,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-shelf_upstand-004",
+       "name": "shelf_upstand",
+       "l": 998.7,
+       "w": 80.3,
+       "t": 18.0,
+       "geom": "998.7x80.3x18",
+       "size_in": "39 5/16\" x 3 3/16\"",
+       "x": 10.0,
+       "y": 1110.0,
+       "pl": 998.7,
+       "pw": 80.3
+      }
+     ]
+    },
+    {
+     "name": "B",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-case_floor-006",
+       "name": "case_floor",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_hold_side-014",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 10.0,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-case_floor-007",
+       "name": "case_floor",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 323.4,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_hold_side-015",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 323.4,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-case_floor-008",
+       "name": "case_floor",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 636.7,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_hold_side-016",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 636.7,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-bearing_strip-005",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 950.1,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_side-005",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 950.1,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-shelf_upstand-005",
+       "name": "shelf_upstand",
+       "l": 998.7,
+       "w": 80.3,
+       "t": 18.0,
+       "geom": "998.7x80.3x18",
+       "size_in": "39 5/16\" x 3 3/16\"",
+       "x": 10.0,
+       "y": 1110.0,
+       "pl": 998.7,
+       "pw": 80.3
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-18mm-06",
+   "project": "Workbench fleet",
+   "stock": "bb18-4x8",
+   "title": "Workbench 18mm sheet 6",
+   "method": "CNC",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-18mm-06-x1",
+     "text": "Track saw: crosscut the 4x8 in half into two 48\" (1219mm) square blanks, A and B."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "A",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-case_floor-009",
+       "name": "case_floor",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_hold_side-017",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 10.0,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-case_floor-010",
+       "name": "case_floor",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 323.4,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_hold_side-018",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 323.4,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-case_lid-001",
+       "name": "case_lid",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 636.7,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_hold_side-019",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 636.7,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-bearing_strip-006",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 950.1,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_side-006",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 950.1,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-shelf_upstand-006",
+       "name": "shelf_upstand",
+       "l": 998.7,
+       "w": 80.3,
+       "t": 18.0,
+       "geom": "998.7x80.3x18",
+       "size_in": "39 5/16\" x 3 3/16\"",
+       "x": 10.0,
+       "y": 1110.0,
+       "pl": 998.7,
+       "pw": 80.3
+      }
+     ]
+    },
+    {
+     "name": "B",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-case_lid-002",
+       "name": "case_lid",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_hold_side-020",
+       "name": "drawer_hold_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 10.0,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-case_lid-003",
+       "name": "case_lid",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 323.4,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_mark_side-007",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 323.4,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-case_lid-004",
+       "name": "case_lid",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 636.7,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_mark_side-008",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 636.7,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-bearing_strip-007",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 950.1,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_side-009",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 950.1,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-shelf_upstand-007",
+       "name": "shelf_upstand",
+       "l": 998.7,
+       "w": 80.3,
+       "t": 18.0,
+       "geom": "998.7x80.3x18",
+       "size_in": "39 5/16\" x 3 3/16\"",
+       "x": 10.0,
+       "y": 1110.0,
+       "pl": 998.7,
+       "pw": 80.3
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-18mm-07",
+   "project": "Workbench fleet",
+   "stock": "bb18-4x8",
+   "title": "Workbench 18mm sheet 7",
+   "method": "CNC",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-18mm-07-x1",
+     "text": "Track saw: crosscut the 4x8 in half into two 48\" (1219mm) square blanks, A and B."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "A",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-case_lid-005",
+       "name": "case_lid",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_mark_side-010",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 10.0,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-case_lid-006",
+       "name": "case_lid",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 323.4,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_mark_side-011",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 323.4,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-case_lid-007",
+       "name": "case_lid",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 636.7,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_mark_side-012",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 636.7,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-bearing_strip-008",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 950.1,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_side-013",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 950.1,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-shelf_upstand-008",
+       "name": "shelf_upstand",
+       "l": 998.7,
+       "w": 80.3,
+       "t": 18.0,
+       "geom": "998.7x80.3x18",
+       "size_in": "39 5/16\" x 3 3/16\"",
+       "x": 10.0,
+       "y": 1110.0,
+       "pl": 998.7,
+       "pw": 80.3
+      }
+     ]
+    },
+    {
+     "name": "B",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-case_lid-008",
+       "name": "case_lid",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_mark_side-014",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 10.0,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-case_lid-009",
+       "name": "case_lid",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 323.4,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_mark_side-015",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 323.4,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-case_lid-010",
+       "name": "case_lid",
+       "l": 892.0,
+       "w": 305.0,
+       "t": 18.0,
+       "geom": "892.0x305.0x18",
+       "size_in": "35 1/8\" x 12\"",
+       "x": 10.0,
+       "y": 636.7,
+       "pl": 892.0,
+       "pw": 305.0
+      },
+      {
+       "id": "wb-drawer_mark_side-016",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 636.7,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-bearing_strip-009",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 950.1,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_side-017",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 950.1,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-shelf_upstand-009",
+       "name": "shelf_upstand",
+       "l": 998.7,
+       "w": 80.3,
+       "t": 18.0,
+       "geom": "998.7x80.3x18",
+       "size_in": "39 5/16\" x 3 3/16\"",
+       "x": 10.0,
+       "y": 1110.0,
+       "pl": 998.7,
+       "pw": 80.3
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-18mm-08",
+   "project": "Workbench fleet",
+   "stock": "bb18-4x8",
+   "title": "Workbench 18mm sheet 8",
+   "method": "CNC",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-18mm-08-x1",
+     "text": "Track saw: crosscut the 4x8 in half into two 48\" (1219mm) square blanks, A and B."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "A",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-case_back-001",
+       "name": "case_back",
+       "l": 892.0,
+       "w": 304.0,
+       "t": 18.0,
+       "geom": "892.0x304.0x18",
+       "size_in": "35 1/8\" x 11 15/16\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 892.0,
+       "pw": 304.0
+      },
+      {
+       "id": "wb-drawer_mark_side-018",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 10.0,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-case_back-002",
+       "name": "case_back",
+       "l": 892.0,
+       "w": 304.0,
+       "t": 18.0,
+       "geom": "892.0x304.0x18",
+       "size_in": "35 1/8\" x 11 15/16\"",
+       "x": 10.0,
+       "y": 322.4,
+       "pl": 892.0,
+       "pw": 304.0
+      },
+      {
+       "id": "wb-drawer_mark_side-019",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 322.4,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-case_back-003",
+       "name": "case_back",
+       "l": 892.0,
+       "w": 304.0,
+       "t": 18.0,
+       "geom": "892.0x304.0x18",
+       "size_in": "35 1/8\" x 11 15/16\"",
+       "x": 10.0,
+       "y": 634.7,
+       "pl": 892.0,
+       "pw": 304.0
+      },
+      {
+       "id": "wb-drawer_mark_side-020",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 634.7,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-bearing_strip-010",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 947.1,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_side-021",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 947.1,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-shelf_upstand-010",
+       "name": "shelf_upstand",
+       "l": 998.7,
+       "w": 80.3,
+       "t": 18.0,
+       "geom": "998.7x80.3x18",
+       "size_in": "39 5/16\" x 3 3/16\"",
+       "x": 10.0,
+       "y": 1107.0,
+       "pl": 998.7,
+       "pw": 80.3
+      }
+     ]
+    },
+    {
+     "name": "B",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-case_back-004",
+       "name": "case_back",
+       "l": 892.0,
+       "w": 304.0,
+       "t": 18.0,
+       "geom": "892.0x304.0x18",
+       "size_in": "35 1/8\" x 11 15/16\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 892.0,
+       "pw": 304.0
+      },
+      {
+       "id": "wb-drawer_mark_side-022",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 10.0,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-case_back-005",
+       "name": "case_back",
+       "l": 892.0,
+       "w": 304.0,
+       "t": 18.0,
+       "geom": "892.0x304.0x18",
+       "size_in": "35 1/8\" x 11 15/16\"",
+       "x": 10.0,
+       "y": 322.4,
+       "pl": 892.0,
+       "pw": 304.0
+      },
+      {
+       "id": "wb-drawer_mark_side-023",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 322.4,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-case_back-006",
+       "name": "case_back",
+       "l": 892.0,
+       "w": 304.0,
+       "t": 18.0,
+       "geom": "892.0x304.0x18",
+       "size_in": "35 1/8\" x 11 15/16\"",
+       "x": 10.0,
+       "y": 634.7,
+       "pl": 892.0,
+       "pw": 304.0
+      },
+      {
+       "id": "wb-drawer_mark_side-024",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 634.7,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-bearing_strip-011",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 947.1,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_side-025",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 947.1,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-jig-001",
+       "name": "jig",
+       "l": 656.0,
+       "w": 70.0,
+       "t": 18.0,
+       "geom": "656.0x70.0x18",
+       "size_in": "25 13/16\" x 2 3/4\"",
+       "x": 10.0,
+       "y": 1107.0,
+       "pl": 656.0,
+       "pw": 70.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-18mm-09",
+   "project": "Workbench fleet",
+   "stock": "bb18-4x8",
+   "title": "Workbench 18mm sheet 9",
+   "method": "CNC",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-18mm-09-x1",
+     "text": "Track saw: crosscut the 4x8 in half into two 48\" (1219mm) square blanks, A and B."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "A",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-case_back-007",
+       "name": "case_back",
+       "l": 892.0,
+       "w": 304.0,
+       "t": 18.0,
+       "geom": "892.0x304.0x18",
+       "size_in": "35 1/8\" x 11 15/16\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 892.0,
+       "pw": 304.0
+      },
+      {
+       "id": "wb-drawer_mark_side-026",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 10.0,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-case_back-008",
+       "name": "case_back",
+       "l": 892.0,
+       "w": 304.0,
+       "t": 18.0,
+       "geom": "892.0x304.0x18",
+       "size_in": "35 1/8\" x 11 15/16\"",
+       "x": 10.0,
+       "y": 322.4,
+       "pl": 892.0,
+       "pw": 304.0
+      },
+      {
+       "id": "wb-drawer_mark_side-027",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 322.4,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-case_back-009",
+       "name": "case_back",
+       "l": 892.0,
+       "w": 304.0,
+       "t": 18.0,
+       "geom": "892.0x304.0x18",
+       "size_in": "35 1/8\" x 11 15/16\"",
+       "x": 10.0,
+       "y": 634.7,
+       "pl": 892.0,
+       "pw": 304.0
+      },
+      {
+       "id": "wb-drawer_mark_side-028",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 634.7,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-bearing_strip-012",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 947.1,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_side-029",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 947.1,
+       "pl": 261.0,
+       "pw": 134.0
+      }
+     ]
+    },
+    {
+     "name": "B",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-case_back-010",
+       "name": "case_back",
+       "l": 892.0,
+       "w": 304.0,
+       "t": 18.0,
+       "geom": "892.0x304.0x18",
+       "size_in": "35 1/8\" x 11 15/16\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 892.0,
+       "pw": 304.0
+      },
+      {
+       "id": "wb-drawer_mark_side-030",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 910.4,
+       "y": 10.0,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-tier_shelf-001",
+       "name": "tier_shelf",
+       "l": 886.0,
+       "w": 287.0,
+       "t": 18.0,
+       "geom": "886.0x287.0x18",
+       "size_in": "34 7/8\" x 11 5/16\"",
+       "x": 10.0,
+       "y": 322.4,
+       "pl": 886.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-drawer_mark_side-031",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 904.4,
+       "y": 322.4,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-tier_shelf-002",
+       "name": "tier_shelf",
+       "l": 886.0,
+       "w": 287.0,
+       "t": 18.0,
+       "geom": "886.0x287.0x18",
+       "size_in": "34 7/8\" x 11 5/16\"",
+       "x": 10.0,
+       "y": 617.7,
+       "pl": 886.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-drawer_mark_side-032",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 904.4,
+       "y": 617.7,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-tier_shelf-003",
+       "name": "tier_shelf",
+       "l": 886.0,
+       "w": 287.0,
+       "t": 18.0,
+       "geom": "886.0x287.0x18",
+       "size_in": "34 7/8\" x 11 5/16\"",
+       "x": 10.0,
+       "y": 913.1,
+       "pl": 886.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-drawer_mark_side-033",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 904.4,
+       "y": 913.1,
+       "pl": 261.0,
+       "pw": 134.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-18mm-10",
+   "project": "Workbench fleet",
+   "stock": "bb18-4x8",
+   "title": "Workbench 18mm sheet 10",
+   "method": "CNC",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-18mm-10-x1",
+     "text": "Track saw: crosscut the 4x8 in half into two 48\" (1219mm) square blanks, A and B."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "A",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-tier_shelf-004",
+       "name": "tier_shelf",
+       "l": 886.0,
+       "w": 287.0,
+       "t": 18.0,
+       "geom": "886.0x287.0x18",
+       "size_in": "34 7/8\" x 11 5/16\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 886.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-drawer_mark_side-034",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 904.4,
+       "y": 10.0,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-tier_shelf-005",
+       "name": "tier_shelf",
+       "l": 886.0,
+       "w": 287.0,
+       "t": 18.0,
+       "geom": "886.0x287.0x18",
+       "size_in": "34 7/8\" x 11 5/16\"",
+       "x": 10.0,
+       "y": 305.4,
+       "pl": 886.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-drawer_mark_side-035",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 904.4,
+       "y": 305.4,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-tier_shelf-006",
+       "name": "tier_shelf",
+       "l": 886.0,
+       "w": 287.0,
+       "t": 18.0,
+       "geom": "886.0x287.0x18",
+       "size_in": "34 7/8\" x 11 5/16\"",
+       "x": 10.0,
+       "y": 600.7,
+       "pl": 886.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-drawer_mark_side-036",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 904.4,
+       "y": 600.7,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-tier_shelf-007",
+       "name": "tier_shelf",
+       "l": 886.0,
+       "w": 287.0,
+       "t": 18.0,
+       "geom": "886.0x287.0x18",
+       "size_in": "34 7/8\" x 11 5/16\"",
+       "x": 10.0,
+       "y": 896.1,
+       "pl": 886.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-drawer_mark_side-037",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 904.4,
+       "y": 896.1,
+       "pl": 261.0,
+       "pw": 134.0
+      }
+     ]
+    },
+    {
+     "name": "B",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-tier_shelf-008",
+       "name": "tier_shelf",
+       "l": 886.0,
+       "w": 287.0,
+       "t": 18.0,
+       "geom": "886.0x287.0x18",
+       "size_in": "34 7/8\" x 11 5/16\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 886.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-drawer_mark_side-038",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 904.4,
+       "y": 10.0,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-tier_shelf-009",
+       "name": "tier_shelf",
+       "l": 886.0,
+       "w": 287.0,
+       "t": 18.0,
+       "geom": "886.0x287.0x18",
+       "size_in": "34 7/8\" x 11 5/16\"",
+       "x": 10.0,
+       "y": 305.4,
+       "pl": 886.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-drawer_mark_side-039",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 904.4,
+       "y": 305.4,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-tier_shelf-010",
+       "name": "tier_shelf",
+       "l": 886.0,
+       "w": 287.0,
+       "t": 18.0,
+       "geom": "886.0x287.0x18",
+       "size_in": "34 7/8\" x 11 5/16\"",
+       "x": 10.0,
+       "y": 600.7,
+       "pl": 886.0,
+       "pw": 287.0
+      },
+      {
+       "id": "wb-drawer_mark_side-040",
+       "name": "drawer_mark_side",
+       "l": 261.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "261.0x134.0x18",
+       "size_in": "10 1/4\" x 5 1/4\"",
+       "x": 904.4,
+       "y": 600.7,
+       "pl": 261.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-bearing_strip-013",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 896.1,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_back-001",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 896.1,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-bearing_strip-014",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 1056.0,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_back-002",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 1056.0,
+       "pl": 422.0,
+       "pw": 134.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-18mm-11",
+   "project": "Workbench fleet",
+   "stock": "bb18-4x8",
+   "title": "Workbench 18mm sheet 11",
+   "method": "CNC",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-18mm-11-x1",
+     "text": "Track saw: crosscut the 4x8 in half into two 48\" (1219mm) square blanks, A and B."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "A",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-bearing_strip-015",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_back-003",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 10.0,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-bearing_strip-016",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 169.9,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_back-004",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 169.9,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-bearing_strip-017",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 329.9,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_back-005",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 329.9,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-bearing_strip-018",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 489.9,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_back-006",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 489.9,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-bearing_strip-019",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 649.8,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_back-007",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 649.8,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-bearing_strip-020",
+       "name": "bearing_strip",
+       "l": 711.2,
+       "w": 151.6,
+       "t": 18.0,
+       "geom": "711.2x151.6x18",
+       "size_in": "28\" x 5 15/16\"",
+       "x": 10.0,
+       "y": 809.8,
+       "pl": 711.2,
+       "pw": 151.6
+      },
+      {
+       "id": "wb-drawer_mark_back-008",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 729.6,
+       "y": 809.8,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-drawer_hold_back-006",
+       "name": "drawer_hold_back",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 969.7,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-006",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 969.7,
+       "pl": 305.0,
+       "pw": 106.0
+      }
+     ]
+    },
+    {
+     "name": "B",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-drawer_hold_back-007",
+       "name": "drawer_hold_back",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-007",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 10.0,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_hold_back-008",
+       "name": "drawer_hold_back",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 152.3,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-008",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 152.3,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_hold_back-009",
+       "name": "drawer_hold_back",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 294.7,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-009",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 294.7,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_hold_back-010",
+       "name": "drawer_hold_back",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 437.1,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-010",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 437.1,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_hold_front-001",
+       "name": "drawer_hold_front",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 579.4,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-011",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 579.4,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_hold_front-002",
+       "name": "drawer_hold_front",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 721.8,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-012",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 721.8,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_hold_front-003",
+       "name": "drawer_hold_front",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 864.1,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-013",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 864.1,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_hold_front-004",
+       "name": "drawer_hold_front",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 1006.5,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-014",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 1006.5,
+       "pl": 305.0,
+       "pw": 106.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-18mm-12",
+   "project": "Workbench fleet",
+   "stock": "bb18-4x8",
+   "title": "Workbench 18mm sheet 12",
+   "method": "CNC",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-18mm-12-x1",
+     "text": "Track saw: crosscut the 4x8 in half into two 48\" (1219mm) square blanks, A and B."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "A",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-drawer_hold_front-005",
+       "name": "drawer_hold_front",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-015",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 10.0,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_hold_front-006",
+       "name": "drawer_hold_front",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 152.3,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-016",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 152.3,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_hold_front-007",
+       "name": "drawer_hold_front",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 294.7,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-017",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 294.7,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_hold_front-008",
+       "name": "drawer_hold_front",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 437.1,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-018",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 437.1,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_hold_front-009",
+       "name": "drawer_hold_front",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 579.4,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-019",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 579.4,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_hold_front-010",
+       "name": "drawer_hold_front",
+       "l": 868.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "868.0x134.0x18",
+       "size_in": "34 3/16\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 721.8,
+       "pl": 868.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-020",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 886.4,
+       "y": 721.8,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_mark_back-009",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 864.1,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-drawer_mark_back-010",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 440.4,
+       "y": 864.1,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-021",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 870.7,
+       "y": 864.1,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_mark_back-011",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 1006.5,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-drawer_mark_back-012",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 440.4,
+       "y": 1006.5,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-022",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 870.7,
+       "y": 1006.5,
+       "pl": 305.0,
+       "pw": 106.0
+      }
+     ]
+    },
+    {
+     "name": "B",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-drawer_mark_back-013",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-drawer_mark_back-014",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 440.4,
+       "y": 10.0,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-023",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 870.7,
+       "y": 10.0,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_mark_back-015",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 152.3,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-drawer_mark_back-016",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 440.4,
+       "y": 152.3,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-024",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 870.7,
+       "y": 152.3,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_mark_back-017",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 294.7,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-drawer_mark_back-018",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 440.4,
+       "y": 294.7,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-025",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 870.7,
+       "y": 294.7,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_mark_back-019",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 437.1,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-drawer_mark_back-020",
+       "name": "drawer_mark_back",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 440.4,
+       "y": 437.1,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-026",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 870.7,
+       "y": 437.1,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_mark_front-001",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 579.4,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-drawer_mark_front-002",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 440.4,
+       "y": 579.4,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-027",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 870.7,
+       "y": 579.4,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_mark_front-003",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 721.8,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-drawer_mark_front-004",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 440.4,
+       "y": 721.8,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-028",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 870.7,
+       "y": 721.8,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_mark_front-005",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 864.1,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-drawer_mark_front-006",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 440.4,
+       "y": 864.1,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-029",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 870.7,
+       "y": 864.1,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_mark_front-007",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 1006.5,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-drawer_mark_front-008",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 440.4,
+       "y": 1006.5,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-030",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 870.7,
+       "y": 1006.5,
+       "pl": 305.0,
+       "pw": 106.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-18mm-13",
+   "project": "Workbench fleet",
+   "stock": "bb18-4x8",
+   "title": "Workbench 18mm sheet 13",
+   "method": "CNC",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-18mm-13-x1",
+     "text": "Track saw: crosscut the 4x8 in half into two 48\" (1219mm) square blanks, A and B."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "A",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-drawer_mark_front-009",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-drawer_mark_front-010",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 440.4,
+       "y": 10.0,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-031",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 870.7,
+       "y": 10.0,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_mark_front-011",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 152.3,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-drawer_mark_front-012",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 440.4,
+       "y": 152.3,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-032",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 870.7,
+       "y": 152.3,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_mark_front-013",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 294.7,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-drawer_mark_front-014",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 440.4,
+       "y": 294.7,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-033",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 870.7,
+       "y": 294.7,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_mark_front-015",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 437.1,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-drawer_mark_front-016",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 440.4,
+       "y": 437.1,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-034",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 870.7,
+       "y": 437.1,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_mark_front-017",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 579.4,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-drawer_mark_front-018",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 440.4,
+       "y": 579.4,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-035",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 870.7,
+       "y": 579.4,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-drawer_mark_front-019",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 10.0,
+       "y": 721.8,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-drawer_mark_front-020",
+       "name": "drawer_mark_front",
+       "l": 422.0,
+       "w": 134.0,
+       "t": 18.0,
+       "geom": "422.0x134.0x18",
+       "size_in": "16 5/8\" x 5 1/4\"",
+       "x": 440.4,
+       "y": 721.8,
+       "pl": 422.0,
+       "pw": 134.0
+      },
+      {
+       "id": "wb-rib-036",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 870.7,
+       "y": 721.8,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-rib-037",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 10.0,
+       "y": 864.1,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-rib-038",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 323.4,
+       "y": 864.1,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-rib-039",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 636.7,
+       "y": 864.1,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-rib-040",
+       "name": "rib",
+       "l": 305.0,
+       "w": 106.0,
+       "t": 18.0,
+       "geom": "305.0x106.0x18",
+       "size_in": "12\" x 4 3/16\"",
+       "x": 10.0,
+       "y": 978.5,
+       "pl": 305.0,
+       "pw": 106.0
+      },
+      {
+       "id": "wb-jig-002",
+       "name": "jig",
+       "l": 656.0,
+       "w": 70.0,
+       "t": 18.0,
+       "geom": "656.0x70.0x18",
+       "size_in": "25 13/16\" x 2 3/4\"",
+       "x": 323.4,
+       "y": 978.5,
+       "pl": 656.0,
+       "pw": 70.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-5mm-01",
+   "project": "Workbench fleet",
+   "stock": "bb5-4x8",
+   "title": "Workbench 5mm sheet 1",
+   "method": "CNC",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-5mm-01-x1",
+     "text": "Track saw: crosscut the 4x8 in half into two 48\" (1219mm) square blanks, A and B."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "A",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-drawer_hold_bottom-001",
+       "name": "drawer_hold_bottom",
+       "l": 807.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "807.8x260.8x5.2",
+       "size_in": "31 13/16\" x 10 1/4\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 807.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_mark_bottom-001",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 826.1,
+       "y": 10.0,
+       "pl": 361.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_hold_bottom-002",
+       "name": "drawer_hold_bottom",
+       "l": 807.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "807.8x260.8x5.2",
+       "size_in": "31 13/16\" x 10 1/4\"",
+       "x": 10.0,
+       "y": 279.2,
+       "pl": 807.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_mark_bottom-002",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 826.1,
+       "y": 279.2,
+       "pl": 361.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_hold_bottom-003",
+       "name": "drawer_hold_bottom",
+       "l": 807.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "807.8x260.8x5.2",
+       "size_in": "31 13/16\" x 10 1/4\"",
+       "x": 10.0,
+       "y": 548.3,
+       "pl": 807.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_mark_bottom-003",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 826.1,
+       "y": 548.3,
+       "pl": 361.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_hold_bottom-004",
+       "name": "drawer_hold_bottom",
+       "l": 807.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "807.8x260.8x5.2",
+       "size_in": "31 13/16\" x 10 1/4\"",
+       "x": 10.0,
+       "y": 817.5,
+       "pl": 807.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_mark_bottom-004",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 826.1,
+       "y": 817.5,
+       "pl": 361.8,
+       "pw": 260.8
+      }
+     ]
+    },
+    {
+     "name": "B",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-drawer_hold_bottom-005",
+       "name": "drawer_hold_bottom",
+       "l": 807.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "807.8x260.8x5.2",
+       "size_in": "31 13/16\" x 10 1/4\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 807.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_mark_bottom-005",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 826.1,
+       "y": 10.0,
+       "pl": 361.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_hold_bottom-006",
+       "name": "drawer_hold_bottom",
+       "l": 807.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "807.8x260.8x5.2",
+       "size_in": "31 13/16\" x 10 1/4\"",
+       "x": 10.0,
+       "y": 279.2,
+       "pl": 807.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_mark_bottom-006",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 826.1,
+       "y": 279.2,
+       "pl": 361.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_hold_bottom-007",
+       "name": "drawer_hold_bottom",
+       "l": 807.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "807.8x260.8x5.2",
+       "size_in": "31 13/16\" x 10 1/4\"",
+       "x": 10.0,
+       "y": 548.3,
+       "pl": 807.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_mark_bottom-007",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 826.1,
+       "y": 548.3,
+       "pl": 361.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_hold_bottom-008",
+       "name": "drawer_hold_bottom",
+       "l": 807.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "807.8x260.8x5.2",
+       "size_in": "31 13/16\" x 10 1/4\"",
+       "x": 10.0,
+       "y": 817.5,
+       "pl": 807.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_mark_bottom-008",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 826.1,
+       "y": 817.5,
+       "pl": 361.8,
+       "pw": 260.8
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-5mm-02",
+   "project": "Workbench fleet",
+   "stock": "bb5-4x8",
+   "title": "Workbench 5mm sheet 2",
+   "method": "CNC",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-5mm-02-x1",
+     "text": "Track saw: crosscut the 4x8 in half into two 48\" (1219mm) square blanks, A and B."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "A",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-drawer_hold_bottom-009",
+       "name": "drawer_hold_bottom",
+       "l": 807.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "807.8x260.8x5.2",
+       "size_in": "31 13/16\" x 10 1/4\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 807.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_mark_bottom-009",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 826.1,
+       "y": 10.0,
+       "pl": 361.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_hold_bottom-010",
+       "name": "drawer_hold_bottom",
+       "l": 807.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "807.8x260.8x5.2",
+       "size_in": "31 13/16\" x 10 1/4\"",
+       "x": 10.0,
+       "y": 279.2,
+       "pl": 807.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_mark_bottom-010",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 826.1,
+       "y": 279.2,
+       "pl": 361.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_mark_bottom-011",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 10.0,
+       "y": 548.3,
+       "pl": 361.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_mark_bottom-012",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 380.2,
+       "y": 548.3,
+       "pl": 361.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_mark_bottom-013",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 750.3,
+       "y": 548.3,
+       "pl": 361.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_mark_bottom-014",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 10.0,
+       "y": 817.5,
+       "pl": 361.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_mark_bottom-015",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 380.2,
+       "y": 817.5,
+       "pl": 361.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_mark_bottom-016",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 750.3,
+       "y": 817.5,
+       "pl": 361.8,
+       "pw": 260.8
+      }
+     ]
+    },
+    {
+     "name": "B",
+     "size": [
+      1219.2,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-drawer_mark_bottom-017",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 361.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_mark_bottom-018",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 380.2,
+       "y": 10.0,
+       "pl": 361.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_mark_bottom-019",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 750.3,
+       "y": 10.0,
+       "pl": 361.8,
+       "pw": 260.8
+      },
+      {
+       "id": "wb-drawer_mark_bottom-020",
+       "name": "drawer_mark_bottom",
+       "l": 361.8,
+       "w": 260.8,
+       "t": 5.2,
+       "geom": "361.8x260.8x5.2",
+       "size_in": "14 1/4\" x 10 1/4\"",
+       "x": 10.0,
+       "y": 279.2,
+       "pl": 361.8,
+       "pw": 260.8
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-mdf-01",
+   "project": "Workbench fleet",
+   "stock": "mdf19-4x8",
+   "title": "Workbench MDF top sheet 1",
+   "method": "TRACK SAW",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-mdf-01-s1",
+     "text": "Rip the sheet to 45 3/8\" (1152mm) wide."
+    },
+    {
+     "id": "wb-mdf-01-s2",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 1."
+    },
+    {
+     "id": "wb-mdf-01-s3",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 2."
+    },
+    {
+     "id": "wb-mdf-01-s4",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 3."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "",
+     "size": [
+      2438.4,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-top_layer-001",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 0.0,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      },
+      {
+       "id": "wb-top_layer-002",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 771.2,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      },
+      {
+       "id": "wb-top_layer-003",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 1542.4,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-mdf-02",
+   "project": "Workbench fleet",
+   "stock": "mdf19-4x8",
+   "title": "Workbench MDF top sheet 2",
+   "method": "TRACK SAW",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-mdf-02-s1",
+     "text": "Rip the sheet to 45 3/8\" (1152mm) wide."
+    },
+    {
+     "id": "wb-mdf-02-s2",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 1."
+    },
+    {
+     "id": "wb-mdf-02-s3",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 2."
+    },
+    {
+     "id": "wb-mdf-02-s4",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 3."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "",
+     "size": [
+      2438.4,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-top_layer-004",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 0.0,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      },
+      {
+       "id": "wb-top_layer-005",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 771.2,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      },
+      {
+       "id": "wb-top_layer-006",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 1542.4,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-mdf-03",
+   "project": "Workbench fleet",
+   "stock": "mdf19-4x8",
+   "title": "Workbench MDF top sheet 3",
+   "method": "TRACK SAW",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-mdf-03-s1",
+     "text": "Rip the sheet to 45 3/8\" (1152mm) wide."
+    },
+    {
+     "id": "wb-mdf-03-s2",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 1."
+    },
+    {
+     "id": "wb-mdf-03-s3",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 2."
+    },
+    {
+     "id": "wb-mdf-03-s4",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 3."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "",
+     "size": [
+      2438.4,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-top_layer-007",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 0.0,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      },
+      {
+       "id": "wb-top_layer-008",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 771.2,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      },
+      {
+       "id": "wb-top_layer-009",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 1542.4,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-mdf-04",
+   "project": "Workbench fleet",
+   "stock": "mdf19-4x8",
+   "title": "Workbench MDF top sheet 4",
+   "method": "TRACK SAW",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-mdf-04-s1",
+     "text": "Rip the sheet to 45 3/8\" (1152mm) wide."
+    },
+    {
+     "id": "wb-mdf-04-s2",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 1."
+    },
+    {
+     "id": "wb-mdf-04-s3",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 2."
+    },
+    {
+     "id": "wb-mdf-04-s4",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 3."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "",
+     "size": [
+      2438.4,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-top_layer-010",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 0.0,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      },
+      {
+       "id": "wb-top_layer-011",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 771.2,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      },
+      {
+       "id": "wb-top_layer-012",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 1542.4,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-mdf-05",
+   "project": "Workbench fleet",
+   "stock": "mdf19-4x8",
+   "title": "Workbench MDF top sheet 5",
+   "method": "TRACK SAW",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-mdf-05-s1",
+     "text": "Rip the sheet to 45 3/8\" (1152mm) wide."
+    },
+    {
+     "id": "wb-mdf-05-s2",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 1."
+    },
+    {
+     "id": "wb-mdf-05-s3",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 2."
+    },
+    {
+     "id": "wb-mdf-05-s4",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 3."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "",
+     "size": [
+      2438.4,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-top_layer-013",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 0.0,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      },
+      {
+       "id": "wb-top_layer-014",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 771.2,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      },
+      {
+       "id": "wb-top_layer-015",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 1542.4,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-mdf-06",
+   "project": "Workbench fleet",
+   "stock": "mdf19-4x8",
+   "title": "Workbench MDF top sheet 6",
+   "method": "TRACK SAW",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-mdf-06-s1",
+     "text": "Rip the sheet to 45 3/8\" (1152mm) wide."
+    },
+    {
+     "id": "wb-mdf-06-s2",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 1."
+    },
+    {
+     "id": "wb-mdf-06-s3",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 2."
+    },
+    {
+     "id": "wb-mdf-06-s4",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 3."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "",
+     "size": [
+      2438.4,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-top_layer-016",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 0.0,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      },
+      {
+       "id": "wb-top_layer-017",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 771.2,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      },
+      {
+       "id": "wb-top_layer-018",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 1542.4,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wb-mdf-07",
+   "project": "Workbench fleet",
+   "stock": "mdf19-4x8",
+   "title": "Workbench MDF top sheet 7",
+   "method": "TRACK SAW",
+   "source": "workbench@2301497",
+   "prep": [
+    {
+     "id": "wb-mdf-07-s1",
+     "text": "Rip the sheet to 45 3/8\" (1152mm) wide."
+    },
+    {
+     "id": "wb-mdf-07-s2",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 1."
+    },
+    {
+     "id": "wb-mdf-07-s3",
+     "text": "Crosscut 30 1/4\" (768mm) off the end, piece 2."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "",
+     "size": [
+      2438.4,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "wb-top_layer-019",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 0.0,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      },
+      {
+       "id": "wb-top_layer-020",
+       "name": "top_layer",
+       "l": 1152.0,
+       "w": 768.0,
+       "t": 19.05,
+       "geom": "1152.0x768.0x19.05",
+       "size_in": "45 3/8\" x 30 1/4\"",
+       "x": 771.2,
+       "y": 0.0,
+       "pl": 768.0,
+       "pw": 1152.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "st-12mm-01",
+   "project": "CNC station",
+   "stock": "bb12-4x8",
+   "title": "CNC station sheet 1",
+   "method": "TRACK SAW",
+   "source": "fabrication@2c64718",
+   "dxf": "export/cnc_shapeoko/nest/sheet_01.dxf",
+   "prep": [
+    {
+     "id": "st-12mm-01-s1",
+     "text": "Track saw: cut base_deck out whole, 49 3/8\" x 42 7/8\". The rest is offcut."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "",
+     "size": [
+      2438.4,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "st-base_deck-001",
+       "name": "base_deck",
+       "l": 1254.1,
+       "w": 1089.0,
+       "t": 12.0,
+       "geom": "1254.1x1089.0x12",
+       "size_in": "49 3/8\" x 42 7/8\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 1254.1,
+       "pw": 1089.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "st-12mm-02",
+   "project": "CNC station",
+   "stock": "bb12-4x8",
+   "title": "CNC station sheet 2",
+   "method": "TRACK SAW",
+   "source": "fabrication@2c64718",
+   "dxf": "export/cnc_shapeoko/nest/sheet_02.dxf",
+   "prep": [
+    {
+     "id": "st-12mm-02-s1",
+     "text": "Track saw: cut top_cap out whole, 49 3/8\" x 42 7/8\". The rest is offcut."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "",
+     "size": [
+      2438.4,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "st-top_cap-001",
+       "name": "top_cap",
+       "l": 1254.1,
+       "w": 1089.0,
+       "t": 12.0,
+       "geom": "1254.1x1089.0x12",
+       "size_in": "49 3/8\" x 42 7/8\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 1254.1,
+       "pw": 1089.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "st-12mm-03",
+   "project": "CNC station",
+   "stock": "bb12-5x5",
+   "title": "CNC station sheet 3 (spine, 5x5)",
+   "method": "CNC",
+   "source": "fabrication@2c64718",
+   "dxf": "export/cnc_shapeoko/nest/sheet_03.dxf",
+   "prep": [
+    {
+     "id": "st-12mm-03-s1",
+     "text": "Rip the full length at 49\" (1245mm) from the bottom long edge, between strip 1 and strip 2."
+    },
+    {
+     "id": "st-12mm-03-s2",
+     "text": "Rip the full length at 51 3/4\" (1315mm) from the bottom long edge, between strip 2 and strip 3."
+    },
+    {
+     "id": "st-12mm-03-s3",
+     "text": "Rip the full length at 54 9/16\" (1385mm) from the bottom long edge, between strip 3 and strip 4."
+    },
+    {
+     "id": "st-12mm-03-s4",
+     "text": "Rip the full length at 57 5/16\" (1455mm) from the bottom long edge, between strip 4 and strip 5."
+    },
+    {
+     "id": "st-12mm-03-s5",
+     "text": "Strip 1: crosscut at 25 5/16\" (643mm) from the left end."
+    },
+    {
+     "id": "st-12mm-03-s6",
+     "text": "Strip 2: crosscut at 46 13/16\" (1189mm) from the left end."
+    },
+    {
+     "id": "st-12mm-03-s7",
+     "text": "Strip 4: crosscut at 39 11/16\" (1008mm) from the left end."
+    },
+    {
+     "id": "st-12mm-03-s8",
+     "text": "Each piece is one Shapeoko blank. Load the sheet's DXF and cut the parts."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "",
+     "size": [
+      1525.0,
+      1525.0
+     ],
+     "parts": [
+      {
+       "id": "st-spine_panel-001",
+       "name": "spine_panel",
+       "l": 1230.1,
+       "w": 628.0,
+       "t": 12.0,
+       "geom": "1230.1x628.0x12",
+       "size_in": "48 7/16\" x 24 3/4\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 628.0,
+       "pw": 1230.1
+      },
+      {
+       "id": "st-left_end-001",
+       "name": "left_end",
+       "l": 1089.0,
+       "w": 628.0,
+       "t": 12.0,
+       "geom": "1089.0x628.0x12",
+       "size_in": "42 7/8\" x 24 3/4\"",
+       "x": 648.0,
+       "y": 10.0,
+       "pl": 628.0,
+       "pw": 1089.0
+      },
+      {
+       "id": "st-vfd_mount-001",
+       "name": "vfd_mount",
+       "l": 400.0,
+       "w": 142.9,
+       "t": 12.0,
+       "geom": "400.0x142.9x12",
+       "size_in": "15 3/4\" x 5 5/8\"",
+       "x": 1286.0,
+       "y": 10.0,
+       "pl": 142.9,
+       "pw": 400.0
+      },
+      {
+       "id": "st-mini_pc_cradle_shelf-001",
+       "name": "mini_pc_cradle_shelf",
+       "l": 223.0,
+       "w": 86.5,
+       "t": 12.0,
+       "geom": "223.0x86.5x12",
+       "size_in": "8 3/4\" x 3 3/8\"",
+       "x": 1286.0,
+       "y": 420.0,
+       "pl": 86.5,
+       "pw": 223.0
+      },
+      {
+       "id": "st-mini_pc_cradle_cheek_l-001",
+       "name": "mini_pc_cradle_cheek_l",
+       "l": 86.5,
+       "w": 40.0,
+       "t": 12.0,
+       "geom": "86.5x40.0x12",
+       "size_in": "3 3/8\" x 1 9/16\"",
+       "x": 1286.0,
+       "y": 653.0,
+       "pl": 86.5,
+       "pw": 40.0
+      },
+      {
+       "id": "st-mini_pc_cradle_cheek_r-001",
+       "name": "mini_pc_cradle_cheek_r",
+       "l": 86.5,
+       "w": 40.0,
+       "t": 12.0,
+       "geom": "86.5x40.0x12",
+       "size_in": "3 3/8\" x 1 9/16\"",
+       "x": 1286.0,
+       "y": 703.0,
+       "pl": 86.5,
+       "pw": 40.0
+      },
+      {
+       "id": "st-drawer1_cutters_side_l-001",
+       "name": "drawer1_cutters_side_l",
+       "l": 500.0,
+       "w": 100.0,
+       "t": 12.0,
+       "geom": "500.0x100.0x12",
+       "size_in": "19 11/16\" x 3 15/16\"",
+       "x": 648.0,
+       "y": 1109.0,
+       "pl": 500.0,
+       "pw": 100.0
+      },
+      {
+       "id": "st-plinth_rail_front-001",
+       "name": "plinth_rail_front",
+       "l": 1174.1,
+       "w": 60.0,
+       "t": 12.0,
+       "geom": "1174.1x60.0x12",
+       "size_in": "46 1/4\" x 2 3/8\"",
+       "x": 10.0,
+       "y": 1250.1,
+       "pl": 1174.1,
+       "pw": 60.0
+      },
+      {
+       "id": "st-stock_rail_top-001",
+       "name": "stock_rail_top",
+       "l": 314.1,
+       "w": 44.0,
+       "t": 12.0,
+       "geom": "314.1x44.0x12",
+       "size_in": "12 3/8\" x 1 3/4\"",
+       "x": 1194.1,
+       "y": 1250.1,
+       "pl": 314.1,
+       "pw": 44.0
+      },
+      {
+       "id": "st-plinth_rail_rear-001",
+       "name": "plinth_rail_rear",
+       "l": 1174.1,
+       "w": 60.0,
+       "t": 12.0,
+       "geom": "1174.1x60.0x12",
+       "size_in": "46 1/4\" x 2 3/8\"",
+       "x": 10.0,
+       "y": 1320.1,
+       "pl": 1174.1,
+       "pw": 60.0
+      },
+      {
+       "id": "st-plinth_rail_y0-001",
+       "name": "plinth_rail_y0",
+       "l": 993.0,
+       "w": 60.0,
+       "t": 12.0,
+       "geom": "993.0x60.0x12",
+       "size_in": "39 1/8\" x 2 3/8\"",
+       "x": 10.0,
+       "y": 1390.1,
+       "pl": 993.0,
+       "pw": 60.0
+      },
+      {
+       "id": "st-lungs_spacer_0-001",
+       "name": "lungs_spacer_0",
+       "l": 500.0,
+       "w": 45.0,
+       "t": 12.0,
+       "geom": "500.0x45.0x12",
+       "size_in": "19 11/16\" x 1 3/4\"",
+       "x": 1013.0,
+       "y": 1390.1,
+       "pl": 500.0,
+       "pw": 45.0
+      },
+      {
+       "id": "st-lungs_spacer_1-001",
+       "name": "lungs_spacer_1",
+       "l": 500.0,
+       "w": 45.0,
+       "t": 12.0,
+       "geom": "500.0x45.0x12",
+       "size_in": "19 11/16\" x 1 3/4\"",
+       "x": 10.0,
+       "y": 1460.1,
+       "pl": 500.0,
+       "pw": 45.0
+      },
+      {
+       "id": "st-lungs_spacer_2-001",
+       "name": "lungs_spacer_2",
+       "l": 500.0,
+       "w": 45.0,
+       "t": 12.0,
+       "geom": "500.0x45.0x12",
+       "size_in": "19 11/16\" x 1 3/4\"",
+       "x": 520.0,
+       "y": 1460.1,
+       "pl": 500.0,
+       "pw": 45.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "st-12mm-04",
+   "project": "CNC station",
+   "stock": "bb12-4x8",
+   "title": "CNC station sheet 4",
+   "method": "CNC",
+   "source": "fabrication@2c64718",
+   "dxf": "export/cnc_shapeoko/nest/sheet_04.dxf",
+   "prep": [
+    {
+     "id": "st-12mm-04-s1",
+     "text": "Rip the full length at 43 7/16\" (1104mm) from the bottom long edge, between strip 1 and strip 2."
+    },
+    {
+     "id": "st-12mm-04-s2",
+     "text": "Strip 1: crosscut at 25 5/16\" (643mm) from the left end."
+    },
+    {
+     "id": "st-12mm-04-s3",
+     "text": "Strip 1: crosscut at 49 13/16\" (1266mm) from the left end."
+    },
+    {
+     "id": "st-12mm-04-s4",
+     "text": "Strip 2: crosscut at 25 15/16\" (659mm) from the left end."
+    },
+    {
+     "id": "st-12mm-04-s5",
+     "text": "Strip 2: crosscut at 51 11/16\" (1313mm) from the left end."
+    },
+    {
+     "id": "st-12mm-04-s6",
+     "text": "Each piece is one Shapeoko blank. Load the sheet's DXF and cut the parts."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "",
+     "size": [
+      2438.4,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "st-right_end-001",
+       "name": "right_end",
+       "l": 1089.0,
+       "w": 628.0,
+       "t": 12.0,
+       "geom": "1089.0x628.0x12",
+       "size_in": "42 7/8\" x 24 3/4\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 628.0,
+       "pw": 1089.0
+      },
+      {
+       "id": "st-rear_door-001",
+       "name": "rear_door",
+       "l": 1085.2,
+       "w": 613.0,
+       "t": 12.0,
+       "geom": "1085.2x613.0x12",
+       "size_in": "42 3/4\" x 24 1/8\"",
+       "x": 648.0,
+       "y": 10.0,
+       "pl": 613.0,
+       "pw": 1085.2
+      },
+      {
+       "id": "st-plinth_rail_y1-001",
+       "name": "plinth_rail_y1",
+       "l": 993.0,
+       "w": 60.0,
+       "t": 12.0,
+       "geom": "993.0x60.0x12",
+       "size_in": "39 1/8\" x 2 3/8\"",
+       "x": 1271.0,
+       "y": 10.0,
+       "pl": 993.0,
+       "pw": 60.0
+      },
+      {
+       "id": "st-plinth_rail_y2-001",
+       "name": "plinth_rail_y2",
+       "l": 993.0,
+       "w": 60.0,
+       "t": 12.0,
+       "geom": "993.0x60.0x12",
+       "size_in": "39 1/8\" x 2 3/8\"",
+       "x": 1271.0,
+       "y": 80.0,
+       "pl": 993.0,
+       "pw": 60.0
+      },
+      {
+       "id": "st-plinth_rail_y3-001",
+       "name": "plinth_rail_y3",
+       "l": 993.0,
+       "w": 60.0,
+       "t": 12.0,
+       "geom": "993.0x60.0x12",
+       "size_in": "39 1/8\" x 2 3/8\"",
+       "x": 1271.0,
+       "y": 150.0,
+       "pl": 993.0,
+       "pw": 60.0
+      },
+      {
+       "id": "st-plinth_rail_y4-001",
+       "name": "plinth_rail_y4",
+       "l": 993.0,
+       "w": 60.0,
+       "t": 12.0,
+       "geom": "993.0x60.0x12",
+       "size_in": "39 1/8\" x 2 3/8\"",
+       "x": 1271.0,
+       "y": 220.0,
+       "pl": 993.0,
+       "pw": 60.0
+      },
+      {
+       "id": "st-console_cheek-001",
+       "name": "console_cheek",
+       "l": 824.0,
+       "w": 620.0,
+       "t": 12.0,
+       "geom": "824.0x620.0x12",
+       "size_in": "32 7/16\" x 24 7/16\"",
+       "x": 1271.0,
+       "y": 290.0,
+       "pl": 824.0,
+       "pw": 620.0
+      },
+      {
+       "id": "st-console_rib-001",
+       "name": "console_rib",
+       "l": 824.0,
+       "w": 78.0,
+       "t": 12.0,
+       "geom": "824.0x78.0x12",
+       "size_in": "32 7/16\" x 3 1/16\"",
+       "x": 1271.0,
+       "y": 920.0,
+       "pl": 824.0,
+       "pw": 78.0
+      },
+      {
+       "id": "st-stile_front_left-001",
+       "name": "stile_front_left",
+       "l": 644.0,
+       "w": 70.5,
+       "t": 12.0,
+       "geom": "644.0x70.5x12",
+       "size_in": "25 3/8\" x 2 3/4\"",
+       "x": 1271.0,
+       "y": 1008.0,
+       "pl": 644.0,
+       "pw": 70.5
+      },
+      {
+       "id": "st-stile_rear_left-001",
+       "name": "stile_rear_left",
+       "l": 644.0,
+       "w": 70.5,
+       "t": 12.0,
+       "geom": "644.0x70.5x12",
+       "size_in": "25 3/8\" x 2 3/4\"",
+       "x": 10.0,
+       "y": 1109.0,
+       "pl": 644.0,
+       "pw": 70.5
+      },
+      {
+       "id": "st-stile_front_right-001",
+       "name": "stile_front_right",
+       "l": 644.0,
+       "w": 70.5,
+       "t": 12.0,
+       "geom": "644.0x70.5x12",
+       "size_in": "25 3/8\" x 2 3/4\"",
+       "x": 664.0,
+       "y": 1109.0,
+       "pl": 644.0,
+       "pw": 70.5
+      },
+      {
+       "id": "st-stile_rear_right-001",
+       "name": "stile_rear_right",
+       "l": 644.0,
+       "w": 70.5,
+       "t": 12.0,
+       "geom": "644.0x70.5x12",
+       "size_in": "25 3/8\" x 2 3/4\"",
+       "x": 1318.0,
+       "y": 1109.0,
+       "pl": 644.0,
+       "pw": 70.5
+      },
+      {
+       "id": "st-lungs_carriage_lip-001",
+       "name": "lungs_carriage_lip",
+       "l": 354.6,
+       "w": 52.0,
+       "t": 12.0,
+       "geom": "354.6x52.0x12",
+       "size_in": "13 15/16\" x 2 1/16\"",
+       "x": 1972.0,
+       "y": 1109.0,
+       "pl": 354.6,
+       "pw": 52.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "st-12mm-05",
+   "project": "CNC station",
+   "stock": "bb12-4x8",
+   "title": "CNC station sheet 5",
+   "method": "CNC",
+   "source": "fabrication@2c64718",
+   "dxf": "export/cnc_shapeoko/nest/sheet_05.dxf",
+   "prep": [
+    {
+     "id": "st-12mm-05-s1",
+     "text": "Rip the full length at 33 5/16\" (846mm) from the bottom long edge, between strip 1 and strip 2."
+    },
+    {
+     "id": "st-12mm-05-s2",
+     "text": "Rip the full length at 37 1/16\" (941mm) from the bottom long edge, between strip 2 and strip 3."
+    },
+    {
+     "id": "st-12mm-05-s3",
+     "text": "Strip 1: crosscut at 25 5/16\" (643mm) from the left end."
+    },
+    {
+     "id": "st-12mm-05-s4",
+     "text": "Strip 1: crosscut at 50 7/16\" (1281mm) from the left end."
+    },
+    {
+     "id": "st-12mm-05-s5",
+     "text": "Strip 2: crosscut at 40 3/8\" (1025mm) from the left end."
+    },
+    {
+     "id": "st-12mm-05-s6",
+     "text": "Strip 3: crosscut at 37 9/16\" (954mm) from the left end."
+    },
+    {
+     "id": "st-12mm-05-s7",
+     "text": "Each piece is one Shapeoko blank. Load the sheet's DXF and cut the parts."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "",
+     "size": [
+      2438.4,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "st-lungs_stock-001",
+       "name": "lungs_stock",
+       "l": 831.0,
+       "w": 628.0,
+       "t": 12.0,
+       "geom": "831.0x628.0x12",
+       "size_in": "32 11/16\" x 24 3/4\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 628.0,
+       "pw": 831.0
+      },
+      {
+       "id": "st-stock_hands-001",
+       "name": "stock_hands",
+       "l": 831.0,
+       "w": 628.0,
+       "t": 12.0,
+       "geom": "831.0x628.0x12",
+       "size_in": "32 11/16\" x 24 3/4\"",
+       "x": 648.0,
+       "y": 10.0,
+       "pl": 628.0,
+       "pw": 831.0
+      },
+      {
+       "id": "st-mains_backplate-001",
+       "name": "mains_backplate",
+       "l": 620.0,
+       "w": 360.0,
+       "t": 12.0,
+       "geom": "620.0x360.0x12",
+       "size_in": "24 7/16\" x 14 3/16\"",
+       "x": 1286.0,
+       "y": 10.0,
+       "pl": 620.0,
+       "pw": 360.0
+      },
+      {
+       "id": "st-drawer3_workholding_side_l-001",
+       "name": "drawer3_workholding_side_l",
+       "l": 500.0,
+       "w": 240.0,
+       "t": 12.0,
+       "geom": "500.0x240.0x12",
+       "size_in": "19 11/16\" x 9 7/16\"",
+       "x": 1916.0,
+       "y": 10.0,
+       "pl": 500.0,
+       "pw": 240.0
+      },
+      {
+       "id": "st-drawer3_workholding_side_r-001",
+       "name": "drawer3_workholding_side_r",
+       "l": 500.0,
+       "w": 240.0,
+       "t": 12.0,
+       "geom": "500.0x240.0x12",
+       "size_in": "19 11/16\" x 9 7/16\"",
+       "x": 1916.0,
+       "y": 260.0,
+       "pl": 500.0,
+       "pw": 240.0
+      },
+      {
+       "id": "st-brain_partition-001",
+       "name": "brain_partition",
+       "l": 620.0,
+       "w": 240.0,
+       "t": 12.0,
+       "geom": "620.0x240.0x12",
+       "size_in": "24 7/16\" x 9 7/16\"",
+       "x": 1286.0,
+       "y": 380.0,
+       "pl": 620.0,
+       "pw": 240.0
+      },
+      {
+       "id": "st-drawer2_instruments_side_r-001",
+       "name": "drawer2_instruments_side_r",
+       "l": 500.0,
+       "w": 180.0,
+       "t": 12.0,
+       "geom": "500.0x180.0x12",
+       "size_in": "19 11/16\" x 7 1/16\"",
+       "x": 1916.0,
+       "y": 510.0,
+       "pl": 500.0,
+       "pw": 180.0
+      },
+      {
+       "id": "st-drawer2_instruments_side_l-001",
+       "name": "drawer2_instruments_side_l",
+       "l": 500.0,
+       "w": 180.0,
+       "t": 12.0,
+       "geom": "500.0x180.0x12",
+       "size_in": "19 11/16\" x 7 1/16\"",
+       "x": 1286.0,
+       "y": 630.0,
+       "pl": 500.0,
+       "pw": 180.0
+      },
+      {
+       "id": "st-drawer1_cutters_side_r-001",
+       "name": "drawer1_cutters_side_r",
+       "l": 500.0,
+       "w": 100.0,
+       "t": 12.0,
+       "geom": "500.0x100.0x12",
+       "size_in": "19 11/16\" x 3 15/16\"",
+       "x": 1916.0,
+       "y": 700.0,
+       "pl": 500.0,
+       "pw": 100.0
+      },
+      {
+       "id": "st-lungs_carriage_cheek_l-001",
+       "name": "lungs_carriage_cheek_l",
+       "l": 500.0,
+       "w": 85.0,
+       "t": 12.0,
+       "geom": "500.0x85.0x12",
+       "size_in": "19 11/16\" x 3 3/8\"",
+       "x": 10.0,
+       "y": 851.0,
+       "pl": 500.0,
+       "pw": 85.0
+      },
+      {
+       "id": "st-lungs_carriage_cheek_r-001",
+       "name": "lungs_carriage_cheek_r",
+       "l": 500.0,
+       "w": 85.0,
+       "t": 12.0,
+       "geom": "500.0x85.0x12",
+       "size_in": "19 11/16\" x 3 3/8\"",
+       "x": 520.0,
+       "y": 851.0,
+       "pl": 500.0,
+       "pw": 85.0
+      },
+      {
+       "id": "st-lungs_spacer_3-001",
+       "name": "lungs_spacer_3",
+       "l": 500.0,
+       "w": 45.0,
+       "t": 12.0,
+       "geom": "500.0x45.0x12",
+       "size_in": "19 11/16\" x 1 3/4\"",
+       "x": 1030.0,
+       "y": 851.0,
+       "pl": 500.0,
+       "pw": 45.0
+      },
+      {
+       "id": "st-lungs_spacer_4-001",
+       "name": "lungs_spacer_4",
+       "l": 500.0,
+       "w": 45.0,
+       "t": 12.0,
+       "geom": "500.0x45.0x12",
+       "size_in": "19 11/16\" x 1 3/4\"",
+       "x": 1540.0,
+       "y": 851.0,
+       "pl": 500.0,
+       "pw": 45.0
+      },
+      {
+       "id": "st-drawer2_instruments_face-001",
+       "name": "drawer2_instruments_face",
+       "l": 318.0,
+       "w": 204.7,
+       "t": 12.0,
+       "geom": "318.0x204.7x12",
+       "size_in": "12 1/2\" x 8 1/16\"",
+       "x": 10.0,
+       "y": 946.0,
+       "pl": 318.0,
+       "pw": 204.7
+      },
+      {
+       "id": "st-drawer1_cutters_face-001",
+       "name": "drawer1_cutters_face",
+       "l": 318.0,
+       "w": 134.8,
+       "t": 12.0,
+       "geom": "318.0x134.8x12",
+       "size_in": "12 1/2\" x 5 5/16\"",
+       "x": 338.0,
+       "y": 946.0,
+       "pl": 318.0,
+       "pw": 134.8
+      },
+      {
+       "id": "st-drawer2_instruments_front-001",
+       "name": "drawer2_instruments_front",
+       "l": 283.0,
+       "w": 180.0,
+       "t": 12.0,
+       "geom": "283.0x180.0x12",
+       "size_in": "11 1/8\" x 7 1/16\"",
+       "x": 666.0,
+       "y": 946.0,
+       "pl": 283.0,
+       "pw": 180.0
+      },
+      {
+       "id": "st-drawer1_cutters_front-001",
+       "name": "drawer1_cutters_front",
+       "l": 283.0,
+       "w": 100.0,
+       "t": 12.0,
+       "geom": "283.0x100.0x12",
+       "size_in": "11 1/8\" x 3 15/16\"",
+       "x": 959.0,
+       "y": 946.0,
+       "pl": 283.0,
+       "pw": 100.0
+      },
+      {
+       "id": "st-drawer2_instruments_back-001",
+       "name": "drawer2_instruments_back",
+       "l": 279.0,
+       "w": 160.0,
+       "t": 12.0,
+       "geom": "279.0x160.0x12",
+       "size_in": "11\" x 6 5/16\"",
+       "x": 1252.0,
+       "y": 946.0,
+       "pl": 279.0,
+       "pw": 160.0
+      },
+      {
+       "id": "st-drawer1_cutters_back-001",
+       "name": "drawer1_cutters_back",
+       "l": 279.0,
+       "w": 80.0,
+       "t": 12.0,
+       "geom": "279.0x80.0x12",
+       "size_in": "11\" x 3 1/8\"",
+       "x": 959.0,
+       "y": 1056.0,
+       "pl": 279.0,
+       "pw": 80.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "st-12mm-06",
+   "project": "CNC station",
+   "stock": "bb12-4x8",
+   "title": "CNC station sheet 6",
+   "method": "CNC",
+   "source": "fabrication@2c64718",
+   "dxf": "export/cnc_shapeoko/nest/sheet_06.dxf",
+   "prep": [
+    {
+     "id": "st-12mm-06-s1",
+     "text": "Rip the full length at 16 7/16\" (418mm) from the bottom long edge, between strip 1 and strip 2."
+    },
+    {
+     "id": "st-12mm-06-s2",
+     "text": "Strip 1: crosscut at 44\" (1117mm) from the left end."
+    },
+    {
+     "id": "st-12mm-06-s3",
+     "text": "Strip 1: crosscut at 81 15/16\" (2081mm) from the left end."
+    },
+    {
+     "id": "st-12mm-06-s4",
+     "text": "Strip 2: crosscut at 43 5/8\" (1108mm) from the left end."
+    },
+    {
+     "id": "st-12mm-06-s5",
+     "text": "Each piece is one Shapeoko blank. Load the sheet's DXF and cut the parts."
+    }
+   ],
+   "blanks": [
+    {
+     "name": "",
+     "size": [
+      2438.4,
+      1219.2
+     ],
+     "parts": [
+      {
+       "id": "st-lungs_door-001",
+       "name": "lungs_door",
+       "l": 616.0,
+       "w": 402.5,
+       "t": 12.0,
+       "geom": "616.0x402.5x12",
+       "size_in": "24 1/4\" x 15 7/8\"",
+       "x": 10.0,
+       "y": 10.0,
+       "pl": 616.0,
+       "pw": 402.5
+      },
+      {
+       "id": "st-lungs_carriage_platform-001",
+       "name": "lungs_carriage_platform",
+       "l": 476.0,
+       "w": 354.6,
+       "t": 12.0,
+       "geom": "476.0x354.6x12",
+       "size_in": "18 3/4\" x 13 15/16\"",
+       "x": 636.0,
+       "y": 10.0,
+       "pl": 476.0,
+       "pw": 354.6
+      },
+      {
+       "id": "st-drawer1_cutters_bottom-001",
+       "name": "drawer1_cutters_bottom",
+       "l": 472.0,
+       "w": 279.0,
+       "t": 12.0,
+       "geom": "472.0x279.0x12",
+       "size_in": "18 9/16\" x 11\"",
+       "x": 1122.0,
+       "y": 10.0,
+       "pl": 472.0,
+       "pw": 279.0
+      },
+      {
+       "id": "st-drawer2_instruments_bottom-001",
+       "name": "drawer2_instruments_bottom",
+       "l": 472.0,
+       "w": 279.0,
+       "t": 12.0,
+       "geom": "472.0x279.0x12",
+       "size_in": "18 9/16\" x 11\"",
+       "x": 1604.0,
+       "y": 10.0,
+       "pl": 472.0,
+       "pw": 279.0
+      },
+      {
+       "id": "st-signal_subplate-001",
+       "name": "signal_subplate",
+       "l": 360.0,
+       "w": 340.0,
+       "t": 12.0,
+       "geom": "360.0x340.0x12",
+       "size_in": "14 3/16\" x 13 3/8\"",
+       "x": 2086.0,
+       "y": 10.0,
+       "pl": 340.0,
+       "pw": 360.0
+      },
+      {
+       "id": "st-drawer3_workholding_bottom-001",
+       "name": "drawer3_workholding_bottom",
+       "l": 472.0,
+       "w": 279.0,
+       "t": 12.0,
+       "geom": "472.0x279.0x12",
+       "size_in": "18 9/16\" x 11\"",
+       "x": 10.0,
+       "y": 422.5,
+       "pl": 472.0,
+       "pw": 279.0
+      },
+      {
+       "id": "st-drawer3_workholding_face-001",
+       "name": "drawer3_workholding_face",
+       "l": 318.0,
+       "w": 272.6,
+       "t": 12.0,
+       "geom": "318.0x272.6x12",
+       "size_in": "12 1/2\" x 10 3/4\"",
+       "x": 492.0,
+       "y": 422.5,
+       "pl": 318.0,
+       "pw": 272.6
+      },
+      {
+       "id": "st-drawer3_workholding_front-001",
+       "name": "drawer3_workholding_front",
+       "l": 283.0,
+       "w": 240.0,
+       "t": 12.0,
+       "geom": "283.0x240.0x12",
+       "size_in": "11 1/8\" x 9 7/16\"",
+       "x": 820.0,
+       "y": 422.5,
+       "pl": 283.0,
+       "pw": 240.0
+      },
+      {
+       "id": "st-drawer3_workholding_back-001",
+       "name": "drawer3_workholding_back",
+       "l": 279.0,
+       "w": 220.0,
+       "t": 12.0,
+       "geom": "279.0x220.0x12",
+       "size_in": "11\" x 8 11/16\"",
+       "x": 1113.0,
+       "y": 422.5,
+       "pl": 279.0,
+       "pw": 220.0
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

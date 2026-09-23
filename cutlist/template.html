@@ -1,0 +1,382 @@
+<title>Shop Cut List</title>
+<meta name="description" content="Every sheet-goods part from the delivered stock, by sheet, with who cut it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#eceeec; --panel:#f8f9f7; --ink:#1a1e1c; --muted:#5d6661; --rule:#cdd3cf;
+  --ply:#e6d5b0; --ply-edge:#a88f5f; --ply-ink:#4a3c22;
+  --blue:#1e57b0; --blue-soft:#dbe6f6;
+  --done:#2b7a4b; --done-soft:#d7eedf;
+  --warn:#9a6414; --warn-soft:#f6e7c9;
+  --bad:#b8321f; --bad-soft:#f7dcd6;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ground:#141816; --panel:#1c211e; --ink:#e6ebe8; --muted:#9aa49e; --rule:#323a36;
+    --ply:#5c4d31; --ply-edge:#8f7849; --ply-ink:#f1e4c6;
+    --blue:#7fa9ec; --blue-soft:#1f3150;
+    --done:#6cc592; --done-soft:#1d3a29;
+    --warn:#e0a94f; --warn-soft:#3d2f15;
+    --bad:#f08573; --bad-soft:#44221c;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#141816; --panel:#1c211e; --ink:#e6ebe8; --muted:#9aa49e; --rule:#323a36;
+  --ply:#5c4d31; --ply-edge:#8f7849; --ply-ink:#f1e4c6;
+  --blue:#7fa9ec; --blue-soft:#1f3150;
+  --done:#6cc592; --done-soft:#1d3a29;
+  --warn:#e0a94f; --warn-soft:#3d2f15;
+  --bad:#f08573; --bad-soft:#44221c;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font:15px/1.45 var(--body);padding-inline:16px;padding-block:0 48px}
+.wrap{max-width:960px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);font-weight:600;letter-spacing:.01em;text-wrap:balance;margin:0}
+.mono,.dim{font-family:var(--mono);font-variant-numeric:tabular-nums}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+
+/* head */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--ground);padding-block:14px 10px;border-bottom:1px solid var(--rule)}
+.titlerow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:2rem;line-height:1}
+.gen{color:var(--muted);font-size:.78rem}
+.who{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.who label{font-weight:600;font-size:.9rem}
+.who input{flex:1 1 220px;min-width:0;padding:10px 12px;border:2px solid var(--rule);border-radius:6px;background:var(--panel)}
+.who input.set{border-color:var(--blue)}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chipbtn{border:1.5px solid var(--rule);background:var(--panel);border-radius:999px;padding:7px 13px;font-size:.85rem;cursor:pointer}
+.chipbtn[aria-pressed="true"]{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.banner{margin-top:10px;padding:9px 12px;border-radius:6px;font-size:.88rem;background:var(--warn-soft);color:var(--ink)}
+
+/* summary */
+.projects{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:16px}
+.proj{background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:12px 14px}
+.proj h2{font-size:1.25rem}
+.bar{height:10px;background:var(--rule);border-radius:5px;overflow:hidden;margin:8px 0 6px}
+.bar i{display:block;height:100%;background:var(--done)}
+.proj .dim{font-size:.8rem;color:var(--muted)}
+.stock{margin-top:14px;overflow-x:auto}
+.stock table{border-collapse:collapse;width:100%;font-size:.85rem;min-width:520px}
+.stock th,.stock td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--rule)}
+.stock th{font-weight:600;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em}
+.stock td.n{font-family:var(--mono);text-align:right}
+
+/* sheets */
+.sheet{margin-top:22px;background:var(--panel);border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.sheet.done{border-color:var(--done)}
+.shead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:12px 14px;flex-wrap:wrap;border-bottom:1px solid var(--rule)}
+.shead h3{font-size:1.4rem;line-height:1.05}
+.meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.tag{font-size:.72rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:4px;background:var(--ground);color:var(--muted)}
+.tag.cnc{background:var(--blue-soft);color:var(--blue)}
+.tag.saw{background:var(--ply);color:var(--ply-ink)}
+.tag.wait{background:var(--warn-soft);color:var(--warn)}
+.tag.fin{background:var(--done-soft);color:var(--done)}
+.count{font-family:var(--display);font-size:1.6rem;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.count small{font-size:.9rem;color:var(--muted);font-weight:500}
+.sbody{padding:12px 14px;display:grid;gap:14px}
+.draw{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
+.draw figure{margin:0;flex:0 0 auto}
+.draw figcaption{font-size:.75rem;color:var(--muted);font-family:var(--mono);margin-bottom:3px}
+.draw svg{display:block;height:170px;width:auto;max-width:none}
+.draw rect.b{fill:var(--ground);stroke:var(--muted);stroke-width:4}
+.draw rect.p{fill:var(--ply);stroke:var(--ply-edge);stroke-width:4;cursor:pointer}
+.draw rect.p.cut{fill:var(--done);stroke:var(--done)}
+.draw rect.p.recut{fill:var(--bad);stroke:var(--bad)}
+.draw rect.p.hot{stroke:var(--blue);stroke-width:14}
+.steps h4,.parts h4{font:600 .72rem/1 var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 6px}
+.row{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--rule)}
+.row:first-of-type{border-top:0}
+.tick{width:44px;height:44px;border-radius:8px;border:2.5px solid var(--muted);background:var(--panel);cursor:pointer;display:grid;place-items:center;padding:0}
+.tick svg{width:24px;height:24px;opacity:0}
+.tick[aria-checked="true"]{background:var(--done);border-color:var(--done)}
+.tick[aria-checked="true"] svg{opacity:1}
+.tick svg path{stroke:var(--panel);stroke-width:3.2;fill:none}
+.tick:disabled{cursor:default;opacity:.55}
+.what{min-width:0}
+.what .nm{font-weight:600;overflow-wrap:anywhere}
+.what .sz{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+.what .by{font-size:.8rem;color:var(--done)}
+.what .flag{font-size:.8rem;color:var(--bad)}
+.what .old{font-size:.8rem;color:var(--warn)}
+.more{border:0;background:none;color:var(--muted);font-size:1.4rem;line-height:1;padding:8px 10px;cursor:pointer;border-radius:6px}
+.inline{grid-column:2 / -1;display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding-bottom:4px}
+.inline input{flex:1 1 180px;min-width:0;padding:8px 10px;border:1.5px solid var(--rule);border-radius:6px;background:var(--ground)}
+.btn{border:1.5px solid var(--rule);background:var(--ground);border-radius:6px;padding:8px 12px;cursor:pointer;font-size:.88rem}
+.btn.go{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.btn.red{border-color:var(--bad);color:var(--bad)}
+.sheetact{display:flex;gap:8px;flex-wrap:wrap}
+.note{font-size:.8rem;color:var(--muted)}
+footer{margin-top:28px;font-size:.8rem;color:var(--muted);max-width:65ch}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--ground);padding:10px 16px;border-radius:6px;font-size:.9rem;z-index:9}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:width .4s ease}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="titlerow">
+    <h1>Shop Cut List</h1>
+    <span class="gen mono" id="gen"></span>
+  </div>
+  <div class="who">
+    <label for="cutter">Cutting as</label>
+    <input id="cutter" list="roster" placeholder="Pick your name first" autocomplete="off">
+    <datalist id="roster"></datalist>
+  </div>
+  <div class="filters" role="group" aria-label="Show">
+    <button class="chipbtn" id="f-all" aria-pressed="true">All projects</button>
+    <button class="chipbtn" id="f-wb" aria-pressed="false">Workbench fleet</button>
+    <button class="chipbtn" id="f-st" aria-pressed="false">CNC station</button>
+    <button class="chipbtn" id="f-open" aria-pressed="false">Hide finished sheets</button>
+  </div>
+  <div class="banner" id="banner" hidden></div>
+</header>
+
+<section class="projects" id="projects"></section>
+<div class="stock" id="stock"></div>
+<main id="sheets"></main>
+<footer id="foot"></footer>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script id="parts" type="application/json">__PARTS_JSON__</script>
+<script>
+(function(){
+const DATA = JSON.parse(document.getElementById('parts').textContent);
+const PROJ = {"Workbench fleet":"wb","CNC station":"st"};
+const state = {cuts:{}, prep:{}, roster:[], filter:"all", hideDone:false, canWrite:null, open:null, db:null};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const allParts = s => s.blanks.flatMap(b => b.parts);
+const pretty = n => n.replace(/_/g, " ");
+const tickSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+let who = "";
+try { who = localStorage.getItem("cutter") || ""; } catch(e) {}
+$("#cutter").value = who;
+$("#cutter").classList.toggle("set", !!who);
+$("#cutter").addEventListener("change", e => {
+  who = e.target.value.trim();
+  e.target.classList.toggle("set", !!who);
+  try { localStorage.setItem("cutter", who); } catch(err) {}
+});
+
+$("#gen").textContent = "parts from " + DATA.sources.join(" · ");
+
+function toast(msg){
+  const t = $("#toast"); t.textContent = msg; t.hidden = false;
+  clearTimeout(toast.h); toast.h = setTimeout(() => t.hidden = true, 2200);
+}
+function when(iso){
+  if(!iso) return "";
+  const d = new Date(iso);
+  return d.toLocaleDateString([], {month:"short", day:"numeric"}) + " " + d.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+}
+function status(p){
+  const c = state.cuts[p.id];
+  if(!c) return "open";
+  if(c.recut) return "recut";
+  if(c.cut) return c.geom && c.geom !== p.geom ? "old" : "cut";
+  return "open";
+}
+const isCut = p => { const s = status(p); return s === "cut"; };
+const waiting = s => DATA.stock[s.stock].on_hand <= 0;
+
+/* ---------- writes ---------- */
+function needWho(){
+  if(who) return true;
+  $("#cutter").focus(); toast("Pick your name in “Cutting as” first");
+  return false;
+}
+async function write(path, body){
+  if(!state.db){ toast("Saving is unavailable in this view"); return false; }
+  try {
+    if(body === null) await state.db.doc(path).delete();
+    else await state.db.doc(path).set(body);
+    return true;
+  } catch(e){
+    if(e && e.code === "invalid_argument"){ state.canWrite = false; render(); toast("This view can show progress but not record it"); }
+    else toast("Not saved: " + (e && e.message || "try again"));
+    return false;
+  }
+}
+async function setCut(p, on){
+  if(on){
+    if(!needWho()) return;
+    const body = {cut:true, by:who, at:new Date().toISOString(), geom:p.geom};
+    state.cuts[p.id] = body; render();
+    if(await write("cuts/" + p.id, body)) toast(pretty(p.name) + " marked cut");
+  } else {
+    delete state.cuts[p.id]; render();
+    if(await write("cuts/" + p.id, null)) toast("Cut removed");
+  }
+}
+async function flagRecut(p, note){
+  if(!needWho()) return;
+  const body = {cut:false, recut:true, note:note || "", by:who, at:new Date().toISOString(), geom:p.geom};
+  state.cuts[p.id] = body; render();
+  if(await write("cuts/" + p.id, body)) toast("Flagged for recut");
+}
+async function setPrep(id, on){
+  if(on && !needWho()) return;
+  const body = on ? {done:true, by:who, at:new Date().toISOString()} : null;
+  if(on) state.prep[id] = body; else delete state.prep[id];
+  render();
+  await write("prep/" + id, body);
+}
+async function cutSheet(s){
+  if(!needWho()) return;
+  const todo = allParts(s).filter(p => status(p) === "open");
+  const at = new Date().toISOString();
+  for(const p of todo){ state.cuts[p.id] = {cut:true, by:who, at, geom:p.geom}; }
+  render();
+  for(const p of todo){ if(!(await write("cuts/" + p.id, state.cuts[p.id]))) return; }
+  toast(todo.length + " parts marked cut");
+}
+
+/* ---------- render ---------- */
+function svgFor(b, sheet){
+  const [W, H] = b.size;
+  const rects = b.parts.map(p => {
+    const st = status(p);
+    const cls = "p" + (st === "cut" || st === "old" ? " cut" : st === "recut" ? " recut" : "") + (state.hot === p.id ? " hot" : "");
+    return `<rect class="${cls}" data-id="${p.id}" x="${p.x}" y="${H - p.y - p.pw}" width="${p.pl}" height="${p.pw}"><title>${esc(pretty(p.name))} ${esc(p.size_in)}</title></rect>`;
+  }).join("");
+  return `<figure>${b.name ? `<figcaption>blank ${b.name} · ${Math.round(W)} mm square</figcaption>` : `<figcaption>${Math.round(W)} × ${Math.round(H)} mm</figcaption>`}
+    <svg viewBox="-6 -6 ${W + 12} ${H + 12}" role="img" aria-label="${esc(sheet.title)} layout"><rect class="b" x="0" y="0" width="${W}" height="${H}"/>${rects}</svg></figure>`;
+}
+function partRow(p, ro, blank){
+  const st = status(p), c = state.cuts[p.id];
+  const checked = st === "cut" || st === "old";
+  let sub = "";
+  if(checked) sub = `<div class="by">Cut by ${esc(c.by)} · ${when(c.at)}</div>`;
+  if(st === "old") sub += `<div class="old">Cut at ${esc(c.geom)} mm; the model now says ${esc(p.geom)}. Check it before use.</div>`;
+  if(st === "recut") sub = `<div class="flag">Recut needed${c.note ? ": " + esc(c.note) : ""} · ${esc(c.by)}, ${when(c.at)}</div>`;
+  const open = state.open === p.id;
+  return `<div class="row" id="r-${p.id}">
+    <button class="tick" role="checkbox" aria-checked="${checked}" data-act="tick" data-id="${p.id}" ${ro ? "disabled" : ""} aria-label="${esc(pretty(p.name))} cut">${tickSvg}</button>
+    <div class="what"><div class="nm">${esc(pretty(p.name))}</div>
+      <div class="sz">${blank ? "blank " + blank + " · " : ""}${esc(p.size_in)} · ${p.l} × ${p.w} × ${p.t} mm</div>${sub}</div>
+    <button class="more" data-act="more" data-id="${p.id}" aria-expanded="${open}" aria-label="More for ${esc(pretty(p.name))}" ${ro ? "disabled" : ""}>⋯</button>
+    ${open ? `<div class="inline">
+      <input id="note-${p.id}" placeholder="What went wrong? (optional)">
+      <button class="btn red" data-act="recut" data-id="${p.id}">Needs recut</button>
+      ${c ? `<button class="btn" data-act="clear" data-id="${p.id}">Clear record</button>` : ""}
+      <button class="btn" data-act="close" data-id="${p.id}">Cancel</button></div>` : ""}
+  </div>`;
+}
+function sheetCard(s){
+  const ps = allParts(s), done = ps.filter(isCut).length;
+  const wait = waiting(s), fin = done === ps.length;
+  const ro = state.canWrite === false || !state.db;
+  const stockLbl = DATA.stock[s.stock].label;
+  const tags = [`<span class="tag ${s.method === "CNC" ? "cnc" : "saw"}">${s.method === "CNC" ? "CNC nest" : "Track saw only"}</span>`,
+    `<span class="tag">${esc(stockLbl)}</span>`];
+  if(wait) tags.push(`<span class="tag wait">Stock not here yet</span>`);
+  if(fin) tags.push(`<span class="tag fin">Sheet done</span>`);
+  const steps = s.prep.map(st => {
+    const d = state.prep[st.id];
+    return `<div class="row"><button class="tick" role="checkbox" aria-checked="${!!d}" data-act="prep" data-id="${st.id}" ${ro ? "disabled" : ""} aria-label="Step done">${tickSvg}</button>
+      <div class="what"><div>${esc(st.text)}</div>${d ? `<div class="by">Done by ${esc(d.by)} · ${when(d.at)}</div>` : ""}</div><span></span></div>`;
+  }).join("");
+  const confirming = state.open === "sheet:" + s.id;
+  return `<section class="sheet${fin ? " done" : ""}" id="s-${s.id}">
+    <div class="shead"><div><h3>${esc(s.title)}</h3><div class="meta">${tags.join("")}</div></div>
+      <div class="count">${done}<small> / ${ps.length} cut</small></div></div>
+    <div class="sbody">
+      <div class="draw">${s.blanks.map(b => svgFor(b, s)).join("")}</div>
+      ${s.prep.length ? `<div class="steps"><h4>${s.method === "CNC" ? "Before the CNC" : "Cut sequence"}</h4>${steps}</div>` : ""}
+      <div class="parts"><h4>Parts</h4>${s.blanks.flatMap(b => b.parts.map(p => [b.name, p]))
+        .sort((x, y) => x[0].localeCompare(y[0]) || x[1].name.localeCompare(y[1].name) || x[1].id.localeCompare(y[1].id))
+        .map(([bn, p]) => partRow(p, ro, bn)).join("")}</div>
+      ${ro || fin ? "" : `<div class="sheetact">${confirming
+        ? `<span class="note">Mark every open part on this sheet as cut by ${esc(who || "…")}?</span>
+           <button class="btn go" data-act="sheetyes" data-id="${s.id}">Yes, mark ${ps.filter(p => status(p) === "open").length} parts</button>
+           <button class="btn" data-act="close">Cancel</button>`
+        : `<button class="btn" data-act="sheet" data-id="${s.id}">Whole sheet came off the machine</button>`}</div>`}
+      ${s.dxf ? `<div class="note">Machine file: <span class="mono">${esc(s.dxf)}</span> in the fabrication repo.</div>` : ""}
+    </div></section>`;
+}
+function render(){
+  const shown = DATA.sheets.filter(s => (state.filter === "all" || PROJ[s.project] === state.filter)
+    && !(state.hideDone && allParts(s).every(isCut)));
+  const projs = Object.keys(PROJ).map(name => {
+    const ss = DATA.sheets.filter(s => s.project === name), ps = ss.flatMap(allParts);
+    const d = ps.filter(isCut).length, sd = ss.filter(s => allParts(s).every(isCut)).length;
+    const rec = ps.filter(p => status(p) === "recut").length;
+    const w = ss.filter(waiting).length;
+    return `<div class="proj"><h2>${name}</h2><div class="bar"><i style="width:${ps.length ? (100 * d / ps.length).toFixed(1) : 0}%"></i></div>
+      <div class="dim">${d} of ${ps.length} parts · ${sd} of ${ss.length} sheets done${rec ? ` · ${rec} to recut` : ""}${w ? ` · ${w} sheets waiting on stock` : ""}</div></div>`;
+  }).join("");
+  $("#projects").innerHTML = projs;
+  $("#stock").innerHTML = `<table><thead><tr><th>Stock</th><th>Status</th><th style="text-align:right">Sheets needed</th><th style="text-align:right">In the shop</th></tr></thead><tbody>${
+    Object.values(DATA.stock).filter(k => k.needed).map(k => `<tr><td>${esc(k.label)}</td><td>${esc(k.status)}</td><td class="n">${k.needed}</td><td class="n">${k.on_hand}</td></tr>`).join("")}</tbody></table>`;
+  $("#sheets").innerHTML = shown.map(sheetCard).join("") || `<p class="note" style="margin-top:20px">Every sheet in this view is finished.</p>`;
+  const known = new Set(DATA.sheets.flatMap(allParts).map(p => p.id));
+  const orphans = Object.keys(state.cuts).filter(id => !known.has(id)).length;
+  $("#foot").innerHTML = `Part list generated ${esc(new Date(DATA.generated).toLocaleString())} from the models. Parts are counted by name, so any rib is as good as any other rib: tick the one you cut, whatever its spot on the drawing.${orphans ? ` ${orphans} earlier record${orphans > 1 ? "s" : ""} name${orphans > 1 ? "" : "s"} parts the models no longer have.` : ""}`;
+  const b = $("#banner");
+  if(!state.db){ b.hidden = false; b.textContent = "Progress is not connected in this view, so ticks will not save."; }
+  else if(state.canWrite === false){ b.hidden = false; b.textContent = "You can see progress here but not record cuts. Ask Mr. Reasy for access."; }
+  else b.hidden = true;
+}
+
+/* ---------- events ---------- */
+const byId = id => DATA.sheets.flatMap(allParts).find(p => p.id === id);
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-act],rect.p,.chipbtn");
+  if(!t) return;
+  if(t.matches("rect.p")){
+    state.hot = t.dataset.id; render();
+    document.getElementById("r-" + t.dataset.id)?.scrollIntoView({block:"center", behavior:"smooth"});
+    return;
+  }
+  if(t.classList.contains("chipbtn")){
+    if(t.id === "f-open"){ state.hideDone = !state.hideDone; t.setAttribute("aria-pressed", state.hideDone); }
+    else {
+      state.filter = {"f-all":"all","f-wb":"wb","f-st":"st"}[t.id];
+      ["f-all","f-wb","f-st"].forEach(i => $("#" + i).setAttribute("aria-pressed", i === t.id));
+    }
+    render(); return;
+  }
+  const id = t.dataset.id, act = t.dataset.act;
+  if(act === "tick"){ const p = byId(id); const st = status(p); setCut(p, !(st === "cut" || st === "old")); }
+  else if(act === "prep"){ setPrep(id, !state.prep[id]); }
+  else if(act === "more"){ state.open = state.open === id ? null : id; render(); }
+  else if(act === "close"){ state.open = null; render(); }
+  else if(act === "recut"){ const n = document.getElementById("note-" + id)?.value.trim(); state.open = null; flagRecut(byId(id), n); }
+  else if(act === "clear"){ state.open = null; setCut(byId(id), false); }
+  else if(act === "sheet"){ if(needWho()){ state.open = "sheet:" + id; render(); } }
+  else if(act === "sheetyes"){ state.open = null; cutSheet(DATA.sheets.find(s => s.id === id)); }
+});
+
+render();
+
+/* ---------- live state ---------- */
+(async () => {
+  const db = window.claude && await window.claude.use("db");
+  if(!db){ render(); return; }
+  state.db = db;
+  const user = await window.claude.use("user");
+  if(user && user.can){ try { const c = await user.can("data.write"); if(c === false) state.canWrite = false; } catch(e) {} }
+  const sub = (col, key) => db.collection(col).limit(1000).onSnapshot(snap => {
+    const m = {}; snap.docs.forEach(d => m[d.id] = d.data()); state[key] = m; render();
+  }, err => { if(err && err.code === "revoked"){ state.db = null; render(); } });
+  sub("cuts", "cuts"); sub("prep", "prep");
+  db.doc("roster/students").onSnapshot(d => {
+    const names = (d.exists && d.data().names) || [];
+    $("#roster").innerHTML = names.map(n => `<option value="${esc(n)}"></option>`).join("");
+  }, () => {});
+  render();
+})();
+})();
+</script>
