@@ -1287,34 +1287,10 @@ def _shelf(units: list[tuple[ToolRow, Socket]], tile_w: float, y: float, notes: 
     units = sorted(units, key=lambda rs: -(rs[1].pw * rs[1].pd))
     shelves: list[dict] = []          # {"y": row_y, "x": next free x, "h": row height}
     for r, s in units:
-        pw, pd, loop = s.pw, s.pd, s.loop
-        if loop is None and pw < pd:
-            pw, pd = pd, pw                 # a box is laid long side along X first
-        rotated = pw > usable
-        if rotated:
-            pw, pd = pd, pw
-        if loop is None:
-            pw = max(pw, POCKET_TOOL_D)     # a pocket is never narrower than its cutter
-            pd = max(pd, POCKET_TOOL_D)
-
-        lab_full = label_text(r)
-        lw = label_width(lab_full)
-        sw = min(SCOOP_W, (pd if rotated else pw) - 2 * POCKET_R)
-        if rotated:
-            beside = pw                      # the band in front is the pocket's own width
-        else:
-            beside = max(pw - sw / 2 - POCKET_R, pw / 2) - sw / 2 - LABEL_WALL
-        own_band = lw > beside
-        lab = clip_label(lab_full, usable)
-        if lab != lab_full.upper():
-            notes.append(
-                f"label {lab_full!r} on {r.id} is {lw:.0f} wide and the tile has {usable:.0f}: "
-                f"milled as {lab!r}. Shorten the Sheet's label."
-            )
-        front = (0.0 if rotated else SCOOP_REACH)
-        band = LABEL_BOX_H + LABEL_GAP if (own_band or rotated) else 0.0
-        cell_w = max(pw + (SCOOP_REACH if rotated else 0.0), lw)
-        cell_h = pd + front + band
+        cell = _lying_cell(r, s, usable, None)
+        if cell["note"]:
+            notes.append(cell["note"])
+        cell_w, cell_h = cell["w"], cell["h"]
 
         # first shelf with the room, else a new one behind the last
         home = next((sh for sh in shelves if sh["x"] + cell_w <= tile_w - MARGIN + 1e-6), None)
@@ -1322,25 +1298,116 @@ def _shelf(units: list[tuple[ToolRow, Socket]], tile_w: float, y: float, notes: 
             home = {"y": (shelves[-1]["y"] + shelves[-1]["h"] + WALL) if shelves else y, "x": MARGIN, "h": 0.0}
             shelves.append(home)
         x, row_y = home["x"], home["y"]
+        out.append(cell["make"](x, row_y))
+        home["x"] = x + cell_w + WALL
+        home["h"] = max(home["h"], cell_h)
+    return out, (shelves[-1]["y"] + shelves[-1]["h"]) if shelves else y
+
+
+def _lying_cell(r: ToolRow, s: Socket, usable: float, turn: bool | None) -> dict:
+    """One lying pocket's cell: the pocket, its scoop and its label band, as
+    ``w`` x ``h`` from the cell's front-left corner, and ``make(x, y)`` to
+    lay it there. ``turn`` None lays it as the shelf always has (long side
+    along X unless that is wider than the tile); True or False forces it
+    L along Y or along X. ``note`` is the clipped-label note, or ""."""
+    pw, pd, loop = s.pw, s.pd, s.loop
+    if loop is None and pw < pd:
+        pw, pd = pd, pw                 # a box is laid long side along X first
+    rotated = pw > usable if turn is None else turn
+    if rotated:
+        pw, pd = pd, pw
+    if loop is None:
+        pw = max(pw, POCKET_TOOL_D)     # a pocket is never narrower than its cutter
+        pd = max(pd, POCKET_TOOL_D)
+
+    lab_full = label_text(r)
+    lw = label_width(lab_full)
+    sw = min(SCOOP_W, (pd if rotated else pw) - 2 * POCKET_R)
+    if rotated:
+        beside = pw                      # the band in front is the pocket's own width
+    else:
+        beside = max(pw - sw / 2 - POCKET_R, pw / 2) - sw / 2 - LABEL_WALL
+    own_band = lw > beside
+    lab = clip_label(lab_full, usable)
+    note = ""
+    if lab != lab_full.upper():
+        note = (
+            f"label {lab_full!r} on {r.id} is {lw:.0f} wide and the tile has {usable:.0f}: "
+            f"milled as {lab!r}. Shorten the Sheet's label."
+        )
+    front = (0.0 if rotated else SCOOP_REACH)
+    band = LABEL_BOX_H + LABEL_GAP if (own_band or rotated) else 0.0
+    cell_w = max(pw + (SCOOP_REACH if rotated else 0.0), lw)
+    cell_h = pd + front + band
+    depth = pocket_depth(s.t, FOAM_DEPTH_ALLOW if loop is not None else FOAM_REVEAL)
+
+    def make(x: float, row_y: float) -> Pocket:
         py = row_y + band + front
         if own_band or rotated:
             lx, ly = x, row_y
         else:
             lx, ly = x, py - SCOOP_REACH + (SCOOP_REACH - LABEL_BOX_H) / 2
-        depth = pocket_depth(s.t, FOAM_DEPTH_ALLOW if loop is not None else FOAM_REVEAL)
-        out.append(
-            Pocket(
-                tool_id=r.id, name=r.name, label=lab, kind=r.kind, rule=s.rule,
-                l=s.l, w=s.w, t=s.t,
-                x=x, y=py, pw=pw, pd=pd,
-                depth=depth, rotated=rotated,
-                label_x=lx, label_y=ly, label_h=LABEL_H,
-                loop=loop, label_full=lab_full,
-            )
+        return Pocket(
+            tool_id=r.id, name=r.name, label=lab, kind=r.kind, rule=s.rule,
+            l=s.l, w=s.w, t=s.t,
+            x=x, y=py, pw=pw, pd=pd,
+            depth=depth, rotated=rotated,
+            label_x=lx, label_y=ly, label_h=LABEL_H,
+            loop=loop, label_full=lab_full,
         )
-        home["x"] = x + cell_w + WALL
-        home["h"] = max(home["h"], cell_h)
-    return out, (shelves[-1]["y"] + shelves[-1]["h"]) if shelves else y
+
+    return {"w": cell_w, "h": cell_h, "make": make, "note": note, "fits": cell_w <= usable + 1e-6}
+
+
+def _skyline(units: list[tuple[ToolRow, Socket]], tile_w: float, y: float, notes: list[str]) -> tuple[list[Pocket], float]:
+    """Lying pockets packed on a skyline, for a tile the shelf rows overflow.
+
+    The shelf gives each row the height of its tallest pocket, so a short
+    pocket beside a tall one leaves the difference empty; on D3 that was a
+    third of the drawer. Here each pocket, biggest first, goes where its
+    cell's back edge lands furthest forward, either way round, so short
+    pockets stack beside a tall one. Cells, labels and scoops are the
+    shelf's own (``_lying_cell``), and WALL still parts every pair."""
+    out: list[Pocket] = []
+    usable = tile_w - 2 * MARGIN
+    units = sorted(units, key=lambda rs: -(rs[1].pw * rs[1].pd))
+    # (x0, x1, back): the back edge of what is already laid, WALL included, across [x0, x1)
+    sky: list[tuple[float, float, float]] = [(MARGIN, MARGIN + usable + WALL, y)]
+    for r, s in units:
+        best = None
+        for turn in (False, True):
+            cell = _lying_cell(r, s, usable, turn)
+            if not cell["fits"]:
+                continue
+            w = cell["w"] + WALL
+            for x0, _x1, _b in sky:
+                if x0 + w > MARGIN + usable + WALL + 1e-6:
+                    continue
+                base = max(b for a, e, b in sky if a < x0 + w - 1e-6 and e > x0 + 1e-6)
+                key = (base + cell["h"], x0)
+                if best is None or key < best[0]:
+                    best = (key, cell, x0, base)
+        if best is None:
+            cell = _lying_cell(r, s, usable, None)
+            best = ((0.0, 0.0), cell, MARGIN, max(b for _a, _e, b in sky))
+        (_k, cell, x0, base) = best
+        if cell["note"]:
+            notes.append(cell["note"])
+        out.append(cell["make"](x0, base))
+        x1, back = x0 + cell["w"] + WALL, base + cell["h"] + WALL
+        new: list[tuple[float, float, float]] = []
+        for a, e, b in sky:
+            if e <= x0 + 1e-6 or a >= x1 - 1e-6:
+                new.append((a, e, b))
+                continue
+            if a < x0:
+                new.append((a, x0, b))
+            if e > x1:
+                new.append((x1, e, b))
+        new.append((x0, x1, back))
+        sky = sorted(new)
+    used = max((pk.y + pk.pd for pk in out), default=y)
+    return out, used
 
 
 def plan(key: str = TRAY_V1, d: Datums = D, rows: list[ToolRow] | None = None,
@@ -1395,7 +1462,17 @@ def plan(key: str = TRAY_V1, d: Datums = D, rows: list[ToolRow] | None = None,
     if lying:
         if pockets:
             y += WALL
-        got, y = _shelf(lying, tile_w, y, notes)
+        y0 = y
+        shelf_notes: list[str] = []
+        got, y = _shelf(lying, tile_w, y0, shelf_notes)
+        if y + MARGIN > tile_d + 1e-6:
+            # the shelf overflows: a tile that fits keeps its shelf layout
+            # untouched, and one that does not takes the skyline if it is shorter
+            sky_notes: list[str] = []
+            sky, sy = _skyline(lying, tile_w, y0, sky_notes)
+            if sy < y:
+                got, y, shelf_notes = sky, sy, sky_notes
+        notes.extend(shelf_notes)
         pockets.extend(got)
 
     used = (y + MARGIN) if pockets else 0.0
@@ -1543,6 +1620,18 @@ def check_trays(d: Datums = D, rows: list[ToolRow] | None = None) -> list[str]:
             f"the {key} tiles are " + " + ".join(f"{p.w:.1f} x {p.d:.1f}" for p in plans)
             + f" and the drawer's inside floor is {iw:.1f} x {idep:.1f}. The tiles are the floor; they are not."
         )
+
+    # every other drawer's tray has to fit its floor too; until 2026-09-25
+    # only D1 was checked, and D2 and D3 ran off the back unflagged
+    for spec_o in DRAWERS:
+        if spec_o.key == key:
+            continue
+        for p in plan_all(spec_o.key, d, rows):
+            if p.used_d > p.d + 1e-6:
+                notes.append(
+                    f"{p.label} needs {p.used_d:.1f}mm of its {p.d:.0f}mm depth. The last pockets run off "
+                    "the back of the foam: move a tool to another drawer, or strike one."
+                )
 
     for p in plans:
         name = p.label

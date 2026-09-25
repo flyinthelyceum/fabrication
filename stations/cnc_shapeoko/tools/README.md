@@ -132,23 +132,21 @@ The ingest's image source is a plug: `ingest(..., source="camera")` is reserved 
 
 The Sheet's LOG tab (date, reading, who) is the human half of the station log; the first row is reserved for the commissioning continuity reading. It is not snapshotted here.
 
-### Carbide 3D's print library as a model source (2026-09-25)
+### Carbide 3D's print library: reference models only (2026-09-25)
 
-https://carbide3d.com/3d-print/ publishes 32 STLs, most of them Carbide's own clamps, stops and caddies. Jared, 2026-09-25: they are not a print queue, they are accurate models of tools and fixtures the station has to make room for. An STL's footprint is an outline source beside the photo capture: a row whose outline came from one says so in `socket_note` and is PROVISIONAL until the thing in hand agrees (the T070 precedent). The one datum so far: `essentialsclampstandard.stl` is 70.0 x 20.0 x 18.0 against T056's calipers 70.23 x 19.77 and its capture 70.3 x 20.5 x 18.
+https://carbide3d.com/3d-print/ publishes 32 STLs, most of them Carbide's own clamps, stops and caddies. RULED, Jared 2026-09-25: they are reference, never a print queue and never an object in a drawer ("I don't want any printed objects in the drawer. the 3d models are only provided as reference"). A caddy is not a way to fit a drawer; every tool keeps its own pocket. What the library is for is checking a tool's size against the maker's own model. The one check so far: `essentialsclampstandard.stl` is 70.0 x 20.0 x 18.0 against T056's calipers 70.23 x 19.77 and its capture 70.3 x 20.5 x 18.
 
-The licence allows personal use and printing, and forbids redistributing the file. This repo is public, so no STL is committed: a row cites the page URL, and only the derived pocket outline (`captures/T0xx.dxf`) lands here.
+The licence allows personal use and printing, and forbids redistributing the file. This repo is public, so no STL is committed; cite the page URL.
 
-In use: T071, the Crush-It Essentials Caddy (125 x 100 x 20), which holds the kit's sixteen pieces (T044, T042, T045 x4 each, four of T056) in one D3 pocket instead of sixteen. Library pages that name a part the station owns, not yet used as an outline, dimensions off the STL's bounding box:
+Library pages that name a part the station owns, dimensions off the STL's bounding box:
 
 | page | STL box, mm | station row | status |
 |---|---|---|---|
 | essential-clamp | 70.0 x 20.0 x 18.0 | T056 | agrees with the calipers; the capture stands |
 | essential-hard-stop | 32.0 x 30.9 x 14.0 | T045? | the capture reads 31.6 x 29.8 x 16: same footprint, 2 taller. UNVERIFIED which part T045 is |
 | crush-it-hard-stop | 25.0 x 25.0 x 15.5 | none | does not match T045's capture |
-| bitzero-caddy (V2) | 79.0 x 35.0 x 24.0 | T063 | a caddy, not the probe |
-| essential-clamp-caddy | 100.0 x 50.0 x 20.0 | eight of T056 | not adopted; see below |
 
-D3 after T071 still needs 500 of its 464mm, one T056 pocket past the back edge. An essential-clamp-caddy row for eight of T056's ten bars was run as a simulation, not committed: D3 then uses 335. That is Jared's call, because it is a second printed object in the drawer.
+T071 (the Crush-It Essentials Caddy) was added and struck the same day under this ruling.
 
 ## DXF layers the tray export writes (C16)
 

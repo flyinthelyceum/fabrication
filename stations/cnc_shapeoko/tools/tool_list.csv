@@ -28,10 +28,10 @@ T038,"Brush-free dust-boot base (polycarbonate, for visibility)",D2,captured,,,,
 T039,M6 x 18mm socket head cap screws (Joinery Stop mounting),D3,case,,,,,,,4,NONE,lives in the T054 organizer case,,,,M6x18 SHCS,active,
 T040,M6 x 20 Socket Head Screws (Essential Clamps mounting),D3,case,,,,,,,4,NONE,lives in the T054 organizer case,,,,M6x20 SHCS,active,
 T041,M6 x 30 Socket Head Screws (Essential Clamps mounting),D3,case,,,,,,,4,NONE,lives in the T054 organizer case,,,,M6x30 SHCS,active,
-T042,Replacement flat jaws (for Crush-It clamps),D3,case,,,,29.4,25.1,10,4,CAPTURED,lives in the T071 caddy (2026-09-25); capture kept for a re-pocket. capture ONE; four pockets,10,captures/T042.dxf,,FLAT JAW,active,
+T042,Replacement flat jaws (for Crush-It clamps),D3,captured,,,,29.4,25.1,10,4,CAPTURED,capture ONE; four pockets,10,captures/T042.dxf,,FLAT JAW,active,
 T043,Sweepy thumb screws,D3,case,,,,,,,2,NONE,lives in the T054 organizer case,,,,THUMB SCREW,active,
-T044,Crush-It Essential Clamps with Serrated Jaws,D3,case,,,,72.0,25.8,12,4,CAPTURED,"lives in the T071 caddy (2026-09-25); capture kept for a re-pocket. capture ONE; four pockets. 25 wide, 11 above the table when seated",20,captures/T044.dxf,,CRUSH-IT,active,
-T045,Crush-It Stops,D3,case,,,,31.6,29.8,16,4,CAPTURED,lives in the T071 caddy (2026-09-25); capture kept for a re-pocket. capture ONE; four pockets,20,captures/T045.dxf,,CRUSH STOP,active,
+T044,Crush-It Essential Clamps with Serrated Jaws,D3,captured,,,,72.0,25.8,12,4,CAPTURED,"capture ONE; four pockets. 25 wide, 11 above the table when seated",20,captures/T044.dxf,,CRUSH-IT,active,
+T045,Crush-It Stops,D3,captured,,,,31.6,29.8,16,4,CAPTURED,capture ONE; four pockets,20,captures/T045.dxf,,CRUSH STOP,active,
 T046,Essential Clamps (bundled in Crush-It set),D3,block,,,,,,,4,MEASURE,,,,,,struck,merged into T056 2026-09-11 (same part C3D-EC; T056 qty 14)
 T047,M6 Teez-Nutz T-nuts,D3,case,,,,,,,24,NONE,lives in the T054 organizer case; T058 merged in 2026-09-11 (12 + 12),,,,T-NUTS,active,
 T048,M6 x 16mm bolts (Crush-It kit),D3,case,,,,,,,6,NONE,lives in the T054 organizer case,,,,M6x16,active,
@@ -42,7 +42,7 @@ T052,M6 x 35mm bolts (Crush-It kit),D3,case,,,,,,,6,NONE,lives in the T054 organ
 T053,M6 x 40mm bolts (Crush-It kit),D3,case,,,,,,,6,NONE,lives in the T054 organizer case,,,,M6x40,active,
 T054,Plastic organizer case (Crush-It Nutz 'n Bolts),D3,captured,,,,154.9,103.1,32,1,CAPTURED,"capture the CASE, closed; holds T039-T041, T043, T047-T053",40,captures/T054.dxf,,NUTZ CASE,active,
 T055,Shapeoko 5.1 Pro Joinery Stop,D3,captured,,,,154.4,46.1,8,1,CAPTURED,,10,captures/T055.dxf,,JOINERY STOP,active,
-T056,Essential Clamp bar,D3,captured,,,,70.3,20.5,18,10,CAPTURED,"T046 + T057 merged in 2026-09-11: 4 standalone + 6 machine-bundled + 4 Crush-It = 14. Calibration datum: calipers 70.23 x 19.77. 2026-09-25: the 4 Crush-It kit bars live in the T071 caddy, so 10 pockets.",20,captures/T056.dxf,,CLAMP BAR,active,
+T056,Essential Clamp bar,D3,captured,,,,70.3,20.5,18,14,CAPTURED,T046 + T057 merged in 2026-09-11: 4 standalone + 6 machine-bundled + 4 Crush-It = 14. Calibration datum: calipers 70.23 x 19.77.,20,captures/T056.dxf,,CLAMP BAR,active,
 T057,Shapeoko Essential Clamps (machine-bundled),D3,block,,,,,,,6,MEASURE,,,,,,struck,merged into T056 2026-09-11 (same part C3D-EC; T056 qty 14)
 T058,Teez Nutz T-nuts (Crush-It kit),D3,block,,,,,,,12,MEASURE,,,,,,struck,merged into T047 2026-09-11 (T047 qty 24)
 T062,Digital calipers,D2,captured,,,,237.2,71.8,10,1,CAPTURED,owned (Jared 2026-09-11); lay closed,10,captures/T062.dxf,,CALIPERS,struck,"Jared 2026-09-21: calipers per machine station; the pair lives in the station kit, never a tray pocket"
@@ -54,4 +54,4 @@ T067,T-handle hex driver 5x150,D2,captured,5,,150,181.6,113.2,23,1,CAPTURED,,30,
 T068,T-handle hex driver 4x150,D2,captured,4,,150,172.8,89.1,18,1,CAPTURED,,20,captures/T068.dxf,,T 4MM,active,
 T069,T-handle hex driver 3x150,D2,captured,3,,150,167.3,86.5,18,1,CAPTURED,,20,captures/T069.dxf,,T 3MM,active,
 T070,T-handle hex driver 2.5x150,D2,captured,2.5,,150,164.6,85.2,18,1,CAPTURED,"PROVISIONAL OUTLINE, scaled from T069 on 2026-09-21 (L ×0.984, W ×0.985), tool not yet owned; RE-CAPTURE on arrival before D2 cuts",20,captures/T070.dxf,,T 2.5MM,active,"provisional silhouette, not a measurement"
-T071,"Crush-It Essentials Caddy (printed, Carbide 3D Print Library)",D3,captured,,,,125.0,100.0,20,1,CAPTURED,"PROVISIONAL OUTLINE from Carbide 3D's STL footprint 2026-09-25 (125 x 100 x 20, corner r 5 derived from the footprint area), not a photo; RE-CAPTURE the printed caddy before D3 cuts. Holds the kit's 16: T044 x4, T042 x4, T045 x4, 4 of T056. STL: carbide3d.com/3d-print/crush-it-essentials-caddy/ (personal/shop use licence)",20,captures/T071.dxf,,CRUSH-IT KIT,active,
+T071,Crush-It Essentials Caddy (Carbide 3D Print Library),D3,block,,,,,,,1,NONE,,,,,,struck,"Jared 2026-09-25: no printed objects in the drawers; the library's STLs are reference only. The kit's pieces keep their own pockets."
