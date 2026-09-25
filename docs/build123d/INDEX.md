@@ -34,4 +34,4 @@ write, before you write it.
   laser. Both come from the same model.
 - Joinery, kerf, and fastener spacing derive from material thickness. Changing
   18mm to 15mm regenerates every joint rather than breaking them.
-- Fitted trays are generated from a tool list, not drawn one pocket at a time.
+- Fitted drawer inserts are generated from a tool list, not drawn one pocket at a time.

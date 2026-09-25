@@ -55,6 +55,7 @@ from stations.cnc_shapeoko.parts import (
     console_plate,
     drawers,
     exhaust_plenum,
+    inserts,
     leg_joint,
     lungs_carriage,
     lungs_door,
@@ -66,7 +67,6 @@ from stations.cnc_shapeoko.parts import (
     stiles,
     stock_rails,
     top_cap,
-    trays,
     vfd_mount,
 )
 
@@ -136,8 +136,7 @@ def collect() -> list[tuple[str, str, str]]:
         ("bay_walls", bay_walls.check_bay_walls(d)),
         ("stiles", stiles.check_stiles(d)),
         ("drawers", drawers.check_drawers(d)),
-        ("trays", trays.check_trays(d)),
-        ("trays", trays.check_pocket_outlines(d)),
+        ("inserts", inserts.check_inserts(d)),
         ("spine_panel", spine_panel.check_spine(d)),
         ("top_cap", top_cap.check_top_cap(d)),
         ("mast_base", mast_base.check_mast_base(d)),

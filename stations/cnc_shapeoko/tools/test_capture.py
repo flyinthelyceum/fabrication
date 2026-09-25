@@ -61,9 +61,9 @@ TRACE SOURCE (history; every call passes source="trace")
        test says so), an open arc, two stadiums, two sheet SIZES in one frame,
        and a frame with no known quartet at all. Each rejects with its reason
        and writes nothing.
-    4. Tray: the stadium's DXF as a CAPTURED row (T999, D2) in a COPY of the
-       tool list, never the real one; trays.plan lays it out and the pocket's
-       box is the pocket loop's box.
+    4. Insert: the stadium's box as a CAPTURED row (T999, D2 INSTRUMENTS) added
+       in memory, never to the real tool list; inserts.plan holds it in a
+       drop-in recess its box plus DROP.
 
 Every write goes to a temporary directory; the real captures/ and
 tool_list.csv are untouched.
@@ -602,37 +602,32 @@ def test_photo_rejects(tmp: Path) -> None:
         print(f"  {name}: rejected, '{r.reason}'")
 
 
-def test_tray(tmp: Path, dxf_path: Path) -> None:
-    from stations.cnc_shapeoko.parts import trays
+def test_insert(tmp: Path) -> None:
+    """A captured row's box, not its silhouette, is what an insert strip
+    holds it by (ruling 2026-09-25: strips, not foam shadows)."""
+    from stations.cnc_shapeoko.parts import inserts
 
-    csv_copy = tmp / "tool_list_tray.csv"
-    shutil.copy(HERE / "tool_list.csv", csv_copy)
-    rows = trays.read_tools(csv_copy)
+    rows = inserts.read_rows()
     rows.append(
-        trays.ToolRow(
-            id="T999", name="TEST STADIUM", drawer="D2", kind="block",
-            shank_d=None, cut_d=None, oal=None, qty=1,
-            dims_status="CAPTURED", height_class=20.0, silhouette=str(dxf_path),
+        inserts.Row(
+            id="T999", name="TEST STADIUM", drawer="D2", strip="INSTRUMENTS", store="recess", qty=1,
+            shank_d=None, cut_d=None, oal=None, bbox=(TOOL_L, TOOL_W, 20.0), hold=(),
+            height_class=20.0, status="active",
         )
     )
-    p = trays.plan("D2", rows=rows)
-    pk = [k for k in p.pockets if k.tool_id == "T999"]
-    assert len(pk) == 1, [k.tool_id for k in p.pockets]
+    p = inserts.plan("D2", rows=rows)
+    pk = [pl for s in p.strips for pl in s.places if pl.tool_id == "T999"]
+    assert len(pk) == 1, pk
     pk = pk[0]
-    assert pk.rule == "captured", pk.rule
-    exp_l, exp_w = TOOL_L + 2 * ci.FOAM_CLEAR, TOOL_W + 2 * ci.FOAM_CLEAR
-    got = (pk.pd, pk.pw) if pk.rotated else (pk.pw, pk.pd)
-    assert abs(got[0] - exp_l) <= TOL_MM and abs(got[1] - exp_w) <= TOL_MM, (got, exp_l, exp_w)
-    assert abs(pk.depth - min(20.0 + trays.FOAM_DEPTH_ALLOW, trays.FOAM_T - trays.FOAM_FLOOR_MIN)) < 1e-6, pk.depth
-    faces = pk.outline().faces()
-    assert len(faces) == 1, len(faces)
-    # the loop plus its finger scoop, opened by the endmill radius, is one face bigger than the pocket alone
-    assert faces[0].area > exp_l * exp_w * 0.9
-    layers = trays.layers(p)
-    assert any(k.startswith("POCKET_D") for k in layers), list(layers)
-    notes = [n for n in trays.check_trays(rows=rows) if "T999" in n]
+    got = sorted((pk.w, pk.d), reverse=True)
+    exp = sorted((TOOL_L + inserts.DROP, TOOL_W + inserts.DROP), reverse=True)
+    assert all(abs(g - e) <= 1e-6 for g, e in zip(got, exp)), (got, exp)
+    assert pk.depth == inserts.DEPTH_MAX, pk.depth
+    strip = next(s for s in p.strips if s.name == "INSTRUMENTS")
+    assert any(k.startswith("POCKET_D") for k in inserts.layers(strip))
+    notes = [n for n in inserts.check_inserts(rows=rows) if "T999" in n]
     assert not notes, notes
-    print(f"  tray D2: T999 pocket {got[0]:.2f} x {got[1]:.2f} x {pk.depth:g} deep at ({pk.x:.1f}, {pk.y:.1f}), {len(p.pockets)} pocket(s), no T999 notes")
+    print(f"  insert D2: T999 recess {got[0]:.2f} x {got[1]:.2f} x {pk.depth:g} on INSTRUMENTS, no T999 notes")
 
 
 def main() -> int:
@@ -662,8 +657,8 @@ def main() -> int:
     test_print_scale(tmp)
     print("3. reject paths")
     test_rejects(tmp)
-    print("4. tray with one CAPTURED row")
-    test_tray(tmp, dxf_path)
+    print("4. insert with one CAPTURED row")
+    test_insert(tmp)
     print(f"ALL PASSED   (example previews: photo {rp.preview_path}, trace {r.preview_path})")
     return 0
 

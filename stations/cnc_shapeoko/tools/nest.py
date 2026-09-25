@@ -14,8 +14,8 @@ the count that comes out. Three materials, three nests:
     acrylic   every solid in the assembly's ``acrylic`` group (the rear door's
               reveal, the console's reveal and three panes, the cradle's lip),
               on the Universal's large bed.  ->  nest/laser_NN.dxf
-    foam      one Kaizen blank per tray tile (D1 is two tiles), from
-              ``trays.plan_all``, on the 2x4 foam sheet.  ->  nest/foam_NN.dxf
+    hdpe      one blank per drawer-insert strip, from ``inserts.plan_all``,
+              on the 2x4 ColorCore sheet.  ->  nest/hdpe_NN.dxf
 
 The birch count is the number the brief (v7, "3 sheets") and the build guide
 ("plan five") were waiting on. It is computed here and asserted by
@@ -86,8 +86,8 @@ LAYERS ON A SHEET
 =================
 
 Each part's own layers (``CUT`` / ``BACK`` / ``POCKET_<SIDE>_<d>`` /
-``VCARVE`` / ``REGISTER`` / ``E_STOP``, or ``ACRYLIC``, or the tray's
-``OUTLINE`` / ``POCKET_D<d>`` / ``TEXT_D<d>``) ride onto the sheet under the
+``VCARVE`` / ``REGISTER`` / ``E_STOP``, or ``ACRYLIC``, or an insert
+strip's ``OUTLINE`` / ``POCKET_D<d>`` / ``THROUGH`` / ``VCARVE``) ride onto the sheet under the
 same names, moved and turned with the part, so the shop reads one drawing
 language on a part drawing and on a nest. A ``BACK`` feature on a nest is
 seen through the material from the front exactly as it is on the part
@@ -151,7 +151,7 @@ from stations.cnc_shapeoko.parts import (
     stiles,
     stock_rails,
     top_cap,
-    trays,
+    inserts,
     vfd_mount,
 )
 
@@ -204,15 +204,15 @@ LASER_T = PANEL_T
 SOURCE: task C18 spec ("the Universal's large bed, LASER_BED_LARGE"),
 lib.house. The finish ruling 2026-09-03 makes every reveal clear."""
 
-FOAM_SHEET = trays.FOAM_SHEET
-FOAM_T = trays.FOAM_T
-"""One two-tone Kaizen sheet. SOURCE: trays.py, which reads the listing."""
+HDPE_SHEET = inserts.SHEET
+HDPE_T = inserts.STOCK_T
+"""One 1/2 in two-colour HDPE sheet. SOURCE: inserts.py."""
 
 GAP = 10.0
 """Kerf and margin: between any two rectangles, and between a rectangle and
 the edge of the blank it is cut from. SOURCE: task C18 spec ("10mm
 kerf/margin"). CONFIDENCE: spec. The same number serves all three nests: the
-foam is cut on the same machine with the same clamps, and the laser's 0.15
+HDPE is cut on the same machine with the same clamps, and the laser's 0.15
 kerf is lost inside it."""
 
 REACH = ROUTER_D
@@ -290,7 +290,7 @@ class Blank:
     """
 
     label: str
-    material: str       # birch | acrylic | foam
+    material: str       # birch | acrylic | hdpe
     a: float
     b: float
     fixed: bool
@@ -354,16 +354,17 @@ def blank_from_component(c: Component, material: str, t: float) -> Blank:
 
 def blanks(comps: list[Component] | None = None, d: Datums = D) -> list[Blank]:
     """Every rectangle the three nests place: birch and acrylic off the
-    assembly, foam off the tray plans."""
+    assembly, HDPE off the insert plans."""
     comps = components(d) if comps is None else comps
     out: list[Blank] = []
     for c in birch_components(comps):
         out.append(blank_from_component(c, "birch", SHEET_T))
     for c in acrylic_components(comps):
         out.append(blank_from_component(c, "acrylic", LASER_T))
-    for spec in drawers.DRAWERS:
-        for p in trays.plan_all(spec.key, d):
-            out.append(Blank(p.label, "foam", max(p.w, p.d), min(p.w, p.d), False, "any"))
+    for p in inserts.plan_all(d):
+        for s in p.strips:
+            if s.d > 0:
+                out.append(Blank(s.filename, "hdpe", max(s.w, s.d), min(s.w, s.d), False, "any"))
     return out
 
 
@@ -413,7 +414,7 @@ class Shelf:
 class Sheet:
     index: int
     material: str
-    kind: str                   # TRACK SAW | SHAPEOKO | LASER | FOAM
+    kind: str                   # TRACK SAW | SHAPEOKO | LASER | HDPE
     size: tuple[float, float]
     travel: float | None        # longest part span the machine reaches; None = whole sheet
     shelves: list[Shelf] = field(default_factory=list)
@@ -572,7 +573,7 @@ def nest(bl: list[Blank] | None = None, comps: list[Component] | None = None,
 
     _pack([b for b in bl if b.material == "acrylic"], "acrylic", LASER_BED, "LASER", None,
           sheets, unplaced)
-    _pack([b for b in bl if b.material == "foam"], "foam", FOAM_SHEET, "FOAM", travel,
+    _pack([b for b in bl if b.material == "hdpe"], "hdpe", HDPE_SHEET, "HDPE", travel,
           sheets, unplaced)
     return Nest(sheets, unplaced)
 
@@ -608,8 +609,8 @@ def check_nest(comps: list[Component] | None = None, d: Datums = D) -> list[str]
             )
         else:
             notes.append(
-                f"nest: {b.label} is {b.a:.0f} x {b.b:.0f} and does not fit a Kaizen "
-                f"sheet {FOAM_SHEET[0]:.0f} x {FOAM_SHEET[1]:.0f}"
+                f"nest: {b.label} is {b.a:.0f} x {b.b:.0f} and does not fit an HDPE "
+                f"sheet {HDPE_SHEET[0]:.0f} x {HDPE_SHEET[1]:.0f}"
             )
 
     # A blank the nest placed and ``flats`` has no drawing for is a part the
@@ -637,8 +638,8 @@ def check_nest(comps: list[Component] | None = None, d: Datums = D) -> list[str]
         f"grain along {GRAIN_AXIS}, rectangles only. Replaces the brief's 3 and the guide's "
         f"5. Plus {len(n.by_material('acrylic'))} bed of 3mm clear on the Universal "
         f"({sum(len(s.placements) for s in n.by_material('acrylic'))} parts) and "
-        f"{len(n.by_material('foam'))} Kaizen sheet "
-        f"({sum(len(s.placements) for s in n.by_material('foam'))} trays). "
+        f"{len(n.by_material('hdpe'))} ColorCore HDPE sheet "
+        f"({sum(len(s.placements) for s in n.by_material('hdpe'))} insert strips). "
         f"Sheets in {NEST_DIR.relative_to(EXPORT_DIR.parents[1])}."
     )
     notes.append(
@@ -656,8 +657,8 @@ def check_nest(comps: list[Component] | None = None, d: Datums = D) -> list[str]
 
 def flats(d: Datums = D) -> dict[str, tuple[Part | None, dict[str, list[Face]]]]:
     """``label -> (flat solid, layers)`` for every blank, built the way each
-    part's own export builds them. The solid is None for a tray: its layers
-    are read off the plan and the foam is never a solid here."""
+    part's own export builds them. The solid is None for an insert strip: its
+    layers are read off the plan and the strip is never a solid here."""
     out: dict[str, tuple[Part | None, dict[str, list[Face]]]] = {}
 
     def add(label: str, part: Part | None, layers: dict[str, list[Face]] | None = None) -> None:
@@ -735,10 +736,11 @@ def flats(d: Datums = D) -> dict[str, tuple[Part | None, dict[str, list[Face]]]]
     acrylic(rear_door.REVEAL_NAME, rear_door.build_reveal(d))
     acrylic(signal_mounts.LIP_NAME, signal_mounts.build_lip(d))
 
-    # -- foam -----------------------------------------------------------
-    for spec in drawers.DRAWERS:
-        for p in trays.plan_all(spec.key, d):
-            add(p.label, None, trays.layers(p))
+    # -- hdpe -----------------------------------------------------------
+    for p in inserts.plan_all(d):
+        for s in p.strips:
+            if s.d > 0:
+                add(s.filename, None, inserts.layers(s))
 
     return out
 
@@ -829,7 +831,7 @@ def _write_sheet(s: Sheet, reg: dict[str, tuple[Part | None, dict[str, list[Face
 
 
 def _sheet_stem(s: Sheet, i: int) -> str:
-    return {"birch": "sheet", "acrylic": "laser", "foam": "foam"}[s.material] + f"_{i:02d}"
+    return {"birch": "sheet", "acrylic": "laser", "hdpe": "hdpe"}[s.material] + f"_{i:02d}"
 
 
 def export(n: Nest | None = None, d: Datums = D, out_dir: Path | None = None) -> list[Path]:
@@ -846,7 +848,7 @@ def export(n: Nest | None = None, d: Datums = D, out_dir: Path | None = None) ->
 
     written: list[Path] = []
     rows: list[dict] = []
-    counters = {"birch": 0, "acrylic": 0, "foam": 0}
+    counters = {"birch": 0, "acrylic": 0, "hdpe": 0}
     for s in n.sheets:
         counters[s.material] += 1
         stem = _sheet_stem(s, counters[s.material])
@@ -895,7 +897,7 @@ def _stock_count(sheets: list[Sheet]) -> str:
 def report(n: Nest, d: Datums = D) -> str:
     travel = min(d.s.travel_x, d.s.travel_y)
     lines: list[str] = []
-    counters = {"birch": 0, "acrylic": 0, "foam": 0}
+    counters = {"birch": 0, "acrylic": 0, "hdpe": 0}
     for s in n.sheets:
         counters[s.material] += 1
         stem = _sheet_stem(s, counters[s.material])
@@ -934,7 +936,7 @@ def main() -> int:
         f"({sum(1 for s in birch if s.kind == 'TRACK SAW')} track saw + "
         f"{sum(1 for s in birch if s.kind == 'SHAPEOKO')} Shapeoko), "
         f"{len(n.by_material('acrylic'))} laser bed of {LASER_T:.0f}mm clear, "
-        f"{len(n.by_material('foam'))} Kaizen sheet"
+        f"{len(n.by_material('hdpe'))} ColorCore HDPE sheet"
     )
     for note in check_nest(comps, d):
         print(f"  - {note}")

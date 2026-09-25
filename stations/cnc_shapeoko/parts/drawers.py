@@ -176,7 +176,6 @@ from stations.cnc_shapeoko.carcass import (
     through_slot,
 )
 from stations.cnc_shapeoko.parts import callouts, console_plate
-from stations.cnc_shapeoko.parts.callouts import CALLOUT_FONT  # trays reads it here
 from stations.cnc_shapeoko.parts.bay_walls import (
     SLIDE_BORE_D,
     SLIDE_BORE_DEPTH,
@@ -194,7 +193,6 @@ __all__ = [
     "BACK_INSET",
     "BACK_DROP",
     "BOTTOM_GROOVE_Z",
-    "CALLOUT_FONT",
     "narrowing",
     "callout_for",
     "register_for",
@@ -277,8 +275,7 @@ FACE_SCREW = f"4 x {2 * T - 4:.0f} pan head, four per drawer, from inside the bo
 chosen."""
 
 # The carve's depth, cap height and font moved to ``callouts`` in C17 with
-# their values unchanged (VCARVE_D, CALLOUT_H, CALLOUT_FONT). ``CALLOUT_FONT``
-# is re-exported above because ``trays`` reads it off this module.
+# their values unchanged (VCARVE_D, CALLOUT_H, CALLOUT_FONT).
 
 
 # ================================================================ the table
@@ -311,8 +308,8 @@ class DrawerSpec:
 
 DRAWERS: tuple[DrawerSpec, ...] = (
     DrawerSpec(1, "D1", "CUTTERS", "endmills, V-bits and the ER-16 collets", 2),
-    DrawerSpec(2, "D2", "INSTRUMENTS", "boots, probe, hand tools, pendant", 1),
-    DrawerSpec(3, "D3", "WORKHOLDING", "clamps, T-track hardware, tapes", 0),
+    DrawerSpec(2, "D2", "INSTRUMENTS", "dust boots, pen holder, way oil, deburr and brush", 1),
+    DrawerSpec(3, "D3", "WORKHOLDING", "clamps, Crush-It, T-handle drivers, joinery stop, hardware case", 0),
 )
 
 

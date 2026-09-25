@@ -49,7 +49,7 @@ commit or the hook warns that they have drifted.
 ## House rules
 
 Parameters live in one block per part, never buried in geometry. Joinery, kerf, and
-fastener spacing derive from material thickness. Fitted trays are generated from a
+fastener spacing derive from material thickness. Fitted drawer inserts are generated from a
 tool list rather than drawn one pocket at a time. STEP and DXF both come from the
 same model.
 

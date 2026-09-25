@@ -85,6 +85,7 @@ from stations.cnc_shapeoko.parts import (
     console_plate,
     drawers,
     exhaust_plenum,
+    inserts,
     leg_joint,
     lungs_carriage,
     lungs_door,
@@ -96,7 +97,6 @@ from stations.cnc_shapeoko.parts import (
     stiles,
     stock_rails,
     top_cap,
-    trays,
     vfd_mount,
 )
 
@@ -204,10 +204,10 @@ def components(d: Datums = DATUMS) -> list[Component]:
     for label, part in drawers.placed_all(d):
         out.append(Component(label, "drawer", part))
 
-    # 7. the fitted tray in drawer 1, generated from the tool list: two
-    # tiles since 2026-09-11, the bore grid in front and the rest behind
-    for label, part in trays.placed_all(d):
-        out.append(Component(label, "tray", part))
+    # 7. the drawer inserts, generated from the tool list: a stack of loose
+    # HDPE strips in every drawer, one kind of thing per strip (2026-09-25)
+    for label, part in inserts.placed_all(d):
+        out.append(Component(label, "insert", part))
 
     # 8. the mast's steel backing plate, under the cap at the mast pad. Not
     # birch, but it lives in the brain band's corner beside two housed panels,
@@ -449,16 +449,18 @@ def joints(d: Datums = DATUMS) -> dict[frozenset[str], Joint]:
     # -- inside each drawer box, and the tray that sits in one -------------
     for a, b, kind, axis, lo, hi, note in drawers.joint_table(d):
         js.append(Joint(a, b, kind, axis, lo, hi, note))
-    for p in trays.plan_all(trays.TRAY_V1, d):
-        js.append(
-            Joint(
-                p.label,
-                f"{trays.spec_for(trays.TRAY_V1).name}_bottom",
-                "bearing",
-                None,
-                note="the tile stands on the drawer's bottom panel",
-            )
-        )
+    for p in inserts.plan_all(d):
+        for s in p.strips:
+            if s.d > 0:
+                js.append(
+                    Joint(
+                        inserts.label_of(s),
+                        f"{inserts.spec_for(p.key).name}_bottom",
+                        "bearing",
+                        None,
+                        note="the strip lies loose on the drawer's bottom panel",
+                    )
+                )
 
     # -- the stock comb is housed in the cap and butts both dividers; the
     # reference blank is housed in the deck's groove and the comb's slot ----
@@ -753,12 +755,10 @@ def envelope(comps: list[Component] | None = None, d: Datums = DATUMS) -> list[F
         )
     )
 
-    tray_spec = trays.spec_for(trays.TRAY_V1)
-    plans = trays.plan_all(trays.TRAY_V1, d)
-    iw, idep, _ih = drawers.interior(tray_spec, d)
-    for plan in plans:
-        fits.append(Fit(f"{plan.label} width", plan.w, iw, "X"))
-    fits.append(Fit("tray_d1 tiles depth", sum(p.d for p in plans), idep, "Y"))
+    for plan in inserts.plan_all(d):
+        iw, idep, _ih = drawers.interior(inserts.spec_for(plan.key), d)
+        fits.append(Fit(f"insert_{plan.key.lower()} strips width", plan.w, iw, "X"))
+        fits.append(Fit(f"insert_{plan.key.lower()} strips depth", sum(s.d for s in plan.strips), idep, "Y"))
 
     # The lungs carriage against the bay less its lining and slides, and the
     # unit against the platform it stands on.
@@ -948,13 +948,12 @@ def main() -> None:
             f"{bay_walls.SLIDE_LEN:.0f}mm slide"
             + (f"   NARROWED by {nar:.1f} for the console, right slide on the cheek" if nar else "")
         )
-    miss = trays.skipped(trays.TRAY_V1)
-    for plan in trays.plan_all(trays.TRAY_V1, d):
+    for plan in inserts.plan_all(d):
         print(
-            f"  {plan.label}: {plan.w:.1f} x {plan.d:.1f} x {plan.h:.1f} foam, "
-            f"{len(plan.pockets)} pockets ({plan.bores} bores, {plan.filled} filled) from the tool list"
+            f"  insert {plan.key}: {len(plan.strips)} strips "
+            f"({', '.join(f'{s.name} {s.d:.0f}' for s in plan.strips)}) x {inserts.STOCK_T:g} HDPE, "
+            f"{sum(len(s.places) for s in plan.strips)} places from the tool list"
         )
-    print(f"  {len(miss)} {trays.TRAY_V1} row(s) still MEASURE")
 
     print("\nstock bay: one comb under the cap, grooves in the deck")
     print(

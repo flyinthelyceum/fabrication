@@ -154,15 +154,15 @@ SOURCES = {
                   "(notes.aaand.space/cnc-cutter-pockets.html, A-05). The 5.0 "
                   "that parts/trays.py carried until then came from a reseller "
                   "listing. NOT calipered: the blank in hand sets it. Read by "
-                  "parts/trays.py (TOP_LAYER_T), which owns every label depth "
-                  "and floor-is-white check that leans on it.",
+                  "parts/trays.py until 2026-09-25, when the foam trays retired "
+                  "for HDPE strips (parts/inserts.py); kept as the record.",
     "er16_collet_od": "DIN 6499 / ISO 15488 ER collet series, ER-16 body: 17.0mm "
                   "OD x 27.5mm long. Chart: "
                   "https://carbideprocessors.com/content/collet-guide-chart.pdf "
                   "and https://www.cgtk.co.uk/metalwork/data/er . Corroborated "
                   "by tool_list.csv, which carries oal 27.5 on all three ER16 "
                   "collets. NOT calipered: Jared's calipers supersede this. "
-                  "Read by parts/trays.py, which owns the socket that uses it.",
+                  "Read by parts/inserts.py (COLLET_STEP), which owns the socket.",
     # ---- catalog capture 2026-09-03 (C00): parts in hand, by SKU. Datasheet
     # first, Amazon listing second, calipers last (Jared's skus ruling). Every
     # value below is read off the maker's page or the listing it names; anything
