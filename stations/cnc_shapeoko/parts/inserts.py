@@ -32,7 +32,8 @@ HOW EACH THING IS HELD (the ``store`` column)
              its own diameter, so no number is milled beside it.
     collet   an ER16 collet standing nut-off in a stepped bore, a negative of
              its own flange over its waist (Carbide's collet caddies).
-    cup      something round standing in a round drop-in: ``hold_mm`` + DROP.
+    cup      something round in a round drop-in: ``hold_mm`` + DROP (the USB
+             cable, coiled flat).
     socket   a part standing on end in a snug rectangle, ``hold_mm`` + SNUG
              (Carbide's clamp cell: 0.4 a side).
     slot     a flat part standing on edge in a snug rectangle.
@@ -40,7 +41,8 @@ HOW EACH THING IS HELD (the ``store`` column)
              (``silhouette``, 1.0 a side over the traced tool), or for a
              calipered rod with no capture its L x W + DROP.
     case     lives inside another row's case; no place of its own.
-    loose    lives in its drawer's BIN.
+    loose    lives in its drawer's BIN: a through-window when the keystone
+             is deep enough, else a pocket tray beside its word.
 
 RULED 2026-09-25 (Jared): only the cutters stand; everything else that is not
 a clamp in its caddy lies in its own outline ("we shouldn't have loose pockets
@@ -243,11 +245,14 @@ STRIPS: dict[str, tuple[StripSpec, ...]] = {
         StripSpec("CLAMPS", "Essential Clamps, nose down"),
         StripSpec("CRUSH-IT", "Crush-It clamps, stops and jaws"),
         StripSpec("FIXTURES", "the joinery stop on edge, the hardware case lying"),
+        StripSpec("CABLE", "the machine's USB cable, coiled flat in a round pocket"),
     ),
 }
 """Front to back. The keystone BIN follows the last one in every drawer. The
 T-handles moved D3 -> D1 on 2026-09-25: lying, they need a 225 strip, D3 had
-188 left and D1 a 338 BIN with nothing loose to hold."""
+188 left and D1 a 338 BIN with nothing loose to hold. D1's front was renamed
+CUTTERS -> TOOLING the same day (Jared). The USB cable is in D3 because D3 is
+the drawer with room; it belongs to no drawer's kind."""
 
 STORES = ("bore", "collet", "cup", "socket", "slot", "shadow", "case", "loose")
 PLACED = ("bore", "collet", "cup", "socket", "slot", "shadow")
@@ -287,6 +292,7 @@ class Row:
     height_class: float | None
     status: str
     silhouette: str = ""
+    dims_status: str = ""
 
     @property
     def active(self) -> bool:
@@ -313,6 +319,7 @@ def read_rows(path: Path = TOOL_LIST) -> list[Row]:
                 height_class=_num(r.get("height_class")),
                 status=(r.get("status") or "active").strip() or "active",
                 silhouette=(r.get("silhouette") or "").strip(),
+                dims_status=(r.get("dims_status") or "").strip().upper(),
             ))
     return out
 
@@ -404,7 +411,7 @@ def group_for(r: Row) -> Group | None:
         if not r.hold or L is None:
             return None
         dia = r.hold[0] + DROP
-        return Group(r, r.qty, dia, dia, dia + WALL, dia + WALL, "circle", DEPTH_MAX, L)
+        return Group(r, r.qty, dia, dia, dia + WALL, dia + WALL, "circle", DEPTH_MAX, H if H is not None else L)
     if s == "socket":
         a, b = (r.hold[0], r.hold[1]) if len(r.hold) >= 2 else (W, H)
         if a is None or b is None or L is None:
@@ -1007,6 +1014,8 @@ def plan(key: str, d: Datums = D, rows: list[Row] | None = None) -> DrawerPlan:
     bin_ = Strip(key, KEYSTONE, w, max(rest, 0.0), y0, [], (EDGE + callouts.text_width(KEYSTONE, LABEL_H) / 2,
                                                              EDGE + LABEL_H / 2 + EDGE), None, [], True,
                  any(r.store == "loose" for r in rows))
+    if _bin_tray(bin_):
+        bin_.label = (bin_.label[0], bin_.d / 2)
     strips.append(bin_)
     for r in rows:
         if r.store not in STORES:
@@ -1046,6 +1055,23 @@ def _face(p: Place) -> Face:
     return Face(Wire.make_polygon([(x + p.cx, y + p.cy, 0.0) for x, y in p.poly], close=True))
 
 
+def _worded(s: Strip) -> bool:
+    """Every strip carries its kind word except a solid keystone: it is a
+    spacer, and BIN on a spacer is a word for nothing."""
+    return not s.keystone or s.loose
+
+
+def _bin_tray(s: Strip) -> tuple[float, float, float, float] | None:
+    """A keystone too thin for its window, in a drawer with loose things,
+    holds them in a tray pocket: right of its word, EDGE all round."""
+    if not s.loose or _bin_recess(s) is not None:
+        return None
+    x0 = EDGE + callouts.text_width(s.name, LABEL_H) + LABEL_GAP
+    if s.d - 2 * EDGE < LABEL_H:
+        return None
+    return (x0, EDGE, s.w - EDGE, s.d - EDGE)
+
+
 def build(s: Strip, *, label: bool = True) -> Part:
     part = Box(s.w, s.d, STOCK_T, align=(Align.MIN, Align.MIN, Align.MIN))
     if s.d <= 0:
@@ -1070,9 +1096,14 @@ def build(s: Strip, *, label: bool = True) -> Part:
         x0, y0, x1, y1 = rec
         part -= extrude(RectangleRounded(x1 - x0, y1 - y0, POCKET_R), amount=STOCK_T).moved(
             Location(((x0 + x1) / 2, (y0 + y1) / 2, 0)))
+    tray = _bin_tray(s) if s.keystone else None
+    if tray:
+        x0, y0, x1, y1 = tray
+        part -= extrude(RectangleRounded(x1 - x0, y1 - y0, POCKET_R), amount=DEPTH_MAX).moved(
+            Location(((x0 + x1) / 2, (y0 + y1) / 2, top - DEPTH_MAX)))
     if s.lift:
         part -= Cylinder(LIFT_D / 2, STOCK_T).moved(Location((s.lift[0], s.lift[1], STOCK_T / 2)))
-    if label and s.d >= MODULE:
+    if label and s.d >= MODULE and _worded(s):
         sk = callouts.text_sketch(s.label_text, LABEL_H).moved(Location((s.label[0], s.label[1], 0)))
         part -= extrude(sk, amount=LABEL_D).moved(Location((0, 0, top - LABEL_D)))
     return part
@@ -1103,9 +1134,14 @@ def layers(s: Strip) -> dict[str, list]:
         x0, y0, x1, y1 = rec
         add("THROUGH", RectangleRounded(x1 - x0, y1 - y0, POCKET_R).moved(
             Location(((x0 + x1) / 2, (y0 + y1) / 2))).faces())
+    tray = _bin_tray(s) if s.keystone else None
+    if tray:
+        x0, y0, x1, y1 = tray
+        add(f"POCKET_D{DEPTH_MAX:g}", RectangleRounded(x1 - x0, y1 - y0, POCKET_R).moved(
+            Location(((x0 + x1) / 2, (y0 + y1) / 2))).faces())
     if s.lift:
         add("THROUGH", Circle(LIFT_D / 2).moved(Location(s.lift)).faces())
-    if s.d >= MODULE:
+    if s.d >= MODULE and _worded(s):
         add(callouts.VCARVE_LAYER, callouts.text_sketch(s.label_text, LABEL_H).moved(Location(s.label)).faces())
     return out
 
@@ -1172,6 +1208,10 @@ def check_inserts(d: Datums = D, rows: list[Row] | None = None) -> list[str]:
                      "white: under 0.5 it does not read. Deepen LABEL_D.")
     notes.append(f"STOCK_T is {STOCK_T:g}, 1/2 in ColorCore nominal, not measured. Calipers on the sheet, "
                  "then set it. MEASURE THIS.")
+    for r in rows:
+        if r.active and r.dims_status == "GENERIC":
+            notes.append(f"{r.id} {r.name} is sized to a GENERIC part, not a measured one (see its note). "
+                         "Caliper it when it is in hand and re-plan. MEASURE THIS.")
     for p in plan_all(d, rows):
         spec = spec_for(p.key)
         top = ceiling(spec, d) - HEAD_CLEAR
@@ -1181,7 +1221,15 @@ def check_inserts(d: Datums = D, rows: list[Row] | None = None) -> list[str]:
                          "back. Move a thing to another drawer or strike it.")
         ks = p.strips[-1]
         loose = [r for r in rows if r.active and r.drawer == p.key and r.store == "loose"]
-        if loose and _bin_recess(ks) is None:
+        tray = _bin_tray(ks) or _bin_recess(ks)
+        for r in loose:
+            L, W, _H = r.bbox
+            if tray and L is not None and W is not None:
+                tw, td = tray[2] - tray[0], tray[3] - tray[1]
+                if not (max(L, W) <= max(tw, td) and min(L, W) <= min(tw, td)):
+                    notes.append(f"{p.key}: {r.id} {r.name} ({L:g} x {W:g}) does not lie in its BIN "
+                                 f"({tw:.0f} x {td:.0f}).")
+        if loose and tray is None:
             notes.append(f"UNMODELLED: {p.key}'s keystone is {ks.d:.0f} deep, too thin for a window, so "
                          + ", ".join(f"{r.id} {r.name}" for r in loose) + " have no home. Caliper them for "
                          "fitted places, or move them to a drawer with room.")
@@ -1252,9 +1300,13 @@ def preview_svg(p: DrawerPlan, path: Path, scale: float = 2.0) -> Path:
         if rec:
             out.append(f'<rect x="{rec[0]:.2f}" y="{s.y0 + rec[1]:.2f}" width="{rec[2] - rec[0]:.2f}" '
                        f'height="{rec[3] - rec[1]:.2f}" rx="1.6" fill="#f2efe8"/>')
+        tray = _bin_tray(s) if s.keystone else None
+        if tray:
+            out.append(f'<rect x="{tray[0]:.2f}" y="{s.y0 + tray[1]:.2f}" width="{tray[2] - tray[0]:.2f}" '
+                       f'height="{tray[3] - tray[1]:.2f}" rx="1.6" fill="#f2efe8"/>')
         if s.lift:
             out.append(f'<circle cx="{s.lift[0]:.2f}" cy="{s.y0 + s.lift[1]:.2f}" r="{LIFT_D / 2:.2f}" fill="#b98b5e"/>')
-        if s.d >= MODULE:
+        if s.d >= MODULE and _worded(s):
             out.append(f'<text x="{s.label[0]:.2f}" y="{-(s.y0 + s.label[1]) + LABEL_H * 0.35:.2f}" '
                        f'transform="scale(1,-1)" font-family="Helvetica" font-size="{LABEL_H:.1f}" '
                        f'text-anchor="middle" fill="#f2efe8">{s.name}</text>')

@@ -3,7 +3,7 @@
 One generator, three boxes, hung off the slide rows ``bay_walls`` already
 drills into the two faces of the hands bay:
 
-    drawer 1  CUTTERS       shallow, top      opening index 2
+    drawer 1  TOOLING       shallow, top      opening index 2
     drawer 2  INSTRUMENTS   medium, middle    opening index 1
     drawer 3  WORKHOLDING   deep, bottom      opening index 0
 
@@ -133,7 +133,7 @@ in tension every time somebody opens it.
 THE FRONTS CARRY THE CALLOUT
 ============================
 
-Each front is V-carved with its bay's name -- CUTTERS, INSTRUMENTS,
+Each front is V-carved with its bay's name -- TOOLING, INSTRUMENTS,
 WORKHOLDING -- ``callouts.VCARVE_D`` deep on its outer face, through the
 matte black to raw birch, no fill (finish ruling, 2026-09-03). The letters
 and the carve come from ``callouts``, which was this file's own helper until
@@ -307,7 +307,7 @@ class DrawerSpec:
 
 
 DRAWERS: tuple[DrawerSpec, ...] = (
-    DrawerSpec(1, "D1", "CUTTERS", "endmills, V-bits, the ER-16 collets, spindle wrenches, T-handle drivers", 2),
+    DrawerSpec(1, "D1", "TOOLING", "endmills, V-bits, the ER-16 collets, spindle wrenches, T-handle drivers", 2),
     DrawerSpec(2, "D2", "INSTRUMENTS", "BitZero, pen holder, way oil, deburr tool, jog pendant, dust boots", 1),
     DrawerSpec(3, "D3", "WORKHOLDING", "clamps, Crush-It, joinery stop, hardware case", 0),
 )

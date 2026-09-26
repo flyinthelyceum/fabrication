@@ -15,7 +15,7 @@ Every drawer holds a stack of loose strips of 1/2in two-colour HDPE (ColorCore: 
 - `socket` — a part standing on end in a snug rectangle, `hold_mm` + 0.8 (0.4 a side, Carbide's essential-clamp caddy), with an 11mm finger gap on its thin side.
 - `slot` — a flat part standing on edge, the same way.
 - `shadow` — a part lying in a pocket of its own outline: the captured loop (1.0 a side over the tool, notches under 12 filled), or for a calipered rod its box + 2. Half its height deep.
-- `cup` — a round part standing in a round drop-in, `hold_mm` + 2.
+- `cup` — a round part in a round drop-in, `hold_mm` + 2 (the USB cable, coiled flat; height from `bbox_h_mm`).
 - `case` — lives in another row's case. `loose` — lives in its drawer's BIN, which gets a window only when the drawer has something loose. There is no dock (Jared 2026-09-25): every tool has a drawer home.
 
 The capture pipeline below stays: a captured row's silhouette is the `shadow` it lies in, and its L x W and height size a `socket`. Only cutters stand (Jared 2026-09-25).
@@ -105,7 +105,7 @@ If the sheet did not print at 100% (a printer's own margins forced a smaller sca
 
 | column | values | who writes it |
 |---|---|---|
-| `dims_status` | `CATALOG` (datasheet numbers: cutters, collets), `CAPTURED` (photographed, silhouette on disk), `MEASURE` (nothing yet) | CATALOG by hand; CAPTURED by the ingest; MEASURE is the default |
+| `dims_status` | `CATALOG` (datasheet numbers: cutters, collets), `CAPTURED` (photographed, silhouette on disk), `GENERIC` (sized to a generic part, not ours: the cable, pipettes, O-rings, the wrenches' thickness; the gate says MEASURE on each), `MEASURE` (nothing yet) | CATALOG and GENERIC by hand; CAPTURED by the ingest; MEASURE is the default |
 | `height_class` | 10, 20, 30, 40, 50: the measured height rounded up to the next ten | the ingest, from the Form's height |
 | `bbox_h_mm` | the measured height, mm | the ingest, from the Form's height |
 | `silhouette` | `captures/T0xx.dxf`, relative to this directory | the ingest |

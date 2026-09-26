@@ -10,7 +10,7 @@ layers a second fixture needs. It was ``drawers._callout`` until C17
 same letters at the same depth in the same place. What changed is that five
 parts now share it instead of one owning it:
 
-    drawer fronts      CUTTERS / INSTRUMENTS / WORKHOLDING     ``drawers``
+    drawer fronts      TOOLING / INSTRUMENTS / WORKHOLDING     ``drawers``
     rear door          the drive's word, and MAINS at the IEC  ``rear_door``
     lungs door         EXTRACTION                              ``lungs_door``
     stock comb         STOCK, the header                       ``stock_rails``
