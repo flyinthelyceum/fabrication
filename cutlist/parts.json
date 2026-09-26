@@ -1,8 +1,8 @@
 {
- "generated": "2026-09-23T23:29:57+00:00",
+ "generated": "2026-09-26T02:46:01+00:00",
  "sources": [
-  "fabrication@2c64718",
-  "workbench@2301497"
+  "fabrication@5d8d972",
+  "workbench@71dc39f"
  ],
  "stock": {
   "bb18-4x8": {
@@ -68,7 +68,7 @@
    "stock": "bb18-4x8",
    "title": "Workbench 18mm sheet 1",
    "method": "CNC",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-18mm-01-x1",
@@ -258,7 +258,7 @@
    "stock": "bb18-4x8",
    "title": "Workbench 18mm sheet 2",
    "method": "CNC",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-18mm-02-x1",
@@ -448,7 +448,7 @@
    "stock": "bb18-4x8",
    "title": "Workbench 18mm sheet 3",
    "method": "CNC",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-18mm-03-x1",
@@ -755,7 +755,7 @@
    "stock": "bb18-4x8",
    "title": "Workbench 18mm sheet 4",
    "method": "CNC",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-18mm-04-x1",
@@ -1127,7 +1127,7 @@
    "stock": "bb18-4x8",
    "title": "Workbench 18mm sheet 5",
    "method": "CNC",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-18mm-05-x1",
@@ -1395,7 +1395,7 @@
    "stock": "bb18-4x8",
    "title": "Workbench 18mm sheet 6",
    "method": "CNC",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-18mm-06-x1",
@@ -1663,7 +1663,7 @@
    "stock": "bb18-4x8",
    "title": "Workbench 18mm sheet 7",
    "method": "CNC",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-18mm-07-x1",
@@ -1931,7 +1931,7 @@
    "stock": "bb18-4x8",
    "title": "Workbench 18mm sheet 8",
    "method": "CNC",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-18mm-08-x1",
@@ -2199,7 +2199,7 @@
    "stock": "bb18-4x8",
    "title": "Workbench 18mm sheet 9",
    "method": "CNC",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-18mm-09-x1",
@@ -2441,7 +2441,7 @@
    "stock": "bb18-4x8",
    "title": "Workbench 18mm sheet 10",
    "method": "CNC",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-18mm-10-x1",
@@ -2709,7 +2709,7 @@
    "stock": "bb18-4x8",
    "title": "Workbench 18mm sheet 11",
    "method": "CNC",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-18mm-11-x1",
@@ -3133,7 +3133,7 @@
    "stock": "bb18-4x8",
    "title": "Workbench 18mm sheet 12",
    "method": "CNC",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-18mm-12-x1",
@@ -3713,7 +3713,7 @@
    "stock": "bb18-4x8",
    "title": "Workbench 18mm sheet 13",
    "method": "CNC",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-18mm-13-x1",
@@ -4037,7 +4037,7 @@
    "stock": "bb5-4x8",
    "title": "Workbench 5mm sheet 1",
    "method": "CNC",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-5mm-01-x1",
@@ -4279,7 +4279,7 @@
    "stock": "bb5-4x8",
    "title": "Workbench 5mm sheet 2",
    "method": "CNC",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-5mm-02-x1",
@@ -4495,7 +4495,7 @@
    "stock": "mdf19-4x8",
    "title": "Workbench MDF top sheet 1",
    "method": "TRACK SAW",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-mdf-01-s1",
@@ -4571,7 +4571,7 @@
    "stock": "mdf19-4x8",
    "title": "Workbench MDF top sheet 2",
    "method": "TRACK SAW",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-mdf-02-s1",
@@ -4647,7 +4647,7 @@
    "stock": "mdf19-4x8",
    "title": "Workbench MDF top sheet 3",
    "method": "TRACK SAW",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-mdf-03-s1",
@@ -4723,7 +4723,7 @@
    "stock": "mdf19-4x8",
    "title": "Workbench MDF top sheet 4",
    "method": "TRACK SAW",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-mdf-04-s1",
@@ -4799,7 +4799,7 @@
    "stock": "mdf19-4x8",
    "title": "Workbench MDF top sheet 5",
    "method": "TRACK SAW",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-mdf-05-s1",
@@ -4875,7 +4875,7 @@
    "stock": "mdf19-4x8",
    "title": "Workbench MDF top sheet 6",
    "method": "TRACK SAW",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-mdf-06-s1",
@@ -4951,7 +4951,7 @@
    "stock": "mdf19-4x8",
    "title": "Workbench MDF top sheet 7",
    "method": "TRACK SAW",
-   "source": "workbench@2301497",
+   "source": "workbench@71dc39f",
    "prep": [
     {
      "id": "wb-mdf-07-s1",
@@ -5010,7 +5010,7 @@
    "stock": "bb12-4x8",
    "title": "CNC station sheet 1",
    "method": "TRACK SAW",
-   "source": "fabrication@2c64718",
+   "source": "fabrication@5d8d972",
    "dxf": "export/cnc_shapeoko/nest/sheet_01.dxf",
    "prep": [
     {
@@ -5049,7 +5049,7 @@
    "stock": "bb12-4x8",
    "title": "CNC station sheet 2",
    "method": "TRACK SAW",
-   "source": "fabrication@2c64718",
+   "source": "fabrication@5d8d972",
    "dxf": "export/cnc_shapeoko/nest/sheet_02.dxf",
    "prep": [
     {
@@ -5088,7 +5088,7 @@
    "stock": "bb12-5x5",
    "title": "CNC station sheet 3 (spine, 5x5)",
    "method": "CNC",
-   "source": "fabrication@2c64718",
+   "source": "fabrication@5d8d972",
    "dxf": "export/cnc_shapeoko/nest/sheet_03.dxf",
    "prep": [
     {
@@ -5211,8 +5211,8 @@
        "pw": 40.0
       },
       {
-       "id": "st-drawer1_cutters_side_l-001",
-       "name": "drawer1_cutters_side_l",
+       "id": "st-drawer1_tooling_side_l-001",
+       "name": "drawer1_tooling_side_l",
        "l": 500.0,
        "w": 100.0,
        "t": 12.0,
@@ -5324,7 +5324,7 @@
    "stock": "bb12-4x8",
    "title": "CNC station sheet 4",
    "method": "CNC",
-   "source": "fabrication@2c64718",
+   "source": "fabrication@5d8d972",
    "dxf": "export/cnc_shapeoko/nest/sheet_04.dxf",
    "prep": [
     {
@@ -5539,7 +5539,7 @@
    "stock": "bb12-4x8",
    "title": "CNC station sheet 5",
    "method": "CNC",
-   "source": "fabrication@2c64718",
+   "source": "fabrication@5d8d972",
    "dxf": "export/cnc_shapeoko/nest/sheet_05.dxf",
    "prep": [
     {
@@ -5684,8 +5684,8 @@
        "pw": 180.0
       },
       {
-       "id": "st-drawer1_cutters_side_r-001",
-       "name": "drawer1_cutters_side_r",
+       "id": "st-drawer1_tooling_side_r-001",
+       "name": "drawer1_tooling_side_r",
        "l": 500.0,
        "w": 100.0,
        "t": 12.0,
@@ -5762,8 +5762,8 @@
        "pw": 204.7
       },
       {
-       "id": "st-drawer1_cutters_face-001",
-       "name": "drawer1_cutters_face",
+       "id": "st-drawer1_tooling_face-001",
+       "name": "drawer1_tooling_face",
        "l": 318.0,
        "w": 134.8,
        "t": 12.0,
@@ -5788,8 +5788,8 @@
        "pw": 180.0
       },
       {
-       "id": "st-drawer1_cutters_front-001",
-       "name": "drawer1_cutters_front",
+       "id": "st-drawer1_tooling_front-001",
+       "name": "drawer1_tooling_front",
        "l": 283.0,
        "w": 100.0,
        "t": 12.0,
@@ -5814,8 +5814,8 @@
        "pw": 160.0
       },
       {
-       "id": "st-drawer1_cutters_back-001",
-       "name": "drawer1_cutters_back",
+       "id": "st-drawer1_tooling_back-001",
+       "name": "drawer1_tooling_back",
        "l": 279.0,
        "w": 80.0,
        "t": 12.0,
@@ -5836,7 +5836,7 @@
    "stock": "bb12-4x8",
    "title": "CNC station sheet 6",
    "method": "CNC",
-   "source": "fabrication@2c64718",
+   "source": "fabrication@5d8d972",
    "dxf": "export/cnc_shapeoko/nest/sheet_06.dxf",
    "prep": [
     {
@@ -5895,8 +5895,8 @@
        "pw": 354.6
       },
       {
-       "id": "st-drawer1_cutters_bottom-001",
-       "name": "drawer1_cutters_bottom",
+       "id": "st-drawer1_tooling_bottom-001",
+       "name": "drawer1_tooling_bottom",
        "l": 472.0,
        "w": 279.0,
        "t": 12.0,
