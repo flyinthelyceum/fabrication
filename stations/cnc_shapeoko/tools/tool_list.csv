@@ -47,7 +47,7 @@ T057,Shapeoko Essential Clamps (machine-bundled),D3,block,,,,,,,6,MEASURE,,,,,,,
 T058,Teez Nutz T-nuts (Crush-It kit),D3,block,,,,,,,12,MEASURE,,,,,,,struck,merged into T047 2026-09-11 (T047 qty 24)
 T062,Digital calipers,D2,captured,,,,237.2,71.8,10,1,CAPTURED,owned (Jared 2026-09-11); lay closed,10,captures/T062.dxf,,,,struck,"Jared 2026-09-21: calipers per machine station; the pair lives in the station kit, never a tray pocket"
 T063,BitZero V2 touch probe,D2,captured,,,,49.1,45.9,34,1,CAPTURED,"owned (Jared 2026-09-11); Carbide 3D BitZero V2 assumed, body only, cable coiled beside",40,captures/T063.dxf,,dock,,active,
-T064,Deburring tool,D2,captured,,,,,,,1,MEASURE,owned (Jared 2026-09-11). D2 CONFIRMED by Jared 2026-09-21,,,INSTRUMENTS,bore,,active,
+T064,Deburring tool,D2,captured,,,,150.2,13.95,13.95,1,CAPTURED,"owned (Jared 2026-09-11). D2 CONFIRMED by Jared 2026-09-21. Calipered by Jared 2026-09-25: 150.2 overall with blade, handle 13.95 across, blade fixed. Lies flat (Jared 2026-09-25: only cutters stand).",,,INSTRUMENTS,recess,,active,
 T065,Brush (chip/dust),D2,captured,,,,,,,1,MEASURE,owned (Jared 2026-09-11). D2 CONFIRMED by Jared 2026-09-21,,,,,,struck,"Jared 2026-09-25: brush deleted from the station"
 T066,Dust-boot upper collar (polycarbonate),D2,captured,,,,148.6,67.4,,1,CAPTURED,"clear polycarbonate: trace on the WHITE card (ruling 2026-09-21), traced 2026-09-21, slot 40; ID photo 2026-09-21 IMG_4714 at /tmp/imsg-relay-attachments/EB650DCE-IMG_4714.png",40,captures/T066.dxf,BOOTS,recess,,active,
 T067,T-handle hex driver 5x150,D3,captured,5,,150,181.6,113.2,23,1,CAPTURED,"stands, handle front to back; hold = hex across corners (5 x 1.155), then handle thickness",30,captures/T067.dxf,HEX,bore,5.8x23,active,

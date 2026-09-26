@@ -44,7 +44,8 @@ HOW EACH THING IS HELD (the ``store`` column)
 Every place is DEPTH_MAX deep, the most 12.7 stock gives with the white still
 under it. One kind word per strip, V-carved through the cap; nothing else is
 written. There are no scoops: a standing thing stands proud and is picked up
-by its top, and a lying one sits in a recess shallower than itself.
+by its top, and a lying one sits in a recess at most half its height, so
+half of it stands proud to pinch.
 """
 
 from __future__ import annotations
@@ -344,7 +345,7 @@ def group_for(r: Row) -> Group | None:
         if a is None or b is None or H is None:
             return None
         return Group(r, r.qty, a + DROP, b + DROP, a + DROP + 2 * WALL, b + DROP + 2 * WALL, "rect",
-                     min(DEPTH_MAX, H), H)
+                     min(DEPTH_MAX, H / 2), H)
     return None
 
 
