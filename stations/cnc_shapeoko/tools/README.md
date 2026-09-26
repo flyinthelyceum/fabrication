@@ -14,11 +14,11 @@ Every drawer holds a stack of loose strips of 1/2in two-colour HDPE (ColorCore: 
 - `collet` — an ER16 standing nut off in a stepped bore, 17.6 x 5 over 13 x 11 (Carbide's collet caddies).
 - `socket` — a part standing on end in a snug rectangle, `hold_mm` + 0.8 (0.4 a side, Carbide's essential-clamp caddy), with an 11mm finger gap on its thin side.
 - `slot` — a flat part standing on edge, the same way.
-- `recess` — a part lying in a drop-in rectangle, its box (L x W) + 2.
+- `shadow` — a part lying in a pocket of its own outline: the captured loop (1.0 a side over the tool, notches under 12 filled), or for a calipered rod its box + 2. Half its height deep.
 - `cup` — a round part standing in a round drop-in, `hold_mm` + 2.
-- `case` — lives in another row's case. `loose` — lives in its drawer's BIN. `dock` — lives at the machine (wrenches, pendant, BitZero), not in a drawer; the dock is not modelled yet and the gate carries it as a TODO.
+- `case` — lives in another row's case. `loose` — lives in its drawer's BIN, which gets a window only when the drawer has something loose. There is no dock (Jared 2026-09-25): every tool has a drawer home.
 
-The capture pipeline below stays: a captured row's L x W and height are what a `recess` or `socket` is sized from. Its silhouette no longer cuts anything.
+The capture pipeline below stays: a captured row's silhouette is the `shadow` it lies in, and its L x W and height size a `socket`. Only cutters stand (Jared 2026-09-25).
 
 ### The procedure (this is the laminated card, `capture_card.pdf`)
 
@@ -109,12 +109,12 @@ If the sheet did not print at 100% (a printer's own margins forced a smaller sca
 | `height_class` | 10, 20, 30, 40, 50: the measured height rounded up to the next ten | the ingest, from the Form's height |
 | `bbox_h_mm` | the measured height, mm | the ingest, from the Form's height |
 | `silhouette` | `captures/T0xx.dxf`, relative to this directory | the ingest |
-| `strip` | the kind word of the strip it lives on (`FLAT`, `SHEET`, `BALL`, `V`, `COLLETS`; `INSTRUMENTS`, `BOOTS`; `CLAMPS`, `CRUSH-IT`, `HEX`, `FIXTURES`), blank for case, loose and dock rows | by hand, 2026-09-25 |
-| `store` | how it is held: `bore`, `collet`, `socket`, `slot`, `recess`, `cup`, `case`, `loose`, `dock` | by hand, 2026-09-25 |
+| `strip` | the kind word of the strip it lives on (`FLAT`, `SHEET`, `BALL`, `V`, `COLLETS`, `WRENCHES`, `HEX`; `INSTRUMENTS`, `PENDANT`, `BOOTS`; `CLAMPS`, `CRUSH-IT`, `FIXTURES`), blank for case and loose rows | by hand, 2026-09-25 |
+| `store` | how it is held: `bore`, `collet`, `socket`, `slot`, `shadow`, `cup`, `case`, `loose` | by hand, 2026-09-25 |
 | `hold_mm` | what it is held by when that is not its box: `20x12` for a clamp's body, `5.8x23` for a T-handle's hex across corners and handle thickness | by hand |
 | `status` | `active`, `ordered` (bought, not in hand: it gets its place now), or `struck` (merged or does not exist; the row is skipped) | by hand; `status_note` says why |
 
-`bbox_l_mm`, `bbox_w_mm`, `bbox_h_mm` are the ingest's record of L, W and height, and `inserts.py` sizes recesses, sockets and slots from them. `socket_note` stays as a free note. The `tile` and `label` columns went with the foam trays on 2026-09-25.
+`bbox_l_mm`, `bbox_w_mm`, `bbox_h_mm` are the ingest's record of L, W and height, and `inserts.py` sizes sockets and slots from them, and a shadow with no silhouette. `socket_note` stays as a free note. The `tile` and `label` columns went with the foam trays on 2026-09-25.
 
 ### The Form and the CAPTURE tab
 

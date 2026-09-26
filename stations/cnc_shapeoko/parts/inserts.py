@@ -36,16 +36,26 @@ HOW EACH THING IS HELD (the ``store`` column)
     socket   a part standing on end in a snug rectangle, ``hold_mm`` + SNUG
              (Carbide's clamp cell: 0.4 a side).
     slot     a flat part standing on edge in a snug rectangle.
-    recess   a part lying in a drop-in rectangle, its L x W + DROP.
+    shadow   a part lying in a pocket of its own outline: the captured loop
+             (``silhouette``, 1.0 a side over the traced tool), or for a
+             calipered rod with no capture its L x W + DROP.
     case     lives inside another row's case; no place of its own.
     loose    lives in its drawer's BIN.
-    dock     lives on the machine-side dock, not in a drawer.
+
+RULED 2026-09-25 (Jared): only the cutters stand; everything else that is not
+a clamp in its caddy lies in its own outline ("we shouldn't have loose pockets
+for anything"). Every tool has a home in a drawer; there is no dock.
 
 Every place is DEPTH_MAX deep, the most 12.7 stock gives with the white still
 under it. One kind word per strip, V-carved through the cap; nothing else is
 written. There are no scoops: a standing thing stands proud and is picked up
-by its top, and a lying one sits in a recess at most half its height, so
+by its top, and a lying one sits in a shadow at most half its height, so
 half of it stands proud to pinch.
+
+A strip is laid out one of two ways. ``grid``: identical places in rows,
+shelf-packed across the strip. ``interlock``: long lying tools head to tail,
+alternately turned half round and slid forward until they meet WALL, so a
+T-handle's shaft runs past its neighbour's handle (a driver stand laid flat).
 """
 
 from __future__ import annotations
@@ -53,19 +63,23 @@ from __future__ import annotations
 import csv
 import itertools
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
+import cv2
+import numpy as np
 from build123d import (
     Align,
     Box,
     Circle,
     Cylinder,
+    Face,
     Location,
     Part,
     Plane,
     Rectangle,
     RectangleRounded,
+    Wire,
     extrude,
 )
 
@@ -113,7 +127,20 @@ SNUG = 0.8
 clamp caddy's 20.9 cell over the clamp's 20 body."""
 
 DROP = 2.0
-"""Over a recess or cup, total: a drop-in, not an index."""
+"""Over a cup, or a shadow drawn from calipers, total: the captured loops'
+own clearance (``capture_ingest.FOAM_CLEAR``, 1.0 a side)."""
+
+CAPTURES = Path(__file__).resolve().parents[1] / "tools" / "captures"
+
+RES = 0.25
+"""Raster cell for the interlock layout and the checks between outlines."""
+
+NOTCH = 6.0
+"""A traced outline is closed by this radius. A notch in it narrower than 12
+would leave an HDPE nub the tool has to be threaded past; a rigid tool is
+lifted straight out, so the pocket ignores it (the hardware case's traced
+bites were capture noise or its hinge knuckles). It also leaves every inside
+corner wider than the 1/8 flat."""
 
 WALL = 3.0
 """Least HDPE between two places across a row (Carbide's clamp cells: 2.7)."""
@@ -157,6 +184,7 @@ KEYSTONE = "BIN"
 class StripSpec:
     name: str       # the kind word milled on it, and the tool list's strip column
     note: str
+    layout: str = "grid"
 
 
 STRIPS: dict[str, tuple[StripSpec, ...]] = {
@@ -166,22 +194,26 @@ STRIPS: dict[str, tuple[StripSpec, ...]] = {
         StripSpec("BALL", "ball and tapered ball"),
         StripSpec("V", "V-bits, engravers, the drag knife"),
         StripSpec("COLLETS", "ER16, nut off"),
+        StripSpec("WRENCHES", "the spindle and collet-nut wrenches, head to tail", "interlock"),
+        StripSpec("HEX", "T-handle drivers lying, head to tail, smallest first like the cutters", "interlock"),
     ),
     "D2": (
-        StripSpec("INSTRUMENTS", "things used at the machine that stand or lie on their own"),
+        StripSpec("INSTRUMENTS", "things used at the machine: probe, pen, oil, deburr"),
+        StripSpec("PENDANT", "the jog pendant, lying"),
         StripSpec("BOOTS", "the dust-boot parts, lying"),
     ),
     "D3": (
         StripSpec("CLAMPS", "Essential Clamps, nose down"),
         StripSpec("CRUSH-IT", "Crush-It clamps, stops and jaws"),
-        StripSpec("HEX", "T-handle drivers, handles front to back like a driver stand"),
         StripSpec("FIXTURES", "the joinery stop on edge, the hardware case lying"),
     ),
 }
-"""Front to back. The keystone BIN follows the last one in every drawer."""
+"""Front to back. The keystone BIN follows the last one in every drawer. The
+T-handles moved D3 -> D1 on 2026-09-25: lying, they need a 225 strip, D3 had
+188 left and D1 a 338 BIN with nothing loose to hold."""
 
-STORES = ("bore", "collet", "cup", "socket", "slot", "recess", "case", "loose", "dock")
-PLACED = ("bore", "collet", "cup", "socket", "slot", "recess")
+STORES = ("bore", "collet", "cup", "socket", "slot", "shadow", "case", "loose")
+PLACED = ("bore", "collet", "cup", "socket", "slot", "shadow")
 
 COLLET_STEP = ((17.6, 5.0), (13.0, DEPTH_MAX))
 """(diameter, depth) from the face: the ER16 body (17.0, ``params.SOURCES
@@ -217,6 +249,7 @@ class Row:
     hold: tuple[float, ...]
     height_class: float | None
     status: str
+    silhouette: str = ""
 
     @property
     def active(self) -> bool:
@@ -242,6 +275,7 @@ def read_rows(path: Path = TOOL_LIST) -> list[Row]:
                 hold=hold,
                 height_class=_num(r.get("height_class")),
                 status=(r.get("status") or "active").strip() or "active",
+                silhouette=(r.get("silhouette") or "").strip(),
             ))
     return out
 
@@ -252,8 +286,9 @@ def read_rows(path: Path = TOOL_LIST) -> list[Row]:
 @dataclass(frozen=True)
 class Place:
     """One held thing, strip-local: X across the drawer from the strip's left
-    end, Y from its front edge. ``shape`` is "circle" (w = d = diameter) or
-    "rect"; ``steps`` is the collet's stepped bore."""
+    end, Y from its front edge. ``shape`` is "circle" (w = d = diameter),
+    "rect", or "poly" (``poly``, the outline about the centre, w x d its
+    box); ``steps`` is the collet's stepped bore."""
 
     tool_id: str
     store: str
@@ -265,6 +300,7 @@ class Place:
     depth: float
     height: float       # what stands above the strip's face, plus the floor under it
     steps: tuple[tuple[float, float], ...] = ()
+    poly: tuple[tuple[float, float], ...] = ()
 
     @property
     def box(self) -> tuple[float, float, float, float]:
@@ -286,13 +322,16 @@ class Group:
     depth: float
     height: float
     steps: tuple[tuple[float, float], ...] = ()
+    poly: tuple[tuple[float, float], ...] = ()
 
     def turned(self) -> "Group":
-        """Rotated a quarter turn: the finger gap turns with the part."""
+        """Rotated a quarter turn: the finger gap and the outline turn with
+        the part."""
         gx = self.px - self.fw
         gy = self.py - self.fd
         return Group(self.row, self.n, self.fd, self.fw, self.fd + gy, self.fw + gx,
-                     self.shape, self.depth, self.height, self.steps)
+                     self.shape, self.depth, self.height, self.steps,
+                     tuple((-y, x) for x, y in self.poly))
 
     def size(self, cols: int) -> tuple[float, float, int, int]:
         """Cell footprint: every place owns a ``px`` x ``py`` cell, centred in
@@ -339,14 +378,88 @@ def group_for(r: Row) -> Group | None:
         if a is None or b is None or W is None:
             return None
         return Group(r, r.qty, a + SNUG, b + SNUG, a + SNUG + WALL, b + SNUG + FINGER, "rect", DEPTH_MAX, W)
-    if s == "recess":
-        a, b = (r.hold[0], r.hold[1]) if len(r.hold) >= 2 else (L, W)
+    if s == "shadow":
         H = H if H is not None else r.height_class      # a trace knows its slot, not its height
-        if a is None or b is None or H is None:
+        loop = outline_of(r)
+        if loop is None or H is None:
             return None
-        return Group(r, r.qty, a + DROP, b + DROP, a + DROP + 2 * WALL, b + DROP + 2 * WALL, "rect",
-                     min(DEPTH_MAX, H / 2), H)
+        fw, fd = _extent(loop)
+        return Group(r, r.qty, fw, fd, fw + WALL, fd + WALL, "poly", min(DEPTH_MAX, H / 2), H, (), loop)
     return None
+
+
+def _extent(pts) -> tuple[float, float]:
+    xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+    return max(xs) - min(xs), max(ys) - min(ys)
+
+
+def _centred(pts: np.ndarray) -> np.ndarray:
+    lo, hi = pts.min(axis=0), pts.max(axis=0)
+    return pts - (lo + hi) / 2
+
+
+def _square(pts: np.ndarray) -> np.ndarray:
+    """Turn a traced loop so its straight edges run along X and Y, its long
+    side along X, its heavier end at the left. The ingest aligns a trace to
+    its least-area box, which lays a T-handle's shaft on the diagonal."""
+    e = np.roll(pts, -1, axis=0) - pts
+    ln = np.hypot(e[:, 0], e[:, 1])
+    ang = np.degrees(np.arctan2(e[:, 1], e[:, 0])) % 90.0
+    tries = np.arange(0.0, 90.0, 0.25)
+    off = np.abs((ang[None, :] - tries[:, None] + 45.0) % 90.0 - 45.0)
+    score = (ln[None, :] * (off < 2.0)).sum(axis=1)
+    k = int(np.argmax(score))
+    if score[k] >= 0.3 * ln.sum():
+        near = off[k] < 2.0
+        a0 = tries[k] + float(np.average((ang[near] - tries[k] + 45.0) % 90.0 - 45.0, weights=ln[near]))
+        a = -math.radians(a0)
+        c, s_ = math.cos(a), math.sin(a)
+        pts = pts @ np.array([[c, -s_], [s_, c]]).T
+    w, d = np.ptp(pts, axis=0)
+    if d > w:
+        pts = pts @ np.array([[0.0, 1.0], [-1.0, 0.0]])
+    pts = _centred(pts)
+    x0, x1 = pts[:, 0].min(), pts[:, 0].max()
+    band = 0.15 * (x1 - x0)
+    left, right = pts[pts[:, 0] < x0 + band], pts[pts[:, 0] > x1 - band]
+    if len(left) and len(right) and np.ptp(right[:, 1]) > np.ptp(left[:, 1]) * 1.2:
+        pts = -pts
+    return pts
+
+
+def _closed(pts: np.ndarray, r: float = NOTCH, res: float = 0.1) -> np.ndarray:
+    """The loop with every notch narrower than 2 r filled (a morphological
+    closing on a fine raster, traced back to a polygon)."""
+    lo = pts.min(axis=0) - 2 * r
+    px = np.round((pts - lo) / res).astype(np.int32)
+    w, h = px.max(axis=0) + int(2 * r / res) + 2
+    m = np.zeros((h, w), np.uint8)
+    cv2.fillPoly(m, [px], 1)
+    k = int(round(r / res))
+    m = cv2.morphologyEx(m, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * k + 1, 2 * k + 1)))
+    cs, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    c = cv2.approxPolyDP(max(cs, key=cv2.contourArea), 0.5, True)[:, 0, :]
+    return c * res + lo
+
+
+def outline_of(r: Row) -> tuple[tuple[float, float], ...] | None:
+    """The shadow's loop about its box centre, squared up: the capture's
+    POCKET loop, or a calipered rod's L x W + DROP."""
+    if r.silhouette:
+        path = CAPTURES / Path(r.silhouette).name
+        if not path.exists():
+            return None
+        import ezdxf
+        pts = np.array([(e.dxf.start.x, e.dxf.start.y) for e in ezdxf.readfile(str(path)).modelspace()
+                        if e.dxftype() == "LINE"])
+        pts = _centred(_closed(_square(pts)))
+    else:
+        L, W, _H = r.bbox
+        if L is None or W is None:
+            return None
+        a, b = (L + DROP) / 2, (W + DROP) / 2
+        pts = np.array([(-a, -b), (a, -b), (a, b), (-a, b)])
+    return tuple((float(x), float(y)) for x, y in pts)
 
 
 # ================================================================ layout
@@ -364,6 +477,7 @@ class Strip:
     lift: tuple[float, float] | None = None
     notes: list[str] = field(default_factory=list)
     keystone: bool = False
+    loose: bool = False             # the keystone holds its drawer's loose things
 
     @property
     def label_text(self) -> str:
@@ -381,7 +495,7 @@ def _snap(v: float) -> float:
 def _options(g: Group) -> list[tuple[Group, int]]:
     """The turns and column counts worth trying for one group."""
     out = []
-    for v in ([g, g.turned()] if g.shape == "rect" else [g]):
+    for v in ([g, g.turned()] if g.shape in ("rect", "poly") else [g]):
         seen = set()
         for cols in range(1, g.n + 1):
             c = v.size(cols)[2]
@@ -453,7 +567,7 @@ def _lay(name: str, groups: list[Group], w: float, notes: list[str],
                     cx = x + g.px / 2 + (i % c) * g.px
                     cy = y + g.py / 2 + (i // c) * g.py
                     places.append(Place(g.row.id, g.row.store, g.shape, cx, cy, g.fw, g.fd, g.depth,
-                                        (STOCK_T - g.depth) + g.height, g.steps))
+                                        (STOCK_T - g.depth) + g.height, g.steps, g.poly))
             if not places:
                 label = (EDGE + lw / 2, MODULE / 2)
                 depth = MODULE
@@ -466,14 +580,12 @@ def _lay(name: str, groups: list[Group], w: float, notes: list[str],
                 else:
                     ly = y0 - LABEL_GAP - LABEL_H / 2
                     shift = EDGE - (ly - LABEL_H / 2)
-                places = [Place(p.tool_id, p.store, p.shape, p.cx, p.cy + shift, p.w, p.d, p.depth, p.height, p.steps)
-                          for p in places]
+                places = [replace(p, cy=p.cy + shift) for p in places]
                 ly += shift
                 used = max(max(p.box[3] for p in places), ly + LABEL_H / 2) + EDGE
                 depth = _snap(used)
                 centre = (depth - used) / 2
-                places = [Place(p.tool_id, p.store, p.shape, p.cx, p.cy + centre, p.w, p.d, p.depth, p.height, p.steps)
-                          for p in places]
+                places = [replace(p, cy=p.cy + centre) for p in places]
                 label = (EDGE + lw / 2, ly + centre)
             key = (depth, not beside)
             if best is None or key < best[0]:
@@ -484,24 +596,167 @@ def _lay(name: str, groups: list[Group], w: float, notes: list[str],
     return best[1], best[2], best[3]
 
 
+def outline(p: Place) -> np.ndarray:
+    """The place's pocket outline in strip coordinates."""
+    if p.poly:
+        return np.array(p.poly) + (p.cx, p.cy)
+    if p.shape == "circle":
+        r = max(p.w, *(dia for dia, _ in p.steps)) / 2 if p.steps else p.w / 2
+        t = np.linspace(0.0, 2 * math.pi, 48, endpoint=False)
+        return np.stack([p.cx + r * np.cos(t), p.cy + r * np.sin(t)], axis=1)
+    x0, y0, x1, y1 = p.box
+    return np.array([(x0, y0), (x1, y0), (x1, y1), (x0, y1)])
+
+
+def _mask(shapes: list[np.ndarray], w: float, d: float, grow: float = 0.0) -> np.ndarray:
+    """Filled outlines on a RES raster over ``w`` x ``d``, grown by ``grow``."""
+    m = np.zeros((int(math.ceil(d / RES)) + 1, int(math.ceil(w / RES)) + 1), np.uint8)
+    for pts in shapes:
+        cv2.fillPoly(m, [np.round(np.asarray(pts) / RES).astype(np.int32)], 1)
+    k = int(round(grow / RES))
+    if k > 0:
+        m = cv2.dilate(m, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * k + 1, 2 * k + 1)))
+    return m
+
+
+def _rect(cx: float, cy: float, w: float, d: float) -> np.ndarray:
+    return np.array([(cx - w / 2, cy - d / 2), (cx + w / 2, cy - d / 2), (cx + w / 2, cy + d / 2),
+                     (cx - w / 2, cy + d / 2)])
+
+
 def _lift(strip: Strip) -> tuple[float, float] | None:
     """The first spot, from the right end and the front, where a lift hole
-    keeps WALL off every place and the word, and EDGE off every edge."""
+    keeps WALL off every place's outline and the word, and EDGE off every
+    edge."""
     r = LIFT_D / 2
     lw = callouts.text_width(strip.name, LABEL_H)
-    boxes = [p.box for p in strip.places] + [(
-        strip.label[0] - lw / 2, strip.label[1] - LABEL_H / 2,
-        strip.label[0] + lw / 2, strip.label[1] + LABEL_H / 2)]
+    shapes = [outline(p) for p in strip.places] + [_rect(*strip.label, lw, LABEL_H)]
+    busy = _mask(shapes, strip.w, strip.d, r + WALL)
     y = EDGE + r
     while y <= strip.d - EDGE - r + 1e-6:
         x = strip.w - EDGE - r
         while x >= EDGE + r - 1e-6:
-            if all(x + r + WALL <= b[0] or x - r - WALL >= b[2] or y + r + WALL <= b[1] or y - r - WALL >= b[3]
-                   for b in boxes):
+            if not busy[int(round(y / RES)), int(round(x / RES))]:
                 return (x, y)
             x -= 2.5
         y += 2.5
     return None
+
+
+def _cells(pts: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Raster cells of an outline whose box starts at the origin."""
+    w, d = pts.max(axis=0)
+    return np.nonzero(_mask([pts], float(w), float(d)))
+
+
+def _interlock_run(name: str, items: list[Group], w: float, along: str,
+                   back: float | None = None) -> tuple[list[tuple[Group, np.ndarray]], tuple[float, float]] | None:
+    """One interlock pass. ``along`` "x": long sides across the strip, heavy
+    ends alternately at the left and right edges, each slid forward. "y":
+    long sides front to back, heavy ends alternately at the front and at
+    ``back``, each slid in from the left. None when something will not fit."""
+    lw = callouts.text_width(name, LABEL_H)
+    far = (back + EDGE + 1.0) if back is not None else 1000.0
+    ny = int(math.ceil(far / RES)) + 1
+    shapes: list[np.ndarray] = []
+    placed: list[tuple[Group, np.ndarray]] = []
+    for k, g in enumerate(items):
+        pts = np.array(g.poly)
+        if along == "y":
+            pts = pts @ np.array([[0.0, 1.0], [-1.0, 0.0]])     # heavy end to the front
+        if k % 2:
+            pts = -pts
+        pts = pts - pts.min(axis=0)
+        ext = pts.max(axis=0)
+        ys, xs = _cells(pts)
+        occ = _mask(shapes, w, far, WALL)
+        if along == "x":
+            ox = EDGE if k % 2 == 0 else w - EDGE - ext[0]
+            if ox < EDGE - 1e-6:
+                return None
+            jx, oy = int(round(ox / RES)), EDGE
+            while True:
+                jy = int(round(oy / RES))
+                if ys.max() + jy >= ny:
+                    return None
+                if not occ[ys + jy, xs + jx].any():
+                    break
+                oy += 0.5
+        else:
+            oy = EDGE if k % 2 == 0 else back - ext[1]
+            if oy < EDGE - 1e-6:
+                return None
+            jy, ox = int(round(oy / RES)), EDGE
+            while True:
+                jx = int(round(ox / RES))
+                if ox + ext[0] > w - EDGE + 1e-6:
+                    return None
+                if not occ[ys + jy, xs + jx].any():
+                    break
+                ox += 0.5
+        shapes.append(pts + (ox, oy))
+        placed.append((g, pts + (ox, oy)))
+    occ = _mask(shapes, w, far, WALL)
+    ly = EDGE + LABEL_H / 2
+    while ly <= far - EDGE - LABEL_H / 2:
+        lx = EDGE + lw / 2
+        while lx <= w - EDGE - lw / 2:
+            x0, y0 = int((lx - lw / 2) / RES), int((ly - LABEL_H / 2) / RES)
+            if not occ[y0:y0 + int(LABEL_H / RES) + 1, x0:x0 + int(lw / RES) + 1].any():
+                return placed, (lx, ly)
+            lx += 1.0
+        ly += 1.0
+    return None
+
+
+_INTERLOCKED: dict = {}
+
+
+def _interlock(name: str, groups: list[Group], w: float,
+               notes: list[str]) -> tuple[list[Place], tuple[float, float], float]:
+    """Long lying tools head to tail, laid both ways (see ``_interlock_run``);
+    the shallower strip wins. For "y" the back line is the least that fits,
+    found by bisection. The word takes the first gap, front to back, left to
+    right."""
+    items = [g for g in groups for _ in range(g.n)]
+    key = (name, round(w, 3), tuple((g.row.id, g.poly, g.depth) for g in items))
+    if key not in _INTERLOCKED:
+        runs = []
+        r = _interlock_run(name, items, w, "x")
+        if r:
+            runs.append(r)
+        lo = max(np.ptp(np.array(g.poly)[:, 0]) for g in items) + EDGE if items else MODULE
+        hi = lo + 200.0
+        if _interlock_run(name, items, w, "y", hi):
+            while hi - lo > 0.5:
+                mid = (lo + hi) / 2
+                if _interlock_run(name, items, w, "y", mid):
+                    hi = mid
+                else:
+                    lo = mid
+            runs.append(_interlock_run(name, items, w, "y", hi))
+        _INTERLOCKED[key] = runs
+    runs = _INTERLOCKED[key]
+    if not runs:
+        notes.append(f"the {name} strip's tools do not interlock across {w:.0f}.")
+        return [], (EDGE + callouts.text_width(name, LABEL_H) / 2, MODULE / 2), MODULE
+
+    def used(run):
+        placed, label = run
+        return max([p[:, 1].max() for _g, p in placed] + [label[1] + LABEL_H / 2]) + EDGE
+
+    placed, label = min(runs, key=lambda run: _snap(used(run)))
+    u = used((placed, label))
+    depth = _snap(u)
+    centre = (depth - u) / 2
+    places = []
+    for g, pts in placed:
+        lo_, hi_ = pts.min(axis=0), pts.max(axis=0)
+        c = (lo_ + hi_) / 2
+        places.append(Place(g.row.id, g.row.store, "poly", float(c[0]), float(c[1] + centre),
+                            float(hi_[0] - lo_[0]), float(hi_[1] - lo_[1]), g.depth, (STOCK_T - g.depth) + g.height,
+                            (), tuple((float(x), float(y)) for x, y in pts - c)))
+    return places, (label[0], label[1] + centre), depth
 
 
 def spec_for(key: str) -> DrawerSpec:
@@ -539,7 +794,7 @@ def plan(key: str, d: Datums = D, rows: list[Row] | None = None) -> DrawerPlan:
     notes: list[str] = []
     strips: list[Strip] = []
     y0 = 0.0
-    x_col = EDGE + max(callouts.text_width(ss.name, LABEL_H) for ss in STRIPS[key]) + LABEL_GAP
+    x_col = EDGE + max(callouts.text_width(ss.name, LABEL_H) for ss in STRIPS[key] if ss.layout == "grid") + LABEL_GAP
     for ss in STRIPS[key]:
         mine = [r for r in rows if r.strip == ss.name and r.store in PLACED]
         groups = []
@@ -552,14 +807,18 @@ def plan(key: str, d: Datums = D, rows: list[Row] | None = None) -> DrawerPlan:
                 continue
             groups.append(g)
         snotes: list[str] = []
-        places, label, sd = _lay(ss.name, groups, w, snotes, x_col)
+        if ss.layout == "interlock":
+            places, label, sd = _interlock(ss.name, groups, w, snotes)
+        else:
+            places, label, sd = _lay(ss.name, groups, w, snotes, x_col)
         st = Strip(key, ss.name, w, sd, y0, places, label, None, snotes)
         st.lift = _lift(st)
         strips.append(st)
         y0 += sd
     rest = depth - y0
     bin_ = Strip(key, KEYSTONE, w, max(rest, 0.0), y0, [], (EDGE + callouts.text_width(KEYSTONE, LABEL_H) / 2,
-                                                             EDGE + LABEL_H / 2 + EDGE), None, [], True)
+                                                             EDGE + LABEL_H / 2 + EDGE), None, [], True,
+                 any(r.store == "loose" for r in rows))
     strips.append(bin_)
     for r in rows:
         if r.store not in STORES:
@@ -585,11 +844,18 @@ profile pass where a pocket this size is an hour of clearing."""
 
 def _bin_recess(s: Strip) -> tuple[float, float, float, float] | None:
     """The keystone's window, behind its word: where the drawer's loose
-    things go."""
+    things go. A drawer with nothing loose gets a solid keystone: an empty
+    window is a pocket for nothing."""
+    if not s.loose:
+        return None
     y_lo = EDGE + LABEL_H + EDGE
     if s.d - KEY_RIM - y_lo < MODULE:
         return None
     return (KEY_RIM, y_lo, s.w - KEY_RIM, s.d - KEY_RIM)
+
+
+def _face(p: Place) -> Face:
+    return Face(Wire.make_polygon([(x + p.cx, y + p.cy, 0.0) for x, y in p.poly], close=True))
 
 
 def build(s: Strip, *, label: bool = True) -> Part:
@@ -605,6 +871,8 @@ def build(s: Strip, *, label: bool = True) -> Part:
         elif p.shape == "circle":
             part -= Cylinder(p.w / 2, p.depth, align=(Align.CENTER, Align.CENTER, Align.MAX)).moved(
                 Location((p.cx, p.cy, top)))
+        elif p.poly:
+            part -= extrude(_face(p), amount=p.depth).moved(Location((0, 0, top - p.depth)))
         else:
             r = min(POCKET_R, p.w / 2 - 0.01, p.d / 2 - 0.01)
             sk = RectangleRounded(p.w, p.d, r)
@@ -637,6 +905,8 @@ def layers(s: Strip) -> dict[str, list]:
                 add(f"POCKET_D{depth:g}", Circle(dia / 2).moved(Location((p.cx, p.cy))).faces())
         elif p.shape == "circle":
             add(f"POCKET_D{p.depth:g}", Circle(p.w / 2).moved(Location((p.cx, p.cy))).faces())
+        elif p.poly:
+            add(f"POCKET_D{p.depth:g}", [_face(p)])
         else:
             r = min(POCKET_R, p.w / 2 - 0.01, p.d / 2 - 0.01)
             add(f"POCKET_D{p.depth:g}", RectangleRounded(p.w, p.d, r).moved(Location((p.cx, p.cy))).faces())
@@ -722,6 +992,11 @@ def check_inserts(d: Datums = D, rows: list[Row] | None = None) -> list[str]:
             notes.append(f"{p.key}'s strips need {p.used:.0f} of its {p.d:.0f} of depth: a strip runs off the "
                          "back. Move a thing to another drawer or strike it.")
         ks = p.strips[-1]
+        loose = [r for r in rows if r.active and r.drawer == p.key and r.store == "loose"]
+        if loose and _bin_recess(ks) is None:
+            notes.append(f"UNMODELLED: {p.key}'s keystone is {ks.d:.0f} deep, too thin for a window, so "
+                         + ", ".join(f"{r.id} {r.name}" for r in loose) + " have no home. Caliper them for "
+                         "fitted places, or move them to a drawer with room.")
         if 0 < ks.d < MODULE:
             notes.append(f"{p.key}'s keystone is {ks.d:.1f} deep: too thin to cut or to lift. Expected, and "
                          "worth knowing; fold it into the strip in front.")
@@ -745,12 +1020,11 @@ def check_inserts(d: Datums = D, rows: list[Row] | None = None) -> list[str]:
                 ax0, ay0, ax1, ay1 = a.box
                 bx0, by0, bx1, by1 = b.box
                 if ax0 < bx1 + WALL - 1e-6 and bx0 < ax1 + WALL - 1e-6 and ay0 < by1 + WALL - 1e-6 and by0 < ay1 + WALL - 1e-6:
+                    if a.poly or b.poly:        # boxes meet; do the outlines?
+                        near = _mask([outline(a)], s.w, s.d, WALL - 2 * RES) & _mask([outline(b)], s.w, s.d)
+                        if not near.any():
+                            continue
                     notes.append(f"{p.key} {s.name}: {a.tool_id} and {b.tool_id} are closer than {WALL:g}.")
-    dock = [r for r in rows if r.active and r.store == "dock"]
-    if dock:
-        notes.append("UNMODELLED: the machine-side DOCK (wrenches at the spindle end, the pendant by its "
-                     "console port, the BitZero). Until it is, " + ", ".join(f"{r.id} {r.name}" for r in dock)
-                     + " have no modelled home.")
     return notes
 
 
@@ -780,6 +1054,9 @@ def preview_svg(p: DrawerPlan, path: Path, scale: float = 2.0) -> Path:
         for pl in s.places:
             if pl.shape == "circle":
                 out.append(f'<circle cx="{pl.cx:.2f}" cy="{s.y0 + pl.cy:.2f}" r="{pl.w / 2:.2f}" fill="#f2efe8"/>')
+            elif pl.poly:
+                pts = " ".join(f"{x + pl.cx:.2f},{s.y0 + y + pl.cy:.2f}" for x, y in pl.poly)
+                out.append(f'<polygon points="{pts}" fill="#f2efe8"/>')
             else:
                 out.append(f'<rect x="{pl.cx - pl.w / 2:.2f}" y="{s.y0 + pl.cy - pl.d / 2:.2f}" width="{pl.w:.2f}" '
                            f'height="{pl.d:.2f}" rx="1.6" fill="#f2efe8"/>')

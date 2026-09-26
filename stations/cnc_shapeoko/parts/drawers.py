@@ -307,9 +307,9 @@ class DrawerSpec:
 
 
 DRAWERS: tuple[DrawerSpec, ...] = (
-    DrawerSpec(1, "D1", "CUTTERS", "endmills, V-bits and the ER-16 collets", 2),
-    DrawerSpec(2, "D2", "INSTRUMENTS", "dust boots, pen holder, way oil, deburr tool", 1),
-    DrawerSpec(3, "D3", "WORKHOLDING", "clamps, Crush-It, T-handle drivers, joinery stop, hardware case", 0),
+    DrawerSpec(1, "D1", "CUTTERS", "endmills, V-bits, the ER-16 collets, spindle wrenches, T-handle drivers", 2),
+    DrawerSpec(2, "D2", "INSTRUMENTS", "BitZero, pen holder, way oil, deburr tool, jog pendant, dust boots", 1),
+    DrawerSpec(3, "D3", "WORKHOLDING", "clamps, Crush-It, joinery stop, hardware case", 0),
 )
 
 

@@ -61,9 +61,9 @@ TRACE SOURCE (history; every call passes source="trace")
        test says so), an open arc, two stadiums, two sheet SIZES in one frame,
        and a frame with no known quartet at all. Each rejects with its reason
        and writes nothing.
-    4. Insert: the stadium's box as a CAPTURED row (T999, D2 INSTRUMENTS) added
-       in memory, never to the real tool list; inserts.plan holds it in a
-       drop-in recess its box plus DROP.
+    4. Insert: the stadium's box as a calipered row (T999, D2 INSTRUMENTS)
+       added in memory, never to the real tool list; inserts.plan lays it in
+       a shadow its box plus DROP, half its height deep.
 
 Every write goes to a temporary directory; the real captures/ and
 tool_list.csv are untouched.
@@ -603,14 +603,15 @@ def test_photo_rejects(tmp: Path) -> None:
 
 
 def test_insert(tmp: Path) -> None:
-    """A captured row's box, not its silhouette, is what an insert strip
-    holds it by (ruling 2026-09-25: strips, not foam shadows)."""
+    """A row with a box and no silhouette lies in a shadow of its box plus
+    DROP, half its height deep (ruling 2026-09-25: every lying tool in its own
+    outline; a calipered rod's outline is its box)."""
     from stations.cnc_shapeoko.parts import inserts
 
     rows = inserts.read_rows()
     rows.append(
         inserts.Row(
-            id="T999", name="TEST STADIUM", drawer="D2", strip="INSTRUMENTS", store="recess", qty=1,
+            id="T999", name="TEST STADIUM", drawer="D2", strip="INSTRUMENTS", store="shadow", qty=1,
             shank_d=None, cut_d=None, oal=None, bbox=(TOOL_L, TOOL_W, 20.0), hold=(),
             height_class=20.0, status="active",
         )
@@ -622,12 +623,12 @@ def test_insert(tmp: Path) -> None:
     got = sorted((pk.w, pk.d), reverse=True)
     exp = sorted((TOOL_L + inserts.DROP, TOOL_W + inserts.DROP), reverse=True)
     assert all(abs(g - e) <= 1e-6 for g, e in zip(got, exp)), (got, exp)
-    assert pk.depth == inserts.DEPTH_MAX, pk.depth
+    assert pk.depth == min(inserts.DEPTH_MAX, 20.0 / 2), pk.depth
     strip = next(s for s in p.strips if s.name == "INSTRUMENTS")
     assert any(k.startswith("POCKET_D") for k in inserts.layers(strip))
     notes = [n for n in inserts.check_inserts(rows=rows) if "T999" in n]
     assert not notes, notes
-    print(f"  insert D2: T999 recess {got[0]:.2f} x {got[1]:.2f} x {pk.depth:g} on INSTRUMENTS, no T999 notes")
+    print(f"  insert D2: T999 shadow {got[0]:.2f} x {got[1]:.2f} x {pk.depth:g} on INSTRUMENTS, no T999 notes")
 
 
 def main() -> int:

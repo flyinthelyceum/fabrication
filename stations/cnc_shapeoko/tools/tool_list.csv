@@ -11,27 +11,27 @@ T021,#251 .25in Downcut Flat Endmill,D1,cutter,6.35,6.35,63.5,,,,1,CATALOG,,,,SH
 T022,#301 .50in 90-degree V-bit,D1,cutter,6.35,12.7,50.8,,,,1,CATALOG,,,,V,bore,,active,
 T023,#302 .50in 60-degree V-bit,D1,cutter,6.35,12.7,50.8,,,,1,CATALOG,,,,V,bore,,active,
 T024,McFly Surfacing Cutter (1/4in shank),D1,cutter,6.35,25.4,47,,,,1,CATALOG,"stands on its shank at the FLAT strip's end, 35 pitch. oal photo-derived 2026-09-03, +/-5%; bore comes off the nominal 6.35 shank.",,,FLAT,bore,,active,
-T025,16mm spindle-shaft wrench,D1,captured,,,,145.8,39.4,,1,CAPTURED,captured by the retired collar-trace method 2026-09-04; re-shoot by photo when convenient,10,captures/T025.dxf,,dock,,active,
-T026,22mm collet-nut wrench,D1,captured,,,,163.8,49.1,,1,CAPTURED,captured by the retired collar-trace method 2026-09-04; re-shoot by photo when convenient,10,captures/T026.dxf,,dock,,active,
+T025,16mm spindle-shaft wrench,D1,captured,,,,145.8,39.4,,1,CAPTURED,captured by the retired collar-trace method 2026-09-04; re-shoot by photo when convenient,10,captures/T025.dxf,WRENCHES,shadow,,active,
+T026,22mm collet-nut wrench,D1,captured,,,,163.8,49.1,,1,CAPTURED,captured by the retired collar-trace method 2026-09-04; re-shoot by photo when convenient,10,captures/T026.dxf,WRENCHES,shadow,,active,
 T027,ER-16 collet nut (M19 thread),D1,block,,,,,,,1,MEASURE,,,,,,,struck,Jared 2026-09-11: does not exist as a stored item; the one nut lives on the spindle
 T028,Spare carbide inserts for McFly (included set),D1,block,,,,,,,4,MEASURE,,,,,,,struck,"Jared 2026-09-11: the inserts live in the McFly body, nothing loose to store"
 T029,2-meter USB cable (removable),D2,bin,,,,,,,1,NONE,"bin pocket, coiled; no capture",,,,loose,,active,
-T030,Quick Draw pen holder,D2,captured,,,,103.7,85.0,28,1,CAPTURED,"RESHOOT (Jared 2026-09-21): 3.7mm parallax; phone straight above the sheet centre and higher, the sheet small in the frame",30,captures/T030.dxf,INSTRUMENTS,recess,,active,
+T030,Quick Draw pen holder,D2,captured,,,,103.7,85.0,28,1,CAPTURED,"RESHOOT (Jared 2026-09-21): 3.7mm parallax; phone straight above the sheet centre and higher, the sheet small in the frame",30,captures/T030.dxf,INSTRUMENTS,shadow,,active,
 T031,"Mobil Vactra Way Oil, 2oz",D2,captured,,,,75.9,28.3,19,1,CAPTURED,"stands in a socket on the INSTRUMENTS strip (was: lies on its side, about 23 diameter)",20,captures/T031.dxf,INSTRUMENTS,socket,28.3x19,active,
 T032,Assembly hex keys / assembly tools,D2,hex,,,,,,,1,MEASURE,,,,,,,struck,"merged into T034 2026-09-11: one set of six keys in the drawer photos, not two sets"
-T033,Jog Pendant,D2,captured,,,,223.2,65.3,35,1,CAPTURED,"TABLOID sheet; pendant only, not the cable. RESHOOT (Jared 2026-09-21): shot too close for a 35mm-tall tool, up to 7.6mm parallax; phone straight above the sheet centre and higher, the sheet small in the frame, tags still readable",40,captures/T033.dxf,,dock,,active,
+T033,Jog Pendant,D2,captured,,,,223.2,65.3,35,1,CAPTURED,"TABLOID sheet; pendant only, not the cable. RESHOOT (Jared 2026-09-21): shot too close for a 35mm-tall tool, up to 7.6mm parallax; phone straight above the sheet centre and higher, the sheet small in the frame, tags still readable",40,captures/T033.dxf,PENDANT,shadow,,active,
 T034,Metric Allen (hex) key set,D2,captured,,,,,,,1,MEASURE,loose L-keys; no pocket cut for this row,,,,,,struck,"Jared 2026-09-21: loose Allen set scrapped, no loose-parts pocket; replaced by the most-used T-handle sizes, one row and one pocket each, captured one per sheet"
 T035,Pipettes,D2,bin,,,,,,,6,NONE,bin pocket; no capture,,,,loose,,active,
 T036,Silicone O-rings,D2,bin,,,,,,,5,NONE,bin pocket; no capture,,,,loose,,active,
-T037,Brush dust-boot base (polycarbonate),D2,captured,,,,156.5,74.7,39.81,1,CAPTURED,"moved D3 -> D2 2026-09-11. RULED 2026-09-21: clear polycarbonate, capture on the WHITE sheet with a pen trace (magenta fails clear bodies); hardware stays ATTACHED; body 39.81 = T038, slot 40; brushes proud, 54.23 overall, flex",40,captures/T037.dxf,BOOTS,recess,,active,
-T038,"Brush-free dust-boot base (polycarbonate, for visibility)",D2,captured,,,,156.5,74.7,39.81,1,CAPTURED,"moved D3 -> D2 2026-09-11. RULED 2026-09-21: clear polycarbonate, capture on the WHITE sheet with a pen trace (magenta fails clear bodies); hardware stays ATTACHED; measured height 39.81mm, gauge slot 40",40,captures/T038.dxf,BOOTS,recess,,active,
+T037,Brush dust-boot base (polycarbonate),D2,captured,,,,156.5,74.7,39.81,1,CAPTURED,"moved D3 -> D2 2026-09-11. RULED 2026-09-21: clear polycarbonate, capture on the WHITE sheet with a pen trace (magenta fails clear bodies); hardware stays ATTACHED; body 39.81 = T038, slot 40; brushes proud, 54.23 overall, flex",40,captures/T037.dxf,BOOTS,shadow,,active,
+T038,"Brush-free dust-boot base (polycarbonate, for visibility)",D2,captured,,,,156.5,74.7,39.81,1,CAPTURED,"moved D3 -> D2 2026-09-11. RULED 2026-09-21: clear polycarbonate, capture on the WHITE sheet with a pen trace (magenta fails clear bodies); hardware stays ATTACHED; measured height 39.81mm, gauge slot 40",40,captures/T038.dxf,BOOTS,shadow,,active,
 T039,M6 x 18mm socket head cap screws (Joinery Stop mounting),D3,case,,,,,,,4,NONE,lives in the T054 organizer case,,,,case,,active,
 T040,M6 x 20 Socket Head Screws (Essential Clamps mounting),D3,case,,,,,,,4,NONE,lives in the T054 organizer case,,,,case,,active,
 T041,M6 x 30 Socket Head Screws (Essential Clamps mounting),D3,case,,,,,,,4,NONE,lives in the T054 organizer case,,,,case,,active,
 T042,Replacement flat jaws (for Crush-It clamps),D3,captured,,,,29.4,25.1,10,4,CAPTURED,capture ONE; four pockets,10,captures/T042.dxf,CRUSH-IT,slot,,active,
 T043,Sweepy thumb screws,D3,case,,,,,,,2,NONE,lives in the T054 organizer case,,,,case,,active,
 T044,Crush-It Essential Clamps with Serrated Jaws,D3,captured,,,,72.0,25.8,12,4,CAPTURED,"25 wide, 11 above the table when seated. Socket 25.8 x 12 PROVISIONAL off the capture; check against the part before D3 cuts",20,captures/T044.dxf,CRUSH-IT,socket,25.8x12,active,
-T045,Crush-It Stops,D3,captured,,,,31.6,29.8,16,4,CAPTURED,capture ONE; four pockets,20,captures/T045.dxf,CRUSH-IT,recess,,active,
+T045,Crush-It Stops,D3,captured,,,,31.6,29.8,16,4,CAPTURED,capture ONE; four pockets,20,captures/T045.dxf,CRUSH-IT,shadow,,active,
 T046,Essential Clamps (bundled in Crush-It set),D3,block,,,,,,,4,MEASURE,,,,,,,struck,merged into T056 2026-09-11 (same part C3D-EC; T056 qty 14)
 T047,M6 Teez-Nutz T-nuts,D3,case,,,,,,,24,NONE,lives in the T054 organizer case; T058 merged in 2026-09-11 (12 + 12),,,,case,,active,
 T048,M6 x 16mm bolts (Crush-It kit),D3,case,,,,,,,6,NONE,lives in the T054 organizer case,,,,case,,active,
@@ -40,19 +40,19 @@ T050,M6 x 25mm bolts (Crush-It kit),D3,case,,,,,,,6,NONE,lives in the T054 organ
 T051,M6 x 30mm bolts (Crush-It kit),D3,case,,,,,,,6,NONE,lives in the T054 organizer case,,,,case,,active,
 T052,M6 x 35mm bolts (Crush-It kit),D3,case,,,,,,,6,NONE,lives in the T054 organizer case,,,,case,,active,
 T053,M6 x 40mm bolts (Crush-It kit),D3,case,,,,,,,6,NONE,lives in the T054 organizer case,,,,case,,active,
-T054,Plastic organizer case (Crush-It Nutz 'n Bolts),D3,captured,,,,154.9,103.1,32,1,CAPTURED,"capture the CASE, closed; holds T039-T041, T043, T047-T053",40,captures/T054.dxf,FIXTURES,recess,,active,
+T054,Plastic organizer case (Crush-It Nutz 'n Bolts),D3,captured,,,,154.9,103.1,32,1,CAPTURED,"capture the CASE, closed; holds T039-T041, T043, T047-T053",40,captures/T054.dxf,FIXTURES,shadow,,active,
 T055,Shapeoko 5.1 Pro Joinery Stop,D3,captured,,,,154.4,46.1,8,1,CAPTURED,,10,captures/T055.dxf,FIXTURES,slot,,active,
 T056,Essential Clamp bar,D3,captured,,,,70.3,20.5,18,14,CAPTURED,"T046 + T057 merged in 2026-09-11: 4 standalone + 6 machine-bundled + 4 Crush-It = 14. Held by the 20 x 12 body, nose down (Carbide essential-clamp caddy).",20,captures/T056.dxf,CLAMPS,socket,20x12,active,
 T057,Shapeoko Essential Clamps (machine-bundled),D3,block,,,,,,,6,MEASURE,,,,,,,struck,merged into T056 2026-09-11 (same part C3D-EC; T056 qty 14)
 T058,Teez Nutz T-nuts (Crush-It kit),D3,block,,,,,,,12,MEASURE,,,,,,,struck,merged into T047 2026-09-11 (T047 qty 24)
 T062,Digital calipers,D2,captured,,,,237.2,71.8,10,1,CAPTURED,owned (Jared 2026-09-11); lay closed,10,captures/T062.dxf,,,,struck,"Jared 2026-09-21: calipers per machine station; the pair lives in the station kit, never a tray pocket"
-T063,BitZero V2 touch probe,D2,captured,,,,49.1,45.9,34,1,CAPTURED,"owned (Jared 2026-09-11); Carbide 3D BitZero V2 assumed, body only, cable coiled beside",40,captures/T063.dxf,,dock,,active,
-T064,Deburring tool,D2,captured,,,,150.2,13.95,13.95,1,CAPTURED,"owned (Jared 2026-09-11). D2 CONFIRMED by Jared 2026-09-21. Calipered by Jared 2026-09-25: 150.2 overall with blade, handle 13.95 across, blade fixed. Lies flat (Jared 2026-09-25: only cutters stand).",,,INSTRUMENTS,recess,,active,
+T063,BitZero V2 touch probe,D2,captured,,,,49.1,45.9,34,1,CAPTURED,"owned (Jared 2026-09-11); Carbide 3D BitZero V2 assumed, body only, cable coiled beside",40,captures/T063.dxf,INSTRUMENTS,shadow,,active,
+T064,Deburring tool,D2,captured,,,,150.2,13.95,13.95,1,CAPTURED,"owned (Jared 2026-09-11). D2 CONFIRMED by Jared 2026-09-21. Calipered by Jared 2026-09-25: 150.2 overall with blade, handle 13.95 across, blade fixed. Lies flat (Jared 2026-09-25: only cutters stand).",,,INSTRUMENTS,shadow,,active,
 T065,Brush (chip/dust),D2,captured,,,,,,,1,MEASURE,owned (Jared 2026-09-11). D2 CONFIRMED by Jared 2026-09-21,,,,,,struck,"Jared 2026-09-25: brush deleted from the station"
-T066,Dust-boot upper collar (polycarbonate),D2,captured,,,,148.6,67.4,,1,CAPTURED,"clear polycarbonate: trace on the WHITE card (ruling 2026-09-21), traced 2026-09-21, slot 40; ID photo 2026-09-21 IMG_4714 at /tmp/imsg-relay-attachments/EB650DCE-IMG_4714.png",40,captures/T066.dxf,BOOTS,recess,,active,
-T067,T-handle hex driver 5x150,D3,captured,5,,150,181.6,113.2,23,1,CAPTURED,"stands, handle front to back; hold = hex across corners (5 x 1.155), then handle thickness",30,captures/T067.dxf,HEX,bore,5.8x23,active,
-T068,T-handle hex driver 4x150,D3,captured,4,,150,172.8,89.1,18,1,CAPTURED,"hold = 4mm hex across corners, then handle thickness",20,captures/T068.dxf,HEX,bore,4.7x18,active,
-T069,T-handle hex driver 3x150,D3,captured,3,,150,167.3,86.5,18,1,CAPTURED,"hold = 3mm hex across corners, then handle thickness",20,captures/T069.dxf,HEX,bore,3.5x18,active,
-T070,T-handle hex driver 2.5x150,D3,captured,2.5,,150,164.6,85.2,18,1,CAPTURED,"hold = 2.5mm hex across corners, then handle thickness. PROVISIONAL OUTLINE, scaled from T069 on 2026-09-21 (L ×0.984, W ×0.985), tool not yet owned; RE-CAPTURE on arrival before D3 cuts",20,captures/T070.dxf,HEX,bore,2.9x18,active,"provisional silhouette, not a measurement"
+T066,Dust-boot upper collar (polycarbonate),D2,captured,,,,148.6,67.4,,1,CAPTURED,"clear polycarbonate: trace on the WHITE card (ruling 2026-09-21), traced 2026-09-21, slot 40; ID photo 2026-09-21 IMG_4714 at /tmp/imsg-relay-attachments/EB650DCE-IMG_4714.png",40,captures/T066.dxf,BOOTS,shadow,,active,
+T067,T-handle hex driver 5x150,D1,captured,5,,150,181.6,113.2,23,1,CAPTURED,"lies flat in its own T outline, head to tail with the others, in D1 (Jared 2026-09-25: only cutters stand)",30,captures/T067.dxf,HEX,shadow,,active,
+T068,T-handle hex driver 4x150,D1,captured,4,,150,172.8,89.1,18,1,CAPTURED,"hold = 4mm hex across corners, then handle thickness",20,captures/T068.dxf,HEX,shadow,,active,
+T069,T-handle hex driver 3x150,D1,captured,3,,150,167.3,86.5,18,1,CAPTURED,"hold = 3mm hex across corners, then handle thickness",20,captures/T069.dxf,HEX,shadow,,active,
+T070,T-handle hex driver 2.5x150,D1,captured,2.5,,150,164.6,85.2,18,1,CAPTURED,"hold = 2.5mm hex across corners, then handle thickness. PROVISIONAL OUTLINE, scaled from T069 on 2026-09-21 (L ×0.984, W ×0.985), tool not yet owned; RE-CAPTURE on arrival before D3 cuts",20,captures/T070.dxf,HEX,shadow,,active,"provisional silhouette, not a measurement"
 T071,Crush-It Essentials Caddy (Carbide 3D Print Library),D3,block,,,,,,,1,NONE,,,,,,,struck,Jared 2026-09-25: no printed objects in the drawers; the library's STLs are reference only. The kit's pieces keep their own pockets.
 T072,Amana 46170-K 1/4in compression spiral (up/down),D1,cutter,6.35,6.35,63.5,,,,2,CATALOG,ADD A002; ordered 2026-09-25 (Order #3). Catalog 1/4 x 1/4 x 2-1/2 OAL,,,SHEET,bore,,ordered,arrives with Order #3; bores cut now so the strip is right on arrival
