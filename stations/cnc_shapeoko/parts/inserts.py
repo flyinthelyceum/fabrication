@@ -52,15 +52,19 @@ written. There are no scoops: a standing thing stands proud and is picked up
 by its top, and a lying one sits in a shadow at most half its height, so
 half of it stands proud to pinch.
 
-A strip is laid out one of two ways. ``grid``: identical places in rows,
+A strip is laid out one of three ways. ``grid``: identical places in rows,
 shelf-packed across the strip. ``interlock``: long lying tools head to tail,
 alternately turned half round and slid forward until they meet WALL, so a
 T-handle's shaft runs past its neighbour's handle (a driver stand laid flat).
+``stagger``: the same, never turned: every jaw opens the same way, and each
+next tool is set to the other edge so its head sits beside the last one's
+handle (the wrenches, Jared 2026-09-25).
 """
 
 from __future__ import annotations
 
 import csv
+import functools
 import itertools
 import math
 from dataclasses import dataclass, field, replace
@@ -142,6 +146,39 @@ lifted straight out, so the pocket ignores it (the hardware case's traced
 bites were capture noise or its hinge knuckles). It also leaves every inside
 corner wider than the 1/8 flat."""
 
+SYMMETRIC = 0.95
+"""A traced outline whose mirror image overlaps it this well (intersection
+over union, about its best axis) is a symmetric tool traced imperfectly: it
+is turned onto that axis and made exactly symmetric, the union of it and its
+mirror. The boots, the pendant and the BitZero measure 0.977 to 0.995; the
+wrenches and T-handles 0.76 to 0.85 and keep their own shape."""
+
+CONVEX = 0.93
+"""A closed outline filling this much of its convex hull is a convex tool
+traced with a wobble: its pocket is the hull, straight where the tool is
+straight. The case and the stops measure 0.94 and 0.98; the pen holder 0.88."""
+
+SQUARE_FIT = 0.95
+"""A convex outline that a rounded rectangle on its own box matches this
+well (IoU, the corner radius searched, a stadium at half the width, grown
+until it holds the trace) is cut as that rounded rectangle, if no gap it
+opens beside the trace is wider than SQUARE_SLOP: the case, the pendant and
+the boots then sit square to the drawer with straight, parallel sides. The
+boots' traces taper 3 to 4 a side; their stadium gives that back at the
+narrow end; the case trace has one corner cut off 8.4 (a squashed
+trace or a real chamfer: the rectangle holds it either way)."""
+SQUARE_SLOP = 9.0
+
+SMOOTH = 3.0
+"""Every other traced outline is smoothed along its length (Gaussian, this
+sigma in mm) and then pushed out until it holds the whole TOOL again (the
+trace less the capture's 1.0 clearance), plus SNUG / 2 so no point of it
+touches: the photo's wobble goes, and the clearance comes out 0.4 at the
+least and 1.4 to 1.8 at the median (the wrenches, pen holder, T-handles)."""
+
+TRACE_CLEAR = 1.0
+"""What a captured loop carries over the tool (``capture_ingest.FOAM_CLEAR``)."""
+
 WALL = 3.0
 """Least HDPE between two places across a row (Carbide's clamp cells: 2.7)."""
 
@@ -194,7 +231,7 @@ STRIPS: dict[str, tuple[StripSpec, ...]] = {
         StripSpec("BALL", "ball and tapered ball"),
         StripSpec("V", "V-bits, engravers, the drag knife"),
         StripSpec("COLLETS", "ER16, nut off"),
-        StripSpec("WRENCHES", "the spindle and collet-nut wrenches, head to tail", "interlock"),
+        StripSpec("WRENCHES", "the spindle and collet-nut wrenches, heads left, jaws the same way", "stagger"),
         StripSpec("HEX", "T-handle drivers lying, head to tail, smallest first like the cutters", "interlock"),
     ),
     "D2": (
@@ -442,6 +479,144 @@ def _closed(pts: np.ndarray, r: float = NOTCH, res: float = 0.1) -> np.ndarray:
     return c * res + lo
 
 
+def _turn(pts: np.ndarray, a: float) -> np.ndarray:
+    c, s_ = math.cos(a), math.sin(a)
+    return pts @ np.array([[c, -s_], [s_, c]]).T
+
+
+def _mirror_fit(pts: np.ndarray, res: float = 0.5) -> tuple[float, float]:
+    """(IoU, angle): how well the outline matches its own mirror about the
+    best horizontal axis through its centroid, and the turn that finds it."""
+    def iou(a: float) -> float:
+        q = _turn(pts, a)
+        m = cv2.moments(q.astype(np.float32))
+        f = q * (1.0, -1.0) + (0.0, 2 * m["m01"] / m["m00"])
+        lo = np.minimum(q.min(axis=0), f.min(axis=0)) - 1.0
+        hi = np.maximum(q.max(axis=0), f.max(axis=0)) + 1.0
+        shape = (int((hi[1] - lo[1]) / res) + 2, int((hi[0] - lo[0]) / res) + 2)
+        A, B = np.zeros(shape, np.uint8), np.zeros(shape, np.uint8)
+        cv2.fillPoly(A, [np.round((q - lo) / res).astype(np.int32)], 1)
+        cv2.fillPoly(B, [np.round((f - lo) / res).astype(np.int32)], 1)
+        return float((A & B).sum() / (A | B).sum())
+    best = max((iou(math.radians(a)), a) for a in np.arange(0.0, 180.0, 1.0))
+    fine = max((iou(math.radians(a)), a) for a in np.arange(best[1] - 1.0, best[1] + 1.0, 0.1))
+    return fine[0], math.radians(fine[1])
+
+
+def _mirrored(pts: np.ndarray, res: float = 0.1) -> np.ndarray:
+    """The union of the outline and its mirror about the horizontal line
+    through its centroid."""
+    m = cv2.moments(pts.astype(np.float32))
+    f = pts * (1.0, -1.0) + (0.0, 2 * m["m01"] / m["m00"])
+    lo = np.minimum(pts.min(axis=0), f.min(axis=0)) - 1.0
+    hi = np.maximum(pts.max(axis=0), f.max(axis=0)) + 1.0
+    M = np.zeros((int((hi[1] - lo[1]) / res) + 2, int((hi[0] - lo[0]) / res) + 2), np.uint8)
+    cv2.fillPoly(M, [np.round((pts - lo) / res).astype(np.int32), np.round((f - lo) / res).astype(np.int32)], 1)
+    cs, _ = cv2.findContours(M, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    return cv2.approxPolyDP(max(cs, key=cv2.contourArea), 0.5, True)[:, 0, :] * res + lo
+
+
+def _inset(pts: np.ndarray, a: float, res: float = 0.1) -> np.ndarray:
+    """The loop pulled in by ``a`` (a raster erosion, traced back)."""
+    lo = pts.min(axis=0) - 1.0
+    px = np.round((pts - lo) / res).astype(np.int32)
+    w, h = px.max(axis=0) + int(1.0 / res) + 2
+    m = np.zeros((h, w), np.uint8)
+    cv2.fillPoly(m, [px], 1)
+    k = int(round(a / res))
+    m = cv2.erode(m, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * k + 1, 2 * k + 1)))
+    cs, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    return max(cs, key=cv2.contourArea)[:, 0, :] * res + lo
+
+
+def _smoothed(pts: np.ndarray, sigma: float = SMOOTH, step: float = 0.25) -> np.ndarray:
+    """Gaussian-smoothed along its length, then offset out along its normals
+    by the most the smoothing cut into the tool plus SNUG / 2."""
+    seg = np.hypot(*np.diff(np.vstack([pts, pts[:1]]), axis=0).T)
+    t = np.concatenate([[0.0], np.cumsum(seg)])
+    u = np.arange(0.0, t[-1], step)
+    closed = np.vstack([pts, pts[:1]])
+    r = np.stack([np.interp(u, t, closed[:, 0]), np.interp(u, t, closed[:, 1])], axis=1)
+    k = int(3 * sigma / step)
+    g = np.exp(-0.5 * (np.arange(-k, k + 1) * step / sigma) ** 2)
+    g /= g.sum()
+    sm = np.stack([np.convolve(np.concatenate([r[-k:, i], r[:, i], r[:k, i]]), g, mode="valid")
+                   for i in range(2)], axis=1)
+    tan = np.roll(sm, -1, axis=0) - np.roll(sm, 1, axis=0)
+    tan /= np.hypot(tan[:, 0], tan[:, 1])[:, None]
+    area = 0.5 * np.sum(sm[:, 0] * np.roll(sm[:, 1], -1) - np.roll(sm[:, 0], -1) * sm[:, 1])
+    out = np.stack([tan[:, 1], -tan[:, 0]], axis=1) * (1.0 if area > 0 else -1.0)
+    c = sm.astype(np.float32).reshape(-1, 1, 2)
+    tool = _inset(pts, TRACE_CLEAR)
+    d = max(0.0, max(-cv2.pointPolygonTest(c, (float(x), float(y)), True) for x, y in tool))
+    res = sm + out * (d + SNUG / 2)
+    return cv2.approxPolyDP(res.astype(np.float32).reshape(-1, 1, 2), 0.02, True)[:, 0, :].astype(float)
+
+
+def _rounded_rect(w: float, d: float, r: float, n: int = 16) -> np.ndarray:
+    r = min(r, w / 2, d / 2)
+    out = []
+    for cx, cy, a0 in ((w / 2 - r, d / 2 - r, 0.0), (-w / 2 + r, d / 2 - r, 90.0),
+                       (-w / 2 + r, -d / 2 + r, 180.0), (w / 2 - r, -d / 2 + r, 270.0)):
+        for a in np.radians(np.linspace(a0, a0 + 90.0, n)):
+            out.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+    return np.array(out)
+
+
+def _squared_up(hull: np.ndarray, res: float = 0.25) -> np.ndarray:
+    """The hull, or the rounded rectangle that stands for it (SQUARE_FIT)."""
+    hull = _centred(hull)
+    w, d = np.ptp(hull, axis=0)
+    hc = hull.astype(np.float32).reshape(-1, 1, 2)
+    best = None
+    for r in np.arange(0.0, min(w, d) / 2 + 1e-9, 1.0):
+        q = np.abs(hull) - (w / 2 - r, d / 2 - r)
+        out = (np.hypot(np.maximum(q[:, 0], 0), np.maximum(q[:, 1], 0))
+               + np.minimum(np.maximum(q[:, 0], q[:, 1]), 0) - r)
+        g = max(0.0, float(out.max()))
+        rr = _rounded_rect(w + 2 * g, d + 2 * g, r + g)
+        gap = max(-cv2.pointPolygonTest(hc, (float(x), float(y)), True) for x, y in rr)
+        if gap > SQUARE_SLOP:
+            continue
+        lo = np.minimum(hull.min(axis=0), rr.min(axis=0)) - 1.0
+        shape = (int((np.ptp(rr[:, 1]) + 4) / res) + 2, int((np.ptp(rr[:, 0]) + 4) / res) + 2)
+        A, B = np.zeros(shape, np.uint8), np.zeros(shape, np.uint8)
+        cv2.fillPoly(A, [np.round((hull - lo) / res).astype(np.int32)], 1)
+        cv2.fillPoly(B, [np.round((rr - lo) / res).astype(np.int32)], 1)
+        fit = float((A & B).sum() / (A | B).sum())
+        if best is None or fit > best[0]:
+            best = (fit, rr)
+    return best[1] if best and best[0] >= SQUARE_FIT else hull
+
+
+def _clean(pts: np.ndarray) -> np.ndarray:
+    """A traced loop made into a pocket (see SYMMETRIC, NOTCH, CONVEX,
+    SMOOTH): turned square, symmetric if the tool is, notches filled, the
+    wobble gone, long side along X and heavy end at the left."""
+    fit, a = _mirror_fit(pts)
+    if fit >= SYMMETRIC:
+        pts = _mirrored(_turn(pts, a))
+    else:
+        pts = _square(pts)
+    pts = _closed(pts)
+    hull = cv2.convexHull(pts.astype(np.float32))[:, 0, :].astype(float)
+    if cv2.contourArea(pts.astype(np.float32)) >= CONVEX * cv2.contourArea(hull.astype(np.float32)):
+        pts = _squared_up(hull)
+    else:
+        pts = _smoothed(pts)
+    w, d = np.ptp(pts, axis=0)
+    if d > w:
+        pts = pts @ np.array([[0.0, 1.0], [-1.0, 0.0]])
+    pts = _centred(pts)
+    x0, x1 = pts[:, 0].min(), pts[:, 0].max()
+    band = 0.15 * (x1 - x0)
+    left, right = pts[pts[:, 0] < x0 + band], pts[pts[:, 0] > x1 - band]
+    if len(left) and len(right) and np.ptp(right[:, 1]) > np.ptp(left[:, 1]) * 1.2:
+        pts = -pts
+    return pts
+
+
+@functools.lru_cache(maxsize=None)
 def outline_of(r: Row) -> tuple[tuple[float, float], ...] | None:
     """The shadow's loop about its box centre, squared up: the capture's
     POCKET loop, or a calipered rod's L x W + DROP."""
@@ -452,7 +627,7 @@ def outline_of(r: Row) -> tuple[tuple[float, float], ...] | None:
         import ezdxf
         pts = np.array([(e.dxf.start.x, e.dxf.start.y) for e in ezdxf.readfile(str(path)).modelspace()
                         if e.dxftype() == "LINE"])
-        pts = _centred(_closed(_square(pts)))
+        pts = _clean(pts)
     else:
         L, W, _H = r.bbox
         if L is None or W is None:
@@ -650,11 +825,13 @@ def _cells(pts: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 
 def _interlock_run(name: str, items: list[Group], w: float, along: str,
-                   back: float | None = None) -> tuple[list[tuple[Group, np.ndarray]], tuple[float, float]] | None:
+                   back: float | None = None, turn: bool = True) -> tuple[list[tuple[Group, np.ndarray]], tuple[float, float]] | None:
     """One interlock pass. ``along`` "x": long sides across the strip, heavy
     ends alternately at the left and right edges, each slid forward. "y":
     long sides front to back, heavy ends alternately at the front and at
-    ``back``, each slid in from the left. None when something will not fit."""
+    ``back``, each slid in from the left. ``turn`` False keeps every tool
+    the same way round (heavy end left), only alternating which edge it is
+    set to. None when something will not fit."""
     lw = callouts.text_width(name, LABEL_H)
     far = (back + EDGE + 1.0) if back is not None else 1000.0
     ny = int(math.ceil(far / RES)) + 1
@@ -664,7 +841,7 @@ def _interlock_run(name: str, items: list[Group], w: float, along: str,
         pts = np.array(g.poly)
         if along == "y":
             pts = pts @ np.array([[0.0, 1.0], [-1.0, 0.0]])     # heavy end to the front
-        if k % 2:
+        if k % 2 and turn:
             pts = -pts
         pts = pts - pts.min(axis=0)
         ext = pts.max(axis=0)
@@ -697,12 +874,22 @@ def _interlock_run(name: str, items: list[Group], w: float, along: str,
         shapes.append(pts + (ox, oy))
         placed.append((g, pts + (ox, oy)))
     occ = _mask(shapes, w, far, WALL)
+    top = max(p[:, 1].max() for p in shapes) if shapes else EDGE + LABEL_H
+
+    def free(lx: float, ly: float) -> bool:
+        x0, y0 = int((lx - lw / 2) / RES), int((ly - LABEL_H / 2) / RES)
+        return not occ[y0:y0 + int(LABEL_H / RES) + 1, x0:x0 + int(lw / RES) + 1].any()
+
+    ly = EDGE + LABEL_H / 2                  # the drawer's word column first, as on every grid strip
+    while ly <= top - LABEL_H / 2:
+        if free(EDGE + lw / 2, ly):
+            return placed, (EDGE + lw / 2, ly)
+        ly += 1.0
     ly = EDGE + LABEL_H / 2
     while ly <= far - EDGE - LABEL_H / 2:
         lx = EDGE + lw / 2
         while lx <= w - EDGE - lw / 2:
-            x0, y0 = int((lx - lw / 2) / RES), int((ly - LABEL_H / 2) / RES)
-            if not occ[y0:y0 + int(LABEL_H / RES) + 1, x0:x0 + int(lw / RES) + 1].any():
+            if free(lx, ly):
                 return placed, (lx, ly)
             lx += 1.0
         ly += 1.0
@@ -712,22 +899,23 @@ def _interlock_run(name: str, items: list[Group], w: float, along: str,
 _INTERLOCKED: dict = {}
 
 
-def _interlock(name: str, groups: list[Group], w: float,
-               notes: list[str]) -> tuple[list[Place], tuple[float, float], float]:
+def _interlock(name: str, groups: list[Group], w: float, notes: list[str],
+               turn: bool = True) -> tuple[list[Place], tuple[float, float], float]:
     """Long lying tools head to tail, laid both ways (see ``_interlock_run``);
     the shallower strip wins. For "y" the back line is the least that fits,
     found by bisection. The word takes the first gap, front to back, left to
-    right."""
+    right. ``turn`` False (the stagger layout): every tool the same way
+    round, across the strip only."""
     items = [g for g in groups for _ in range(g.n)]
-    key = (name, round(w, 3), tuple((g.row.id, g.poly, g.depth) for g in items))
+    key = (name, round(w, 3), turn, tuple((g.row.id, g.poly, g.depth) for g in items))
     if key not in _INTERLOCKED:
         runs = []
-        r = _interlock_run(name, items, w, "x")
+        r = _interlock_run(name, items, w, "x", turn=turn)
         if r:
             runs.append(r)
         lo = max(np.ptp(np.array(g.poly)[:, 0]) for g in items) + EDGE if items else MODULE
         hi = lo + 200.0
-        if _interlock_run(name, items, w, "y", hi):
+        if turn and _interlock_run(name, items, w, "y", hi):
             while hi - lo > 0.5:
                 mid = (lo + hi) / 2
                 if _interlock_run(name, items, w, "y", mid):
@@ -807,8 +995,8 @@ def plan(key: str, d: Datums = D, rows: list[Row] | None = None) -> DrawerPlan:
                 continue
             groups.append(g)
         snotes: list[str] = []
-        if ss.layout == "interlock":
-            places, label, sd = _interlock(ss.name, groups, w, snotes)
+        if ss.layout in ("interlock", "stagger"):
+            places, label, sd = _interlock(ss.name, groups, w, snotes, ss.layout == "interlock")
         else:
             places, label, sd = _lay(ss.name, groups, w, snotes, x_col)
         st = Strip(key, ss.name, w, sd, y0, places, label, None, snotes)
