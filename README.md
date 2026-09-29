@@ -19,6 +19,8 @@ stations/cnc_shapeoko/params.py   the Shapeoko 5 Pro 4x4 station parameter block
 docs/build123d/                   vendored build123d reference, pinned to the
                                   installed version. Start at INDEX.md.
 export/                           STEP and DXF output, gitignored
+equipment/                        one reference per shop machine: manuals, settings,
+                                  traps. Start at equipment/README.md.
 ```
 
 ## Setup
