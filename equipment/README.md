@@ -7,3 +7,4 @@ The repo is public, so lock codes and passwords stay out of it.
 | Machine | File |
 |---|---|
 | Weller WT 1 soldering station | [weller-wt1.md](weller-wt1.md) |
+| Stratasys F170 (with notes on the uPrint SE Plus, which is gone) | [stratasys-f170.md](stratasys-f170.md) |
