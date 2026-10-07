@@ -1,0 +1,197 @@
+{
+  "angle": "machine and physics limits — Shapeoko 5 Pro / 5.1 Pro w/ VFD spindle kit",
+  "note_on_method": "Every number below is tagged type: 'cited' (with source_url, quoted/paraphrased from a primary Carbide3D or third-party page) or 'derived' (shows the formula and inputs used). Several Carbide3D spec pages do not publish the number a rigid industrial router chart would assume (max feed/rapid, torque curve) — those gaps are stated explicitly rather than filled with guesses.",
+
+  "machine_specs": {
+    "machine": "Shapeoko 5 Pro / 5.1 Pro",
+    "spindle_used_in_calcs": "80mm water-cooled VFD spindle kit (2.2kW) — Carbide3D states this is the VFD kit sold for 5 Pro / 5.1 Pro",
+    "spindle_power": {
+      "type": "cited",
+      "value": "2.2 kW rated",
+      "source_url": "https://shop.carbide3d.com/products/vfd-spindle-80mm",
+      "quote": "2.2kW, 80mm Spindle ... 8k-24k RPM ... 220V, 12A"
+    },
+    "spindle_rpm_range": {
+      "type": "cited",
+      "value": "8,000-24,000 RPM",
+      "source_url": "https://shop.carbide3d.com/products/vfd-spindle-80mm"
+    },
+    "spindle_torque_vs_rpm_curve": {
+      "type": "gap — not published",
+      "note": "Carbide3D's own 80mm spindle doc page does not give a power/torque curve, torque at low RPM, or a stated base/rated frequency. Confirmed absent on https://carbide3d.com/hub/docs/80mm-spindle-kit (fetched directly). This means we cannot cite how much power/torque is actually available at 16-18k RPM vs the rated 2.2kW — only general VFD-motor physics (below)."
+    },
+    "vfd_power_derating_general_physics": {
+      "type": "derived",
+      "statement": "Induction-motor VFD spindles are typically constant-torque below a base (rated) frequency and constant-power above it; available power falls roughly linearly with RPM below base speed. This is standard AC induction motor/VFD behavior, not a number specific to this spindle (Carbide3D does not publish the base frequency for the 80mm unit). Because 16-18k RPM sits in the upper half of this spindle's 8-24k range, it is more likely to be near full rated power than the low end (8-10k RPM) would be — but this is an inference from general VFD behavior, not a verified curve for this part."
+    },
+    "collet_and_max_cutter": {
+      "type": "cited",
+      "value": "ER-20 collet, 1/8in / 1/4in / 1/2in sizes included; max cutter shank 1/2in (12mm)",
+      "source_url": "https://shop.carbide3d.com/products/vfd-spindle-80mm"
+    },
+    "electrical_input_spindle": {
+      "type": "cited",
+      "value": "220V, 12A, dedicated circuit required (cannot run on 110V)",
+      "source_url": "https://shop.carbide3d.com/products/vfd-spindle-80mm"
+    },
+    "machine_electrical_input": {
+      "type": "cited",
+      "value": "110V or 220V auto-switching, 4A (machine only, excludes spindle)",
+      "source_url": "https://carbide3d.com/shapeoko/shapeoko5pro-specs/"
+    },
+    "motion_system": {
+      "type": "cited",
+      "value": "Ballscrew-driven on all axes (not belt). X/Y ballscrew: 16mm diameter, 20mm pitch, with wiper. Z ballscrew: 16mm diameter, 10mm pitch (1610), carried over from the Shapeoko HDM to lift the heavier 80mm spindle. Linear rails: HG-15. No belts, no round/unsupported rails, no leadscrews or gear racks.",
+      "source_url": "https://carbide3d.com/shapeoko/shapeoko5pro-specs/",
+      "secondary_source_url": "https://carbide3d.com/blog/introducing-shapeoko-5-pro/"
+    },
+    "ballscrew_accuracy": {
+      "type": "cited",
+      "value": "+/- 50 micrometers per 300mm (ballscrew lead accuracy spec, not a measured whole-machine positioning accuracy)",
+      "source_url": "https://carbide3d.com/shapeoko/shapeoko5pro-specs/"
+    },
+    "step_resolution": {
+      "type": "cited",
+      "value": "X/Y step length 0.012mm, Z step length 0.006mm",
+      "source_url": "https://carbide3d.com/shapeoko/shapeoko5pro-specs/"
+    },
+    "gantry_rigidity_spec": {
+      "type": "gap — not published",
+      "note": "Carbide3D does not publish a gantry/frame deflection or stiffness number anywhere in the fetched spec/shop pages. This is a real unquantified limit beyond the single-tool deflection calculated below — the whole gantry, not just the 1/4in cutter, can flex under cutting load, and that is not bounded by any number in this file."
+    },
+    "max_feed_and_rapid_rate": {
+      "type": "gap on Carbide3D's own spec page — filled with community/forum reports only, clearly flagged",
+      "carbide3d_official_spec_page_status": "https://carbide3d.com/shapeoko5pro-specs/ lists no max feed or max rapid rate at all.",
+      "community_reports": [
+        {
+          "claim": "Shapeoko 5 Pro ships configured to 200 IPM (5080 mm/min) XY and 100 IPM (2540 mm/min) Z by default; GRBL/firmware ceiling is ~275 IPM (6985 mm/min) if settings are changed, limited by step-pulse generation rate of the controller.",
+          "type": "cited (forum, not manufacturer spec)",
+          "source_urls": [
+            "https://community.carbide3d.com/t/max-feed-speed-on-pro-5/91075",
+            "https://community.carbide3d.com/t/maximum-speed-shapeoko-5-pro/91269"
+          ]
+        },
+        {
+          "claim": "A user reports running (older, pre-5) Shapeoko Pro machines at 400 IPM (~10,000 mm/min) in soft plastic, stating that is the factory GRBL ceiling for that machine.",
+          "type": "cited (forum, different/older machine model — 'Shapeoko Pro' not '5 Pro' — included for context only, not applied to the 5 Pro)",
+          "source_url": "https://community.carbide3d.com/t/max-feed-rates-on-pro/37523"
+        }
+      ],
+      "relevance_to_this_analysis": "Both candidate feed rates computed below (about 64 IPM and about 108 IPM, see calcs.mrr_and_power) are well under even the conservative 200 IPM factory default. The machine's feed/rapid ceiling is not the binding constraint for the birch-ply full-slotting case in this file."
+    }
+  },
+
+  "calcs": {
+    "mrr_and_power": {
+      "purpose": "Material removal rate and spindle power needed, 1/4in (6.35mm) 2-flute cutter, full slot (width of cut = cutter diameter) in birch plywood, at two bounding candidate settings.",
+      "formula": [
+        "Vf (feed rate, mm/min) = RPM x fz (chipload, mm/tooth) x z (flute count)",
+        "MRR (mm3/min) = Vf x D (cutter diameter, mm) x DOC (depth of cut, mm)   [full slot: radial width = D]",
+        "P (W) = MRR (mm3/min) x Ke (specific cutting energy, J/mm3) / 60"
+      ],
+      "fixed_inputs": {"D_mm": 6.35, "flutes": 2},
+      "specific_cutting_energy_Ke": {
+        "cited_but_not_used_directly": {
+          "value_J_per_mm3": [227.89, 190.63, 261.68],
+          "type": "cited",
+          "source_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11054301/",
+          "context": "15mm birch (Betula pendula) plywood, drilling dowel/eccentric-joint/confirmat holes, 8mm drill, 6000 RPM, 2 m/min feed. Values are whole-machine 'specific cutting work' (measured from total energy draw) per mm3 of hole volume.",
+          "why_not_used_for_this_calc": "Plugging this directly into the MRR formula above gives absurd results (>100kW for a 3mm-deep slot pass), which is a red flag, not a real spindle-power requirement. The likely reason: drilling a small hole removes very little volume while the spindle motor, acceleration, and fixed machine overhead energy stay roughly constant, so dividing total energy by a tiny removed volume massively inflates J/mm3 relative to the energy actually spent shearing wood. This number measures a different thing (whole-system energy per small drilled hole) than the per-volume shear energy an MRR-based spindle-power estimate needs. Reported here for transparency, not used below."
+        },
+        "derived_estimate_used": {
+          "value_J_per_mm3": [0.15, 0.3, 0.6],
+          "type": "derived",
+          "derivation": "Standard machining 'unit power' framework (Up, hp per in3/min of MRR) used for spindle-sizing in shop/machining handbooks: P(hp) = MRR(in3/min) x Up. Converting Up to J/mm3: Ke[J/mm3] = Up[hp/in3/min] x 745.7 W/hp / (16387 mm3/in3 / 60 s/min) = Up x 2.73. Mild steel Up is roughly 1.0 hp/in3/min, aluminum alloys roughly 0.2-0.3 hp/in3/min (both commonly cited round numbers in machining-handbook unit-power tables, not individually re-verified here). Wood is softer and shears far more easily than aluminum, so its Up — and thus Ke — should sit below aluminum's. 0.15-0.6 J/mm3 is used as a bounding estimate on that basis (equivalent to roughly 0.05-0.22 hp/in3/min).",
+          "caveat": "This is an order-of-magnitude engineering estimate, not a number read off a primary source for wood specifically. Treat the resulting power numbers as 'almost certainly well under 2.2kW' rather than as a precise prediction."
+        }
+      },
+      "scenario_A_conservative": {
+        "RPM": 16000, "chipload_in": 0.002, "chipload_mm": 0.0508,
+        "feed_rate_mm_min_derived": 1625.6,
+        "feed_rate_ipm_derived": 64.0,
+        "results_by_depth_mm": {
+          "3":  {"MRR_mm3_min_derived": 30968, "power_W_derived_low_mid_high": [77.4, 154.8, 309.7]},
+          "6":  {"MRR_mm3_min_derived": 61935, "power_W_derived_low_mid_high": [154.8, 309.7, 619.4]},
+          "9":  {"MRR_mm3_min_derived": 92903, "power_W_derived_low_mid_high": [232.3, 464.5, 929.0]}
+        }
+      },
+      "scenario_B_aggressive": {
+        "RPM": 18000, "chipload_in": 0.003, "chipload_mm": 0.0762,
+        "feed_rate_mm_min_derived": 2743.2,
+        "feed_rate_ipm_derived": 108.0,
+        "results_by_depth_mm": {
+          "3":  {"MRR_mm3_min_derived": 52258, "power_W_derived_low_mid_high": [130.6, 261.3, 522.6]},
+          "6":  {"MRR_mm3_min_derived": 104516, "power_W_derived_low_mid_high": [261.3, 522.6, 1045.2]},
+          "9":  {"MRR_mm3_min_derived": 156774, "power_W_derived_low_mid_high": [392.0, 783.9, 1567.7]}
+        }
+      },
+      "comparison_to_spindle": "Even at the high-estimate end of the derived Ke band (0.6 J/mm3) and the most aggressive candidate setting (18k RPM / 0.003in / 9mm DOC), estimated cutting power is about 1.57 kW against a 2.2kW rated spindle (about 71% of rated power). At the conservative setting (16k RPM / 0.002in / 3mm DOC) it is about 0.08-0.31 kW (4-14% of rated power). Spindle power is not the limiting factor across this whole candidate grid under this estimate; it only gets tight (>1.5kW) at full 9mm depth combined with the highest chipload and highest Ke estimate simultaneously."
+    },
+
+    "tool_deflection": {
+      "purpose": "Cantilever deflection of the 1/4in (6.35mm) solid carbide cutter at 25mm stickout, under the tangential cutting force implied by the power estimates above.",
+      "formula": [
+        "I (mm4) = pi x d^4 / 64   (second moment of area, round shaft)",
+        "v (m/s) = pi x D x RPM / 60000   (cutter OD surface speed)",
+        "Ft (N) = P (W) / v (m/s)   (tangential cutting force from power and surface speed)",
+        "delta (mm) = Ft x L^3 / (3 x E x I)   (cantilever beam tip deflection, point load at tip, fixed base)"
+      ],
+      "carbide_modulus_E": {
+        "type": "cited",
+        "value_GPa": 600,
+        "range_GPa": [575, 635],
+        "source_url": "https://carbideprocessors.com/pages/carbide-parts/tungsten-carbide-properties.html",
+        "note": "Range reflects cobalt-binder content (grade HCA ~635 GPa at 5.5% Co, grade H-91 ~575 GPa at 11% Co); 600 GPa used as the mid-range reference value per this source."
+      },
+      "fixed_inputs": {"d_mm": 6.35, "L_mm": 25, "I_mm4_derived": 79.81, "E_N_mm2": 600000, "caveat": "Ft used here is tangential force only; true resultant (tangential + radial) force on a milling cutter is somewhat higher — commonly 1.1-1.3x tangential in wood cutting — so these deflections are a lower-bound estimate, not a worst case."},
+      "scenario_A_conservative_16k_0.002in": {
+        "surface_speed_m_s_derived": 5.32,
+        "results_by_depth_mm": {
+          "3": {"Ft_N_derived": 29.1, "deflection_mm_derived": 0.0032, "deflection_um_derived": 3.2},
+          "6": {"Ft_N_derived": 58.2, "deflection_mm_derived": 0.0063, "deflection_um_derived": 6.3},
+          "9": {"Ft_N_derived": 87.3, "deflection_mm_derived": 0.0095, "deflection_um_derived": 9.5}
+        }
+      },
+      "scenario_B_aggressive_18k_0.003in": {
+        "surface_speed_m_s_derived": 5.99,
+        "results_by_depth_mm": {
+          "3": {"Ft_N_derived": 43.7, "deflection_mm_derived": 0.0048, "deflection_um_derived": 4.8},
+          "6": {"Ft_N_derived": 87.3, "deflection_mm_derived": 0.0095, "deflection_um_derived": 9.5},
+          "9": {"Ft_N_derived": 131.0, "deflection_mm_derived": 0.0143, "deflection_um_derived": 14.3}
+        }
+      },
+      "interpretation": "All derived deflections are under 0.015mm (15 microns) even in the aggressive 9mm-deep scenario, because a 1/4in solid carbide shank at only 25mm stickout is very stiff (deflection scales with L^3, so short stickout dominates). At these force levels, tool deflection is not the binding limit either — the bottleneck for full-slotting birch ply on this machine is more likely chip evacuation, heat, and the unquantified gantry rigidity (see machine_specs.gantry_rigidity_spec gap) than either spindle power or single-tool bending."
+    },
+
+    "min_chipload_rubbing_burning": {
+      "purpose": "Lower bound on chipload to avoid rubbing/burning in wood.",
+      "critical_chip_thickness": {
+        "type": "cited (secondary/industry guide, not an independently verified primary engineering source)",
+        "value_mm": 0.05,
+        "statement": "Critical chip thickness for clean cutting of hardwood is cited as approximately 0.05mm; below this the tool rubs rather than shears, generating friction heat that burns the surface.",
+        "source_url": "https://www.toolgrit.com/guides/cnc-wood-speeds-feeds-guide",
+        "caveat": "This number came back aggregated across several CNC-router feeds/speeds guide pages in search results (toolgrit.com and cncwoodguide.com both surfaced similar figures); the exact original attribution could not be independently re-verified by direct fetch within this task's tool-call budget. Treat as industry-guide-sourced, not textbook/peer-reviewed-sourced."
+      },
+      "typical_minimum_chipload_ranges_for_6mm_bit": {
+        "type": "cited (same caveat as above — aggregated from CNC router feeds/speeds guides)",
+        "hardwood_mm": [0.08, 0.20],
+        "plywood_mm": [0.08, 0.18],
+        "source_urls": ["https://www.toolgrit.com/guides/cnc-wood-speeds-feeds-guide", "https://cncwoodguide.com/posts/cnc-chip-load-chart-for-wood/"]
+      },
+      "comparison_to_candidate_settings": "Candidate chiploads 0.002-0.003in = 0.0508-0.0762mm sit right at or just above the cited ~0.05mm critical chip thickness floor, and below the low end of the cited 0.08-0.20mm 'typical' hardwood/plywood range. This means the 0.002in end of the candidate range is marginal — close enough to the rubbing/burning threshold that it should be treated as a floor, not a comfortable working point, especially if the actual spindle RPM runs above the nominal setpoint (RPM accuracy on this VFD spindle is only specified to +/-5%, per the 65mm spindle kit page, which raises actual chipload-at-the-edge uncertainty)."
+      ,"rpm_accuracy_caveat": {
+        "type": "cited",
+        "value": "+/-5% RPM accuracy",
+        "source_url": "https://community.carbide3d.com/t/carbide-3d-vfd-spindle-kit/42851",
+        "note": "Cited from the 65mm VFD spindle kit announcement; Carbide3D does not separately publish an RPM-accuracy figure for the 80mm unit on its own doc page, so this is carried over as the best available same-family number, flagged as such."
+      }
+    }
+  },
+
+  "recommended_envelope": {
+    "rpm_range": "16,000-18,000 RPM",
+    "chipload_range_in": "0.0025-0.003in (avoid the bottom of the 0.002in end — it sits at/near the cited ~0.05mm rubbing/burning floor)",
+    "max_doc_mm_full_slot": "6mm per pass for routine production; 9mm is power- and deflection-feasible per the derived estimates above (about 0.3-1.6kW and under 15 microns tool deflection) but pushes chip load per the toolgrit-sourced ranges and removes nearly 2.5x the chips per pass of a 3mm-deep pass, so chip evacuation/heat — not spindle power or tool stiffness — is the real risk at 9mm on a dust-boot-and-vacuum hobby/school setup.",
+    "rationale": "Spindle power (2.2kW cited) and single-tool deflection (<15 microns at 25mm stickout, 600GPa carbide, cited) both have wide margin across the full candidate grid per the derived estimates in this file, even acknowledging those estimates are order-of-magnitude (Ke band) rather than measured. The real constraints this machine imposes that a rigid industrial-router feeds/speeds chart would not show are: (1) no published torque curve for the VFD spindle below its rated band, so low-RPM cuts (<10-12k RPM) should not be assumed to have full rated power, even though 16-18k RPM is clear of that concern; (2) no published gantry/frame stiffness number, so whole-machine deflection beyond the single tool is a real but unquantified risk at the higher end of the depth range; (3) the machine's own feed/rapid ceiling (200-275 IPM, forum-sourced) is not binding at these chiploads — do not let that drive settings down further than the chipload floor requires."
+  }
+}
