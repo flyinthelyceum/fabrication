@@ -8,3 +8,4 @@ The repo is public, so lock codes and passwords stay out of it.
 |---|---|
 | Weller WT 1 soldering station | [weller-wt1.md](weller-wt1.md) |
 | Stratasys F170 (with notes on the uPrint SE Plus, which is gone) | [stratasys-f170.md](stratasys-f170.md) |
+| Shapeoko 5 Pro (pendant wiring traced at the machine, not from a manual) | [shapeoko-5-pro.md](shapeoko-5-pro.md) |
