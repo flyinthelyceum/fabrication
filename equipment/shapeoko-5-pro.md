@@ -54,11 +54,18 @@ active) with the Z count reaching 232.5.
 
 | Check | Reading |
 |---|---|
-| J1 White to Green | Closed released and closed pressed: the E-stop does not change state |
+| J1 White to Green | Closed in both button positions: the E-stop is stuck latched |
 | J3 Black to Red | Closed released: the switch works |
 | J3 Black to Blue | Closed pressed: the switch works |
 | J3 Green or Yellow to those contacts | No continuity in either position |
 | J1 White to Blue (J2 position 1 to 5) | Not yet metered in both positions |
+
+**Cause (2026-10-30):** the E-stop will not mechanically release, so it is latched pressed.
+Replacement: Gebildet 22 mm 2NO 2NC latching E-stop, 6 blade terminals, Amazon B094FBG1MB.
+
+**Fitting the replacement:** do not copy the old terminal labels across. Wire ES1 and ES2 to
+one pole so that J2 position 1 to 5 reads closed released and open pressed, confirm that with
+a meter before power, then confirm pressing the button stops the machine.
 
 **Traps:**
 - Do not jumper ES1 to ES2 or bypass the E-stop to test or to run. Mains work and the
