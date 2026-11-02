@@ -9,6 +9,30 @@
 Unlike the other files here, the wiring below is not from a maker's manual. We found no
 published pinout, so it was traced at the machine with a meter on 2026-10-30.
 
+## Resume here: forced relay test (left 2026-11-02)
+
+The machine is down and the fault is still open. The supply is good at 24V. The lead is the
+relay that never clicks. Full log under "Open fault"; parts map at
+https://notes.aaand.space/shapeoko-controller-teardown.html
+
+Before starting, check how the machine was left: cord out of the wall, 8-pin plug (cable
+S5-W-IPW) off the Warthog, no jumper fitted. Adult only, because the box is open and the L and
+N terminals are bare mains when powered. Do not reflow or remove anything; the machine is
+under warranty.
+
+1. With the cord out, read VCC to GND on ohms at the free plug. Predicted: about 660.
+2. Bridge a VCC socket to RELAY IN on the free plug with thin solid wire, about 40 mA. Do not
+   force or spread the sockets.
+3. Keep the plug away from metal. Plug in and switch on, hands off the L and N screws. Listen
+   for a click.
+4. On DC volts, read RELAY OUT to GND.
+5. Switch off, unplug at the wall, pull the jumper.
+
+| Result | Meaning | Next |
+|---|---|---|
+| Click, 24V at RELAY OUT | Relay is good | Trace what should feed RELAY IN; check whether the 14V at VIN reaches the coil |
+| No click, or no 24V | Relay or adapter board is bad | Gmail draft to support@carbide3d.com, order #153044, for that assembly |
+
 ## Power pendant wiring
 
 ![Wiring from the E-stop and feed hold bundles to the J2 connector](shapeoko-5-pro-pendant-wiring.svg)
