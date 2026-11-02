@@ -92,3 +92,6 @@ After that fix the fault remained: Main Power and Machine On lit, front C logo l
 
 
 **Supply test, 2026-11-02 16:26.** Mains on, 8-pin off: Mean Well green LED steady, 24V VCC to GND at the free plug. Cable S5-W-IPW, 8-pin labeled VCC, VCC, GND, GND, GND, RELAY IN, RELAY OUT, RELAY OUT. This corrects the earlier note: J3 is not power only, and the relay does connect to the Warthog. "No click may be normal" is withdrawn; no click is the lead clue. Inference: motors and gantry LEDs get power through the relay, and the relay never closes. Next: ohms with mains off at the free plug, RELAY IN and RELAY OUT each to VCC and to GND.
+
+
+**Relay ohms, 2026-11-02 16:35.** Free plug, mains off: RELAY IN to VCC 1.3k, RELAY IN to GND 636, RELAY OUT to VCC OL, RELAY OUT to GND OL. Inference: coil about 636 ohms from RELAY IN to GND, with about 660 ohms VCC to GND through the supply; contacts open at rest. Open question: 24V relay needs about 18V to pull in, and VIN read 14V; link untraced. Next: VCC to RELAY IN jumper at the free plug, mains on, 8-pin off, listen for click, read RELAY OUT to GND.
