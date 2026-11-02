@@ -89,3 +89,6 @@ After that fix the fault remained: Main Power and Machine On lit, front C logo l
 
 
 **D16 and D17, 2026-11-02 16:19.** Diode mode: D16 .824 and .268. D17 matches, per Jared (his text said "D18", taken as D16). Reading the same on a clean part means the meter cannot single out D16; the scorch is unproven as the cause. Whether the 8-pin was off during the reading and whether .268 held steady were not confirmed. Next: mains on, 8-pin off, USB out, read 24V at the free plug and note the supply LED.
+
+
+**Supply test, 2026-11-02 16:26.** Mains on, 8-pin off: Mean Well green LED steady, 24V VCC to GND at the free plug. Cable S5-W-IPW, 8-pin labeled VCC, VCC, GND, GND, GND, RELAY IN, RELAY OUT, RELAY OUT. This corrects the earlier note: J3 is not power only, and the relay does connect to the Warthog. "No click may be normal" is withdrawn; no click is the lead clue. Inference: motors and gantry LEDs get power through the relay, and the relay never closes. Next: ohms with mains off at the free plug, RELAY IN and RELAY OUT each to VCC and to GND.
