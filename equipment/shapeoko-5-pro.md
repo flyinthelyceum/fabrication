@@ -67,6 +67,10 @@ Replacement: Gebildet 22 mm 2NO 2NC latching E-stop, 6 blade terminals, Amazon B
 one pole so that J2 position 1 to 5 reads closed released and open pressed, confirm that with
 a meter before power, then confirm pressing the button stops the machine.
 
+**Log reading, 2026-11-02 (journal on `cnc-station-02`, after both switches were reworked).** Alarm 9 is unchanged: Z counts to 232.5, X and Y stay at 0. Feed hold is not the cause. The first homing attempt on 10-30 (08:16) and today's (12:44) both failed with `Pn:P` alone, no H. `P` was absent at idle through 10-29, appeared at the 10-30 power-up and has been on in every status line since. H first appeared 10-30 08:27, in the same stretch the pendant was being traced, and has toggled in and out today, so the FH line reaches the controller.
+
+Inference, not metered: a stuck `P`, no motion and dark gantry LEDs share one cause, the E-stop loop or the rail it switches still being dead. H reads active when the FH line is open (10-30 timing), which would make FH fail-safe: released must hold it closed. J3 Black is GND and terminal 1 is VIN, so tying common to 1 shorts VIN to GND through a closed contact. No `$14` or other settings appear in the journal, so the polarity is not read from firmware.
+
 **Traps:**
 - Do not jumper ES1 to ES2 or bypass the E-stop to test or to run. Mains work and the
   interlock are Mr. Reasy's alone.
