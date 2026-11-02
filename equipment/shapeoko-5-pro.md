@@ -80,3 +80,6 @@ After that fix the fault remained: Main Power and Machine On lit, front C logo l
   interlock are Mr. Reasy's alone.
 - Do not unlock past the alarm with `$X` to run a job. An unhomed machine has no reference.
 - J3 Green and Yellow showing no continuity to the contacts is not by itself a fault.
+
+
+**Step 14, 2026-11-02 16:00.** Initialize produced no motion at all. Going into the control box. Carbide publishes no teardown; the forum knows only that the board is called the Warthog, with an ESP32, a 328p running Grbl, and a reported 24V 2.6A fuse on the AUX port. Correction: USB did drop today at 15:45 and 16:01, both during our reseating and unplugging, so the "never dropped" note holds only through 15:44. The Carbide 5.1 Pro assembly guide is in Drive at My Drive/IC/CNC Station 2026 (id 1YfQRNmvPAUUoKE_ugUIEqYutmEx_A7u5); it warns that pushing the gantry fast back-feeds the board, and the red controller LED lighting while moved by hand is the sign. Warranty: 18 months, excludes damage from repairs tried outside Carbide, void on modifying electronics. Purchase date not on file.
