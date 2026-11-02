@@ -71,6 +71,10 @@ a meter before power, then confirm pressing the button stops the machine.
 
 Inference, not metered: a stuck `P`, no motion and dark gantry LEDs share one cause, the E-stop loop or the rail it switches still being dead. H reads active when the FH line is open (10-30 timing), which would make FH fail-safe: released must hold it closed. J3 Black is GND and terminal 1 is VIN, so tying common to 1 shorts VIN to GND through a closed contact. No `$14` or other settings appear in the journal, so the polarity is not read from firmware.
 
+**Traced 2026-11-02, supersedes the J3 table above.** Continuity to J2, power off: J3 Black = position 2 (FH). J3 Yellow = positions 3 and 6 (GND). J3 Green = position 4 (VIN). J3 Blue = positions 3 and 6 (GND). J3 Red = nothing. J1 White = position 1 (ES2). Terminals 1 and D are probably the button backlight (inference). Feed hold wiring: Black on C, Blue on NO, Green and Yellow on 1 and D, Red spare. The ES1 connector at J2 position 5 was loose and intermittently open; Jared tightened it 11-02, and positions 1 to 5 now read closed released, open pressed. The loop reads 0 V closed and 3.3 V open, so it is a low-voltage signal. VIN read 13.9 to 14.7 V and did not change with the E-stop; correct level unknown.
+
+After that fix the fault remained: Main Power and Machine On lit, front C logo lit, gantry LEDs dark, X and Y slide freely, `Pn:P` steady. The USB link to the station has not dropped since 10-30 10:02 through several machine power-offs, so the controller stays alive on USB and can connect and count Z with the motors unpowered (inference).
+
 **Traps:**
 - Do not jumper ES1 to ES2 or bypass the E-stop to test or to run. Mains work and the
   interlock are Mr. Reasy's alone.
