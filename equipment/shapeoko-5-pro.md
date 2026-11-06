@@ -9,29 +9,26 @@
 Unlike the other files here, the wiring below is not from a maker's manual. We found no
 published pinout, so it was traced at the machine with a meter on 2026-10-30.
 
-## Resume here: forced relay test (left 2026-11-02)
+## Resume here: the relay is good, the fault is upstream (2026-11-06)
 
-The machine is down and the fault is still open. The supply is good at 24V. The lead is the
-relay that never clicks. Full log under "Open fault"; parts map at
-https://notes.aaand.space/shapeoko-controller-teardown.html
+Forced relay test run 2026-11-06 12:30 to 12:52 by Ryken Aston with Jared at the machine. The
+11-04 reseat and Initialize retry had failed with the same HM009.
 
-Before starting, check how the machine was left: cord out of the wall, 8-pin plug (cable
-S5-W-IPW) off the Warthog, no jumper fitted. Adult only, because the box is open and the L and
-N terminals are bare mains when powered. Do not reflow or remove anything; the machine is
-under warranty.
+- Cable S5-W-IPW unplugged at the power board end, so the test used the power board's own header,
+  J3 (beside relay K2 and R8). Header map, J3 label at top and K2 at bottom: left column GND, GND,
+  VCC, VCC; right column RELAY_OUT, RELAY_OUT, RELAY_IN, GND.
+- VCC to GND, power off, continuity mode: flashes 250 to 300 then OL as the supply capacitors
+  charge. No short.
+- Jumper VCC to RELAY_IN (third row), power on: the Mean Well LED is lit and the relay clicks once the
+  jumper makes firm contact. The first try was silent because the jumper wasn't touching.
+- RELAY_OUT to GND, DC volts, relay held: 24V.
 
-1. With the cord out, read VCC to GND on ohms at the free plug. Predicted: about 660.
-2. Bridge a VCC socket to RELAY IN on the free plug with thin solid wire, about 40 mA. Do not
-   force or spread the sockets.
-3. Keep the plug away from metal. Plug in and switch on, hands off the L and N screws. Listen
-   for a click.
-4. On DC volts, read RELAY OUT to GND.
-5. Switch off, unplug at the wall, pull the jumper.
-
-| Result | Meaning | Next |
-|---|---|---|
-| Click, 24V at RELAY OUT | Relay is good | Trace what should feed RELAY IN; check whether the 14V at VIN reaches the coil |
-| No click, or no 24V | Relay or adapter board is bad | Gmail draft to support@carbide3d.com, order #153044, for that assembly |
+Result: the relay and the power board work. When RELAY_IN gets 24V, RELAY_OUT delivers 24V. So the
+fault is upstream: in normal operation nothing drives RELAY_IN, and that signal comes from the
+Warthog over the S5-W-IPW cable. Next test: cable reconnected at both ends, e-stop released, read
+RELAY_IN to GND at power-up and during Initialize. Expect 0V, which puts the fault on the Warthog
+(its enable output, or the E-stop and 14V VIN logic that gates it). That makes it a warranty claim
+for the Warthog to support@carbide3d.com, order #153044, not for the power board.
 
 ## Power pendant wiring
 
