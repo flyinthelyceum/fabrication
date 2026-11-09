@@ -9,7 +9,23 @@
 Unlike the other files here, the wiring below is not from a maker's manual. We found no
 published pinout, so it was traced at the machine with a meter on 2026-10-30.
 
-## Resume here: the relay is good, the fault is upstream (2026-11-06)
+## Resume here: the Warthog never drives RELAY_IN (2026-11-09)
+
+Live reading by Jared, 2026-11-09 10:40 to 11:10, cable S5-W-IPW plugged in at both ends, E-stop released.
+
+- RELAY_IN is labeled at the J3 end of the cable: column 1, row 2. From the back of the plug the
+  columns and rows run differently from the face map below, so go by the label.
+- Mains off, Warthog end unplugged: RELAY_IN to supply V- reads 636 ohms (relay coil intact).
+  Column 1 row 3 reads OL to V+ and V- (RELAY_OUT, contacts open).
+- Mains on: RELAY_IN to V- reads 0 V at idle and 0 V during Initialize. No click.
+- Mains off: the RELAY_IN wire beeps end to end through the cable.
+- Verdict: the cable, power board and relay are good. The Warthog v2.2a never energizes the relay.
+  Warranty claim with Carbide (ticket handled by Fleming Valenzuela, 2026-11-09).
+- With the cable connected, pin-to-rail ohms read 1k to 1.8k because the Warthog adds paths.
+  Identify pins with the Warthog end unplugged.
+- Journal 11:03: `Pn:PXYAZH`, every limit input active (inference: the sensors sit behind the open relay).
+
+## Earlier: the relay is good, the fault is upstream (2026-11-06)
 
 Forced relay test run 2026-11-06 12:30 to 12:52 by Ryken Aston with Jared at the machine. The
 11-04 reseat and Initialize retry had failed with the same HM009.
